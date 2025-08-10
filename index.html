@@ -3,26 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinTrack Pro</title>
+    <title>Balance</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script async defer src="https://cdn.jsdelivr.net/npm/lucide-dev/dist/umd/lucide.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+            font-family: 'Nunito', sans-serif;
+            background-color: #F8FAFC; /* New clean background */
+            color: #1D2B53; /* New primary text color */
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Inter', sans-serif;
         }
         .container {
             max-width: 1100px;
         }
         .card {
             background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Softer shadow */
             border-radius: 1.5rem; /* rounded-3xl */
-            padding: 2.5rem; /* p-10 */
+            padding: 2rem; /* p-8 */
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+        .btn-primary {
+            background-color: #11B981; /* New accent color */
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px; /* rounded-full */
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #0c9b6f;
+        }
+        .btn-secondary {
+            background-color: #E2E8F0;
+            color: #475569;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #CBD5E1;
         }
         .log-message {
             padding: 4px 8px;
@@ -32,22 +63,22 @@
             word-wrap: break-word;
         }
         .log-info {
-            background-color: #e2e8f0;
-            color: #4a5568;
+            background-color: #E2E8F0;
+            color: #475569;
         }
         .log-error {
-            background-color: #fee2e2;
-            color: #991b1b;
+            background-color: #FEE2E2;
+            color: #991B1B;
             font-weight: bold;
         }
         .filter-btn.active {
-            background-color: #3b82f6; /* blue-500 */
+            background-color: #11B981; /* New accent color */
             color: white;
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 6px rgba(17, 185, 129, 0.3);
         }
         .filter-btn:not(.active) {
-            background-color: #e5e7eb;
-            color: #4b5563;
+            background-color: #E2E8F0;
+            color: #475569;
         }
         @keyframes fade-in-down {
             from { opacity: 0; transform: translateY(-20px); }
@@ -78,14 +109,24 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+        
+        /* Custom styles for icon colors to match the theme */
+        [data-lucide="wallet"] { color: #11B981; }
+        [data-lucide="line-chart"] { color: #EAB308; }
+        [data-lucide="lightbulb"] { color: #8B5CF6; }
+        [data-lucide="brain"] { color: #11B981; }
+        [data-lucide="pencil"] { color: #3B82F6; }
+        [data-lucide="folder-open"] { color: #6366F1; }
+        [data-lucide="list-checks"] { color: #F43F5E; }
+        
     </style>
 </head>
 <body class="flex items-start justify-center min-h-screen p-4 md:p-8">
     <div class="container mx-auto relative">
         <header class="flex justify-between items-center mb-10">
-            <h1 class="text-5xl font-bold text-gray-800 tracking-tight">FinTrack Pro</h1>
-            <button id="toggle-info-panel-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 transform hover:scale-105 flex items-center">
-                <i class="fas fa-info-circle mr-2"></i>
+            <h1 class="text-5xl font-bold tracking-tight">Balance</h1>
+            <button id="toggle-info-panel-btn" class="btn-secondary transition-all duration-300 transform hover:scale-105 flex items-center">
+                <i data-lucide="info" class="w-5 h-5 mr-2"></i>
                 Info
             </button>
         </header>
@@ -95,10 +136,10 @@
             <!-- Firebase Configuration Error Message -->
             <div id="config-error-view" class="text-center p-10 hidden">
                 <div class="card p-10 flex flex-col items-center max-w-lg mx-auto bg-red-50 border-red-200">
-                    <i class="fas fa-exclamation-triangle text-8xl text-red-500 mb-6 animate-pop-in"></i>
+                    <i data-lucide="circle-x" class="w-20 h-20 text-red-500 mb-6 animate-pop-in"></i>
                     <h2 class="text-3xl font-bold text-gray-800 mb-2">Setup Error</h2>
                     <p class="text-gray-600 mb-6 max-w-md">
-                        FinTrack Pro is unable to connect to its database because the necessary configuration is missing.
+                        Balance is unable to connect to its database because the necessary configuration is missing.
                         Please ensure the app is properly configured.
                     </p>
                     <p id="error-details" class="text-sm text-red-500 italic"></p>
@@ -108,12 +149,12 @@
             <!-- Account Creation Prompt (visible if no account exists) -->
             <div id="no-account-view" class="text-center p-10 hidden">
                 <div class="card p-10 flex flex-col items-center max-w-lg mx-auto">
-                    <i class="fas fa-seedling text-8xl text-emerald-500 mb-6 animate-pop-in"></i>
-                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome to FinTrack Pro!</h2>
+                    <i data-lucide="piggy-bank" class="w-20 h-20 text-emerald-500 mb-6 animate-pop-in"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome to Balance!</h2>
                     <p class="text-gray-600 mb-6 max-w-md">
                         Your financial journey starts here. Create an account to securely track your daily transactions.
                     </p>
-                    <button id="create-account-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
+                    <button id="create-account-btn" class="btn-primary transform hover:scale-105">
                         Create My Account
                     </button>
                     <p id="account-status" class="mt-4 text-sm text-gray-500 italic">
@@ -130,31 +171,31 @@
                     <!-- Total Balance Card -->
                     <div class="card p-6 flex flex-col justify-between">
                         <div>
-                            <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
-                                <i class="fas fa-wallet text-green-500 mr-2"></i>
+                            <h2 class="text-xl font-semibold mb-2 flex items-center">
+                                <i data-lucide="wallet" class="w-5 h-5 mr-2"></i>
                                 Total Balance
                             </h2>
-                            <span id="total-balance" class="text-5xl font-extrabold text-gray-900">₹0.00</span>
+                            <span id="total-balance" class="text-5xl font-extrabold">₹0.00</span>
                         </div>
                     </div>
 
                     <!-- Monthly Summary Card -->
                     <div class="card p-6">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-chart-line text-yellow-500 mr-2"></i>
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <i data-lucide="line-chart" class="w-5 h-5 mr-2"></i>
                             Monthly Summary
                         </h2>
                         <div class="space-y-2">
-                            <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <div class="flex justify-between items-center text-lg font-medium">
                                 <span>Income:</span>
                                 <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
                             </div>
-                            <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <div class="flex justify-between items-center text-lg font-medium">
                                 <span>Expenses:</span>
                                 <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
                             </div>
                             <hr class="my-2 border-gray-200">
-                            <div class="flex justify-between items-center text-xl font-bold text-gray-800">
+                            <div class="flex justify-between items-center text-xl font-bold">
                                 <span>Net Balance:</span>
                                 <span id="monthly-balance" class="text-2xl font-extrabold">₹0.00</span>
                             </div>
@@ -163,15 +204,16 @@
 
                     <!-- Frugal Fun Facts Card -->
                     <div class="card p-6 flex flex-col justify-center">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
-                            <i class="fas fa-lightbulb text-purple-500 mr-2"></i>
+                        <h2 class="text-xl font-semibold mb-2 flex items-center">
+                            <i data-lucide="lightbulb" class="w-5 h-5 mr-2"></i>
                             Frugal Fun Facts
                         </h2>
-                        <p id="fun-fact" class="text-lg text-gray-700 italic text-center transition-all duration-500 ease-in-out">
+                        <p id="fun-fact" class="text-lg italic text-center transition-all duration-500 ease-in-out">
                             Click the button below for a finance joke!
                         </p>
-                        <button id="generate-fun-fact-btn" class="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                            ✨ Generate Fun Fact
+                        <button id="generate-fun-fact-btn" class="mt-4 w-full btn-secondary">
+                            <i data-lucide="sparkles" class="w-5 h-5 inline-block mr-2"></i>
+                            Generate Fun Fact
                         </button>
                     </div>
                 </div>
@@ -179,15 +221,16 @@
                 <!-- AI-Powered Financial Insights -->
                 <div class="card p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                            <i class="fas fa-brain text-emerald-500 mr-2"></i>
+                        <h2 class="text-xl font-semibold flex items-center">
+                            <i data-lucide="brain" class="w-5 h-5 mr-2"></i>
                             Financial Insights
                         </h2>
-                        <button id="generate-summary-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                            ✨ Generate Spending Summary
+                        <button id="generate-summary-btn" class="btn-primary transform hover:scale-105">
+                            <i data-lucide="sparkles" class="w-5 h-5 inline-block mr-2"></i>
+                            Generate Spending Summary
                         </button>
                     </div>
-                    <div id="summary-content" class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div id="summary-content" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <p class="text-gray-500 italic">Your personalized summary will appear here. It may take a moment to generate.</p>
                     </div>
                 </div>
@@ -196,8 +239,8 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Transaction Form -->
                     <div class="card p-6 col-span-2">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-pen-to-square text-blue-500 mr-2"></i>
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <i data-lucide="pencil" class="w-5 h-5 mr-2"></i>
                             Record Transaction
                         </h2>
                         <form id="transaction-form" class="space-y-4">
@@ -205,27 +248,27 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                                    <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-[#11B981] focus:border-[#11B981] sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                                    <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-[#11B981] focus:border-[#11B981] sm:text-sm">
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
-                                    <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-[#11B981] focus:border-[#11B981] sm:text-sm">
                                 </div>
                                 <div>
                                     <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
-                                    <select id="type" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <select id="type" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-[#11B981] focus:border-[#11B981] sm:text-sm">
                                         <option value="expense" selected>Expense</option>
                                         <option value="income">Income</option>
                                     </select>
                                 </div>
                                 <div class="flex items-end">
-                                    <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                                    <button type="submit" id="submit-button" class="w-full btn-primary transform hover:scale-105">
                                         Add Transaction
                                     </button>
                                 </div>
@@ -235,15 +278,15 @@
                     
                     <!-- Account Info Card -->
                     <div class="card p-6 flex flex-col justify-between">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-folder-open text-indigo-500 mr-2"></i>
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <i data-lucide="folder-open" class="w-5 h-5 mr-2"></i>
                             Your Account
                         </h2>
                         <div class="space-y-2">
                             <p class="text-gray-600">Your data is stored under a single, dedicated account.</p>
                             <p id="account-status-dashboard" class="text-gray-500 italic">Account Active</p>
                         </div>
-                        <button id="delete-account-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 mt-4">
+                        <button id="delete-account-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-xl shadow-md transition-all duration-300 transform hover:scale-105 mt-4">
                             Delete My Account
                         </button>
                     </div>
@@ -252,14 +295,14 @@
                 <!-- Transaction List & Filters -->
                 <div class="card p-6">
                     <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-2 md:mb-0 flex items-center">
-                            <i class="fas fa-list-ul text-rose-500 mr-2"></i>
+                        <h2 class="text-xl font-semibold mb-2 md:mb-0 flex items-center">
+                            <i data-lucide="list-checks" class="w-5 h-5 mr-2"></i>
                             Transaction History
                         </h2>
                         <div class="flex flex-wrap space-x-2">
-                            <button onclick="setFilter('all')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">All</button>
-                            <button onclick="setFilter('income')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Income</button>
-                            <button onclick="setFilter('expense')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Expenses</button>
+                            <button onclick="setFilter('all')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-full shadow-sm transition-colors duration-200">All</button>
+                            <button onclick="setFilter('income')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-full shadow-sm transition-colors duration-200">Income</button>
+                            <button onclick="setFilter('expense')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-full shadow-sm transition-colors duration-200">Expenses</button>
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -285,13 +328,13 @@
         <!-- Info/Log Panel (Hidden by default) -->
         <div id="info-panel" class="fixed top-0 right-0 h-full w-full md:w-1/3 bg-white shadow-2xl z-40 p-8 pt-20 overflow-y-auto slide-in-right">
             <button id="close-info-panel-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 transition-colors duration-200">
-                <i class="fas fa-times text-2xl"></i>
+                <i data-lucide="x" class="w-6 h-6"></i>
             </button>
             
             <!-- User ID Card -->
             <div class="card p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-id-badge text-indigo-500 mr-2"></i>
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i data-lucide="fingerprint" class="w-5 h-5 mr-2 text-[#6366F1]"></i>
                     Your Unique ID
                 </h2>
                 <div id="user-info">
@@ -303,8 +346,8 @@
             <!-- App Log Card -->
             <div class="card p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                        <i class="fas fa-clipboard-list text-orange-500 mr-2"></i>
+                    <h2 class="text-xl font-semibold flex items-center">
+                        <i data-lucide="file-text" class="w-5 h-5 mr-2 text-[#F97316]"></i>
                         App Log
                     </h2>
                     <button id="clear-log-btn" class="text-sm text-red-500 hover:text-red-700 font-medium transition duration-200">Clear Log</button>
@@ -344,55 +387,157 @@
             let hasAccount = false;
             const ACCOUNT_ID = 'main_account'; // Fixed ID for the single account
 
-            const form = document.getElementById('transaction-form');
-            const transactionList = document.getElementById('transaction-list');
-            const totalBalanceElement = document.getElementById('total-balance');
-            const submitButton = document.getElementById('submit-button');
-            const monthlyIncomeElement = document.getElementById('monthly-income');
-            const monthlyExpensesElement = document.getElementById('monthly-expenses');
-            const monthlyBalanceElement = document.getElementById('monthly-balance');
-            const userIdElement = document.getElementById('user-id');
-            const logDisplay = document.getElementById('log-display');
-            const clearLogBtn = document.getElementById('clear-log-btn');
-            const deleteModal = document.getElementById('delete-modal');
-            const deleteModalMessage = document.getElementById('delete-modal-message');
-            const deleteModalConfirmBtn = document.getElementById('delete-modal-confirm-btn');
-            const deleteModalCancelBtn = document.getElementById('delete-modal-cancel-btn');
-            const infoPanel = document.getElementById('info-panel');
-            const toggleInfoPanelBtn = document.getElementById('toggle-info-panel-btn');
-            const closeInfoPanelBtn = document.getElementById('close-info-panel-btn');
-            const funFactElement = document.getElementById('fun-fact');
-            const createAccountBtn = document.getElementById('create-account-btn');
-            const deleteAccountBtn = document.getElementById('delete-account-btn');
-            const noAccountView = document.getElementById('no-account-view');
-            const dashboardView = document.getElementById('dashboard-view');
-            const accountStatusElement = document.getElementById('account-status');
-            const accountStatusDashboardElement = document.getElementById('account-status-dashboard');
-            const generateFunFactBtn = document.getElementById('generate-fun-fact-btn');
-            const generateSummaryBtn = document.getElementById('generate-summary-btn');
-            const summaryContent = document.getElementById('summary-content');
-            const configErrorView = document.getElementById('config-error-view');
-            const errorDetailsElement = document.getElementById('error-details');
-            const mainAppView = document.getElementById('main-app-view');
+            let form, transactionList, totalBalanceElement, submitButton, monthlyIncomeElement, monthlyExpensesElement, monthlyBalanceElement, userIdElement, logDisplay, clearLogBtn, deleteModal, deleteModalMessage, deleteModalConfirmBtn, deleteModalCancelBtn, infoPanel, toggleInfoPanelBtn, closeInfoPanelBtn, funFactElement, createAccountBtn, deleteAccountBtn, noAccountView, dashboardView, accountStatusElement, accountStatusDashboardElement, generateFunFactBtn, generateSummaryBtn, summaryContent, configErrorView, errorDetailsElement, mainAppView;
 
             let transactions = [];
             let currentCurrency = '₹';
             let currentFilter = 'all';
             let editingTransactionId = null;
 
-            // Toggling the Info Panel
-            toggleInfoPanelBtn.addEventListener('click', () => {
-                infoPanel.classList.toggle('slide-in-right');
-                infoPanel.classList.toggle('open');
-            });
+            // This function will be called once the entire page is loaded
+            window.onload = function () {
+                // Initialize all DOM elements
+                form = document.getElementById('transaction-form');
+                transactionList = document.getElementById('transaction-list');
+                totalBalanceElement = document.getElementById('total-balance');
+                submitButton = document.getElementById('submit-button');
+                monthlyIncomeElement = document.getElementById('monthly-income');
+                monthlyExpensesElement = document.getElementById('monthly-expenses');
+                monthlyBalanceElement = document.getElementById('monthly-balance');
+                userIdElement = document.getElementById('user-id');
+                logDisplay = document.getElementById('log-display');
+                clearLogBtn = document.getElementById('clear-log-btn');
+                deleteModal = document.getElementById('delete-modal');
+                deleteModalMessage = document.getElementById('delete-modal-message');
+                deleteModalConfirmBtn = document.getElementById('delete-modal-confirm-btn');
+                deleteModalCancelBtn = document.getElementById('delete-modal-cancel-btn');
+                infoPanel = document.getElementById('info-panel');
+                toggleInfoPanelBtn = document.getElementById('toggle-info-panel-btn');
+                closeInfoPanelBtn = document.getElementById('close-info-panel-btn');
+                funFactElement = document.getElementById('fun-fact');
+                createAccountBtn = document.getElementById('create-account-btn');
+                deleteAccountBtn = document.getElementById('delete-account-btn');
+                noAccountView = document.getElementById('no-account-view');
+                dashboardView = document.getElementById('dashboard-view');
+                accountStatusElement = document.getElementById('account-status');
+                accountStatusDashboardElement = document.getElementById('account-status-dashboard');
+                generateFunFactBtn = document.getElementById('generate-fun-fact-btn');
+                generateSummaryBtn = document.getElementById('generate-summary-btn');
+                summaryContent = document.getElementById('summary-content');
+                configErrorView = document.getElementById('config-error-view');
+                errorDetailsElement = document.getElementById('error-details');
+                mainAppView = document.getElementById('main-app-view');
 
-            closeInfoPanelBtn.addEventListener('click', () => {
-                infoPanel.classList.remove('open');
-                infoPanel.classList.add('slide-in-right');
-            });
+                // Important: The Lucide library needs to be initialized AFTER the DOM is loaded
+                // to correctly render all the icons.
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                } else {
+                    logMessage("Lucide library not loaded.", 'error');
+                }
+
+                // Toggling the Info Panel
+                if (toggleInfoPanelBtn) {
+                    toggleInfoPanelBtn.addEventListener('click', () => {
+                        infoPanel.classList.toggle('slide-in-right');
+                        infoPanel.classList.toggle('open');
+                    });
+                }
+
+                if (closeInfoPanelBtn) {
+                    closeInfoPanelBtn.addEventListener('click', () => {
+                        infoPanel.classList.remove('open');
+                        infoPanel.classList.add('slide-in-right');
+                    });
+                }
+                
+                // Modal functions for deleting an account
+                if (deleteAccountBtn) {
+                    deleteAccountBtn.addEventListener('click', () => {
+                        deleteModal.classList.remove('hidden');
+                    });
+                }
+
+                if (deleteModalConfirmBtn) {
+                    deleteModalConfirmBtn.addEventListener('click', async () => {
+                        deleteModal.classList.add('hidden');
+                        await deleteAccount();
+                    });
+                }
+
+                if (deleteModalCancelBtn) {
+                    deleteModalCancelBtn.addEventListener('click', () => {
+                        deleteModal.classList.add('hidden');
+                        logMessage("Account deletion cancelled.");
+                    });
+                }
+
+                if (clearLogBtn) {
+                    clearLogBtn.addEventListener('click', () => {
+                        logDisplay.innerHTML = '<p class="text-gray-500 italic">Logs will appear here...</p>';
+                    });
+                }
+                
+                if (form) {
+                    form.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+
+                        if (!hasAccount) {
+                            logMessage("No account exists. Please create one.", 'error');
+                            return;
+                        }
+
+                        const date = document.getElementById('date').value;
+                        const description = document.getElementById('description').value;
+                        const amount = parseFloat(document.getElementById('amount').value);
+                        const type = document.getElementById('type').value;
+
+                        const transactionData = {
+                            date: date,
+                            description: description,
+                            amount: amount,
+                            type: type,
+                            timestamp: new Date().toISOString()
+                        };
+
+                        try {
+                            if (editingTransactionId) {
+                                const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`, editingTransactionId);
+                                await setDoc(transactionRef, transactionData);
+                                logMessage(`Transaction '${description}' updated successfully.`);
+                                editingTransactionId = null;
+                                submitButton.textContent = "Add Transaction";
+                            } else {
+                                const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`);
+                                await addDoc(transactionsCollectionRef, transactionData);
+                                logMessage(`Transaction '${description}' added successfully.`);
+                            }
+                        } catch (error) {
+                            logMessage(`Error adding/updating transaction: ${error.message}`, 'error');
+                        }
+
+                        form.reset();
+                    });
+                }
+                
+                if (createAccountBtn) {
+                    createAccountBtn.addEventListener('click', createAccount);
+                }
+
+                if (generateSummaryBtn) {
+                    generateSummaryBtn.addEventListener('click', generateSpendingSummary);
+                }
+
+                if (generateFunFactBtn) {
+                    generateFunFactBtn.addEventListener('click', generateNewFunFact);
+                }
+
+                initializeFirebaseApp();
+            };
 
             // Function to handle logging to the UI
             function logMessage(message, type = 'info') {
+                if (!logDisplay) return;
                 const logEntry = document.createElement('div');
                 logEntry.className = `log-message ${type === 'error' ? 'log-error' : 'log-info'}`;
                 logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
@@ -404,33 +549,9 @@
                 }
             }
 
-            clearLogBtn.addEventListener('click', () => {
-                logDisplay.innerHTML = '<p class="text-gray-500 italic">Logs will appear here...</p>';
-            });
-
-            // Modal functions for deleting an account
-            if (deleteAccountBtn) {
-                deleteAccountBtn.addEventListener('click', () => {
-                    deleteModal.classList.remove('hidden');
-                });
-            }
-
-            if (deleteModalConfirmBtn) {
-                deleteModalConfirmBtn.addEventListener('click', async () => {
-                    deleteModal.classList.add('hidden');
-                    await deleteAccount();
-                });
-            }
-
-            if (deleteModalCancelBtn) {
-                deleteModalCancelBtn.addEventListener('click', () => {
-                    deleteModal.classList.add('hidden');
-                    logMessage("Account deletion cancelled.");
-                });
-            }
-
             // Function to render transactions and update balance
             function renderTransactions() {
+                if (!transactionList) return;
                 transactionList.innerHTML = ''; // Clear the current list
                 let total = 0;
                 let monthlyIncome = 0;
@@ -495,25 +616,30 @@
                 });
 
                 // Update balance displays
-                totalBalanceElement.textContent = `${currentCurrency}${total.toFixed(2)}`;
-                if (total < 0) {
-                    totalBalanceElement.classList.add('text-red-600');
-                    totalBalanceElement.classList.remove('text-gray-900');
-                } else {
-                    totalBalanceElement.classList.remove('text-red-600');
-                    totalBalanceElement.classList.add('text-gray-900');
+                if (totalBalanceElement) {
+                    totalBalanceElement.textContent = `${currentCurrency}${total.toFixed(2)}`;
+                    if (total < 0) {
+                        totalBalanceElement.classList.add('text-red-600');
+                        totalBalanceElement.classList.remove('text-gray-900');
+                    } else {
+                        totalBalanceElement.classList.remove('text-red-600');
+                        totalBalanceElement.classList.add('text-gray-900');
+                    }
                 }
-
-                monthlyIncomeElement.textContent = `${currentCurrency}${monthlyIncome.toFixed(2)}`;
-                monthlyExpensesElement.textContent = `${currentCurrency}${monthlyExpenses.toFixed(2)}`;
+                
+                if (monthlyIncomeElement) monthlyIncomeElement.textContent = `${currentCurrency}${monthlyIncome.toFixed(2)}`;
+                if (monthlyExpensesElement) monthlyExpensesElement.textContent = `${currentCurrency}${monthlyExpenses.toFixed(2)}`;
+                
                 const monthlyBalance = monthlyIncome - monthlyExpenses;
-                monthlyBalanceElement.textContent = `${currentCurrency}${monthlyBalance.toFixed(2)}`;
-                if (monthlyBalance < 0) {
-                    monthlyBalanceElement.classList.add('text-red-600');
-                    monthlyBalanceElement.classList.remove('text-gray-800');
-                } else {
-                    monthlyBalanceElement.classList.remove('text-red-600');
-                    monthlyBalanceElement.classList.add('text-gray-800');
+                if (monthlyBalanceElement) {
+                    monthlyBalanceElement.textContent = `${currentCurrency}${monthlyBalance.toFixed(2)}`;
+                    if (monthlyBalance < 0) {
+                        monthlyBalanceElement.classList.add('text-red-600');
+                        monthlyBalanceElement.classList.remove('text-gray-800');
+                    } else {
+                        monthlyBalanceElement.classList.remove('text-red-600');
+                        monthlyBalanceElement.classList.add('text-gray-800');
+                    }
                 }
             }
 
@@ -532,49 +658,6 @@
 
             // Export setFilter globally for onclick
             window.setFilter = setFilter;
-
-            // Handle form submission (Add/Edit)
-            if (form) {
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-
-                    if (!hasAccount) {
-                        logMessage("No account exists. Please create one.", 'error');
-                        return;
-                    }
-
-                    const date = document.getElementById('date').value;
-                    const description = document.getElementById('description').value;
-                    const amount = parseFloat(document.getElementById('amount').value);
-                    const type = document.getElementById('type').value;
-
-                    const transactionData = {
-                        date: date,
-                        description: description,
-                        amount: amount,
-                        type: type,
-                        timestamp: new Date().toISOString()
-                    };
-
-                    try {
-                        if (editingTransactionId) {
-                            const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`, editingTransactionId);
-                            await setDoc(transactionRef, transactionData);
-                            logMessage(`Transaction '${description}' updated successfully.`);
-                            editingTransactionId = null;
-                            submitButton.textContent = "Add Transaction";
-                        } else {
-                            const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`);
-                            await addDoc(transactionsCollectionRef, transactionData);
-                            logMessage(`Transaction '${description}' added successfully.`);
-                        }
-                    } catch (error) {
-                        logMessage(`Error adding/updating transaction: ${error.message}`, 'error');
-                    }
-
-                    form.reset();
-                });
-            }
 
             // Function to edit a transaction
             window.editTransaction = function(id) {
@@ -651,10 +734,6 @@
                 }
             }
             
-            if (createAccountBtn) {
-                createAccountBtn.addEventListener('click', createAccount);
-            }
-
 
             function setupTransactionListener() {
                 if (unsubscribeTransactions) {
@@ -760,21 +839,28 @@
             // Function to generate a spending summary using Gemini
             async function generateSpendingSummary() {
                 if (transactions.length === 0) {
-                    summaryContent.innerHTML = `<p class="text-gray-500 italic">Please add some transactions first to generate a summary.</p>`;
+                    if (summaryContent) {
+                        summaryContent.innerHTML = `<p class="text-gray-500 italic">Please add some transactions first to generate a summary.</p>`;
+                    }
                     return;
                 }
                 
-                generateSummaryBtn.disabled = true;
-                generateSummaryBtn.innerHTML = `
-                    <i class="fas fa-spinner fa-spin mr-2"></i>
-                    Generating...
-                `;
-                summaryContent.innerHTML = `
-                    <div class="flex items-center justify-center p-4 text-blue-500">
-                        <i class="fas fa-spinner fa-spin text-xl mr-2"></i>
-                        <span class="text-sm">Analyzing your transactions...</span>
-                    </div>
-                `;
+                if (generateSummaryBtn) {
+                    generateSummaryBtn.disabled = true;
+                    generateSummaryBtn.innerHTML = `
+                        <i data-lucide="loader-2" class="w-5 h-5 inline-block mr-2 animate-spin"></i>
+                        Generating...
+                    `;
+                }
+                if (summaryContent) {
+                    summaryContent.innerHTML = `
+                        <div class="flex items-center justify-center p-4 text-[#11B981]">
+                            <i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>
+                            <span class="text-sm">Analyzing your transactions...</span>
+                        </div>
+                    `;
+                }
+
 
                 // Create a clean prompt with transaction data
                 const transactionDataForPrompt = transactions.map(t => ({
@@ -787,47 +873,55 @@
 
                 try {
                     const result = await callGeminiApi(prompt);
-                    summaryContent.innerHTML = `<p class="text-gray-800 whitespace-pre-wrap">${result}</p>`;
+                    if (summaryContent) {
+                        summaryContent.innerHTML = `<p class="text-gray-800 whitespace-pre-wrap">${result}</p>`;
+                    }
                     logMessage("Successfully generated financial summary.");
                 } catch (error) {
-                    summaryContent.innerHTML = `<p class="text-red-500 italic">Error generating summary. Please check the app log.</p>`;
+                    if (summaryContent) {
+                        summaryContent.innerHTML = `<p class="text-red-500 italic">Error generating summary. Please check the app log.</p>`;
+                    }
                 } finally {
-                    generateSummaryBtn.disabled = false;
-                    generateSummaryBtn.innerHTML = `✨ Generate Spending Summary`;
+                    if (generateSummaryBtn) {
+                        generateSummaryBtn.disabled = false;
+                        generateSummaryBtn.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5 inline-block mr-2"></i> Generate Spending Summary`;
+                    }
                 }
             }
             
-            if (generateSummaryBtn) {
-                generateSummaryBtn.addEventListener('click', generateSpendingSummary);
-            }
-
             // Function to generate a fun fact using Gemini
             async function generateNewFunFact() {
-                generateFunFactBtn.disabled = true;
-                generateFunFactBtn.innerHTML = `
-                    <i class="fas fa-spinner fa-spin mr-2"></i>
-                    Generating...
-                `;
-                funFactElement.textContent = "Fetching a new joke...";
-                funFactElement.classList.remove('animate-pop-in');
+                if (generateFunFactBtn) {
+                    generateFunFactBtn.disabled = true;
+                    generateFunFactBtn.innerHTML = `
+                        <i data-lucide="loader-2" class="w-5 h-5 inline-block mr-2 animate-spin"></i>
+                        Generating...
+                    `;
+                }
+                if (funFactElement) {
+                    funFactElement.textContent = "Fetching a new joke...";
+                    funFactElement.classList.remove('animate-pop-in');
+                }
 
                 const prompt = "Please generate a single, short, and witty joke or a 'fun fact' related to finance, money, or budgeting. Do not include a title or introduction, just the joke or fact itself.";
 
                 try {
                     const result = await callGeminiApi(prompt);
-                    funFactElement.classList.add('animate-pop-in');
-                    funFactElement.textContent = result;
+                    if (funFactElement) {
+                        funFactElement.classList.add('animate-pop-in');
+                        funFactElement.textContent = result;
+                    }
                     logMessage("Successfully generated a new fun fact.");
                 } catch (error) {
-                    funFactElement.textContent = "Couldn't get a joke right now. Try again later!";
+                    if (funFactElement) {
+                        funFactElement.textContent = "Couldn't get a joke right now. Try again later!";
+                    }
                 } finally {
-                    generateFunFactBtn.disabled = false;
-                    generateFunFactBtn.innerHTML = `✨ Generate Fun Fact`;
+                    if (generateFunFactBtn) {
+                        generateFunFactBtn.disabled = false;
+                        generateFunFactBtn.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5 inline-block mr-2"></i> Generate Fun Fact`;
+                    }
                 }
-            }
-
-            if (generateFunFactBtn) {
-                generateFunFactBtn.addEventListener('click', generateNewFunFact);
             }
 
             // Initialize App
@@ -855,7 +949,9 @@
                     onAuthStateChanged(auth, (user) => {
                         if (user) {
                             userId = user.uid;
-                            userIdElement.textContent = userId;
+                            if (userIdElement) {
+                                userIdElement.textContent = userId;
+                            }
                             logMessage(`User authenticated with ID: ${userId}`);
                             checkAndInitializeAccount();
                             setFilter('all'); // Set default filter
@@ -870,8 +966,6 @@
                     if (errorDetailsElement) errorDetailsElement.textContent = `Error details: ${error.message}`;
                 }
             }
-
-            document.addEventListener('DOMContentLoaded', initializeFirebaseApp);
         </script>
     </body>
 </html>
