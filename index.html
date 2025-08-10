@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Transaction Tracker</title>
+    <title>FinTrack Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,7 +76,7 @@
 <body class="flex items-start justify-center min-h-screen p-4 md:p-8">
     <div class="container mx-auto relative">
         <header class="flex justify-between items-center mb-10">
-            <h1 class="text-5xl font-bold text-gray-800 tracking-tight">Financial Flow</h1>
+            <h1 class="text-5xl font-bold text-gray-800 tracking-tight">FinTrack Pro</h1>
             <button id="toggle-info-panel-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 transform hover:scale-105 flex items-center">
                 <i class="fas fa-info-circle mr-2"></i>
                 Info
@@ -85,158 +85,176 @@
 
         <!-- Main Application View -->
         <div id="main-app-view" class="space-y-6">
-            <!-- Summary and Accounts Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Total Balance Card -->
-                <div class="card p-6 flex flex-col justify-between">
-                    <div>
-                        <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
-                            <i class="fas fa-wallet text-green-500 mr-2"></i>
-                            Total Balance
-                        </h2>
-                        <span id="total-balance" class="text-5xl font-extrabold text-gray-900">₹0.00</span>
-                    </div>
-                </div>
-
-                <!-- Monthly Summary Card -->
-                <div class="card p-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-chart-line text-yellow-500 mr-2"></i>
-                        Monthly Summary
-                    </h2>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
-                            <span>Income:</span>
-                            <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
-                        </div>
-                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
-                            <span>Expenses:</span>
-                            <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
-                        </div>
-                        <hr class="my-2 border-gray-200">
-                        <div class="flex justify-between items-center text-xl font-bold text-gray-800">
-                            <span>Net Balance:</span>
-                            <span id="monthly-balance" class="text-2xl font-extrabold">₹0.00</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Frugal Fun Facts Card -->
-                <div class="card p-6 flex flex-col justify-center">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
-                        <i class="fas fa-lightbulb text-purple-500 mr-2"></i>
-                        Frugal Fun Facts
-                    </h2>
-                    <p id="fun-fact" class="text-lg text-gray-700 italic text-center transition-all duration-500 ease-in-out">
-                        Click the button below for a finance joke!
+            <!-- Account Creation Prompt (visible if no account exists) -->
+            <div id="no-account-view" class="text-center p-10 hidden">
+                <div class="card p-10 flex flex-col items-center max-w-lg mx-auto">
+                    <i class="fas fa-seedling text-8xl text-emerald-500 mb-6 animate-pop-in"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome to FinTrack Pro!</h2>
+                    <p class="text-gray-600 mb-6 max-w-md">
+                        Your financial journey starts here. Create an account to securely track your daily transactions.
                     </p>
-                    <button id="generate-fun-fact-btn" class="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                        ✨ Generate Fun Fact
-                    </button>
-                </div>
-            </div>
-
-            <!-- AI-Powered Financial Insights -->
-            <div class="card p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                        <i class="fas fa-brain text-emerald-500 mr-2"></i>
-                        Financial Insights
-                    </h2>
-                    <button id="generate-summary-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                        ✨ Generate Spending Summary
-                    </button>
-                </div>
-                <div id="summary-content" class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <p class="text-gray-500 italic">Your personalized summary will appear here. It may take a moment to generate.</p>
-                </div>
-            </div>
-
-            <!-- Transaction Form and Accounts -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Transaction Form -->
-                <div class="card p-6 col-span-2">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-pen-to-square text-blue-500 mr-2"></i>
-                        Record Transaction
-                    </h2>
-                    <form id="transaction-form" class="space-y-4">
-                        <input type="hidden" id="transaction-id">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                                <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                                <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
-                                <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
-                                <select id="type" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <option value="expense" selected>Expense</option>
-                                    <option value="income">Income</option>
-                                </select>
-                            </div>
-                            <div class="flex items-end">
-                                <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                                    Add Transaction
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Account Placeholder / Info -->
-                <div class="card p-6 flex flex-col justify-between">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-folder-open text-indigo-500 mr-2"></i>
-                        Your Account
-                    </h2>
-                    <div class="space-y-2">
-                        <p class="text-gray-600">Your data is stored under a single, dedicated account.</p>
-                        <p id="account-status" class="text-gray-500 italic">Account loading...</p>
-                    </div>
-                    <button id="create-account-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 hidden mt-4">
+                    <button id="create-account-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
                         Create My Account
                     </button>
+                    <p id="account-status" class="mt-4 text-sm text-gray-500 italic">Account loading...</p>
                 </div>
             </div>
-            
-            <!-- Transaction List & Filters -->
-            <div class="card p-6">
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-2 md:mb-0 flex items-center">
-                        <i class="fas fa-list-ul text-rose-500 mr-2"></i>
-                        Transaction History
-                    </h2>
-                    <div class="flex flex-wrap space-x-2">
-                        <button onclick="setFilter('all')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">All</button>
-                        <button onclick="setFilter('income')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Income</button>
-                        <button onclick="setFilter('expense')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Expenses</button>
+
+            <!-- Main Dashboard (visible after account creation) -->
+            <div id="dashboard-view" class="space-y-6 hidden">
+                <!-- Summary and Accounts Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Total Balance Card -->
+                    <div class="card p-6 flex flex-col justify-between">
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
+                                <i class="fas fa-wallet text-green-500 mr-2"></i>
+                                Total Balance
+                            </h2>
+                            <span id="total-balance" class="text-5xl font-extrabold text-gray-900">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Summary Card -->
+                    <div class="card p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-chart-line text-yellow-500 mr-2"></i>
+                            Monthly Summary
+                        </h2>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                                <span>Income:</span>
+                                <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                                <span>Expenses:</span>
+                                <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
+                            </div>
+                            <hr class="my-2 border-gray-200">
+                            <div class="flex justify-between items-center text-xl font-bold text-gray-800">
+                                <span>Net Balance:</span>
+                                <span id="monthly-balance" class="text-2xl font-extrabold">₹0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Frugal Fun Facts Card -->
+                    <div class="card p-6 flex flex-col justify-center">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
+                            <i class="fas fa-lightbulb text-purple-500 mr-2"></i>
+                            Frugal Fun Facts
+                        </h2>
+                        <p id="fun-fact" class="text-lg text-gray-700 italic text-center transition-all duration-500 ease-in-out">
+                            Click the button below for a finance joke!
+                        </p>
+                        <button id="generate-fun-fact-btn" class="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                            ✨ Generate Fun Fact
+                        </button>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transaction-list" class="bg-white divide-y divide-gray-200">
-                            <!-- Transactions will be added here by JavaScript -->
-                        </tbody>
-                    </table>
+
+                <!-- AI-Powered Financial Insights -->
+                <div class="card p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                            <i class="fas fa-brain text-emerald-500 mr-2"></i>
+                            Financial Insights
+                        </h2>
+                        <button id="generate-summary-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                            ✨ Generate Spending Summary
+                        </button>
+                    </div>
+                    <div id="summary-content" class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <p class="text-gray-500 italic">Your personalized summary will appear here. It may take a moment to generate.</p>
+                    </div>
+                </div>
+
+                <!-- Transaction Form and Accounts -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Transaction Form -->
+                    <div class="card p-6 col-span-2">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-pen-to-square text-blue-500 mr-2"></i>
+                            Record Transaction
+                        </h2>
+                        <form id="transaction-form" class="space-y-4">
+                            <input type="hidden" id="transaction-id">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                                    <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                    <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
+                                    <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
+                                    <select id="type" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                        <option value="expense" selected>Expense</option>
+                                        <option value="income">Income</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                                        Add Transaction
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Account Info Card -->
+                    <div class="card p-6 flex flex-col justify-between">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-folder-open text-indigo-500 mr-2"></i>
+                            Your Account
+                        </h2>
+                        <div class="space-y-2">
+                            <p class="text-gray-600">Your data is stored under a single, dedicated account.</p>
+                            <p id="account-status-dashboard" class="text-gray-500 italic">Account Active</p>
+                        </div>
+                        <button id="delete-account-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 mt-4">
+                            Delete My Account
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Transaction List & Filters -->
+                <div class="card p-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-2 md:mb-0 flex items-center">
+                            <i class="fas fa-list-ul text-rose-500 mr-2"></i>
+                            Transaction History
+                        </h2>
+                        <div class="flex flex-wrap space-x-2">
+                            <button onclick="setFilter('all')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">All</button>
+                            <button onclick="setFilter('income')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Income</button>
+                            <button onclick="setFilter('expense')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Expenses</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transaction-list" class="bg-white divide-y divide-gray-200">
+                                <!-- Transactions will be added here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -259,18 +277,6 @@
                 </div>
             </div>
 
-            <!-- Data Reset Card -->
-            <div class="card p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-trash-alt text-red-500 mr-2"></i>
-                    Reset All Data
-                </h2>
-                <p class="text-gray-600 mb-4">This will permanently delete your account and all transactions. This action cannot be undone.</p>
-                <button id="delete-account-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
-                    Delete My Account
-                </button>
-            </div>
-            
             <!-- App Log Card -->
             <div class="card p-6">
                 <div class="flex justify-between items-center mb-4">
@@ -300,7 +306,7 @@
 
         <script type="module">
             import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-            import { getAuth, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+            import { getAuth, signInWithCustomToken, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
             import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
             // IMPORTANT: The following global variables are provided by the canvas environment.
@@ -336,8 +342,10 @@
             const funFactElement = document.getElementById('fun-fact');
             const createAccountBtn = document.getElementById('create-account-btn');
             const deleteAccountBtn = document.getElementById('delete-account-btn');
+            const noAccountView = document.getElementById('no-account-view');
+            const dashboardView = document.getElementById('dashboard-view');
             const accountStatusElement = document.getElementById('account-status');
-            const mainAppView = document.getElementById('main-app-view');
+            const accountStatusDashboardElement = document.getElementById('account-status-dashboard');
             const generateFunFactBtn = document.getElementById('generate-fun-fact-btn');
             const generateSummaryBtn = document.getElementById('generate-summary-btn');
             const summaryContent = document.getElementById('summary-content');
@@ -363,8 +371,7 @@
                 const logEntry = document.createElement('div');
                 logEntry.className = `log-message ${type === 'error' ? 'log-error' : 'log-info'}`;
                 logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-                logDisplay.appendChild(logEntry);
-                logDisplay.scrollTop = logDisplay.scrollHeight; // Auto-scroll to the bottom
+                logDisplay.prepend(logEntry); // Prepend to show newest first
                 // Remove the initial "Logs will appear here..." message if it exists
                 const initialMessage = logDisplay.querySelector('p');
                 if (initialMessage) {
@@ -377,19 +384,25 @@
             });
 
             // Modal functions for deleting an account
-            deleteAccountBtn.addEventListener('click', () => {
-                deleteModal.classList.remove('hidden');
-            });
-            
-            deleteModalConfirmBtn.addEventListener('click', async () => {
-                deleteModal.classList.add('hidden');
-                await deleteAccount();
-            });
+            if (deleteAccountBtn) {
+                deleteAccountBtn.addEventListener('click', () => {
+                    deleteModal.classList.remove('hidden');
+                });
+            }
 
-            deleteModalCancelBtn.addEventListener('click', () => {
-                deleteModal.classList.add('hidden');
-                logMessage("Account deletion cancelled.");
-            });
+            if (deleteModalConfirmBtn) {
+                deleteModalConfirmBtn.addEventListener('click', async () => {
+                    deleteModal.classList.add('hidden');
+                    await deleteAccount();
+                });
+            }
+
+            if (deleteModalCancelBtn) {
+                deleteModalCancelBtn.addEventListener('click', () => {
+                    deleteModal.classList.add('hidden');
+                    logMessage("Account deletion cancelled.");
+                });
+            }
 
             // Function to render transactions and update balance
             function renderTransactions() {
@@ -496,45 +509,47 @@
             window.setFilter = setFilter;
 
             // Handle form submission (Add/Edit)
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
 
-                if (!hasAccount) {
-                    logMessage("No account exists. Please create one.", 'error');
-                    return;
-                }
-
-                const date = document.getElementById('date').value;
-                const description = document.getElementById('description').value;
-                const amount = parseFloat(document.getElementById('amount').value);
-                const type = document.getElementById('type').value;
-
-                const transactionData = {
-                    date: date,
-                    description: description,
-                    amount: amount,
-                    type: type,
-                    timestamp: new Date().toISOString()
-                };
-
-                try {
-                    if (editingTransactionId) {
-                        const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`, editingTransactionId);
-                        await setDoc(transactionRef, transactionData);
-                        logMessage(`Transaction '${description}' updated successfully.`);
-                        editingTransactionId = null;
-                        submitButton.textContent = "Add Transaction";
-                    } else {
-                        const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`);
-                        await addDoc(transactionsCollectionRef, transactionData);
-                        logMessage(`Transaction '${description}' added successfully.`);
+                    if (!hasAccount) {
+                        logMessage("No account exists. Please create one.", 'error');
+                        return;
                     }
-                } catch (error) {
-                    logMessage(`Error adding/updating transaction: ${error.message}`, 'error');
-                }
 
-                form.reset();
-            });
+                    const date = document.getElementById('date').value;
+                    const description = document.getElementById('description').value;
+                    const amount = parseFloat(document.getElementById('amount').value);
+                    const type = document.getElementById('type').value;
+
+                    const transactionData = {
+                        date: date,
+                        description: description,
+                        amount: amount,
+                        type: type,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    try {
+                        if (editingTransactionId) {
+                            const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`, editingTransactionId);
+                            await setDoc(transactionRef, transactionData);
+                            logMessage(`Transaction '${description}' updated successfully.`);
+                            editingTransactionId = null;
+                            submitButton.textContent = "Add Transaction";
+                        } else {
+                            const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`);
+                            await addDoc(transactionsCollectionRef, transactionData);
+                            logMessage(`Transaction '${description}' added successfully.`);
+                        }
+                    } catch (error) {
+                        logMessage(`Error adding/updating transaction: ${error.message}`, 'error');
+                    }
+
+                    form.reset();
+                });
+            }
 
             // Function to edit a transaction
             window.editTransaction = function(id) {
@@ -605,11 +620,16 @@
                     hasAccount = false;
                     transactions = [];
                     renderTransactions();
-                    logMessage(`Account and all user data deleted successfully. A new account can now be created.`);
+                    logMessage(`Account and all user data deleted successfully.`);
                 } catch (error) {
                     logMessage(`Error deleting account: ${error.message}`, 'error');
                 }
             }
+            
+            if (createAccountBtn) {
+                createAccountBtn.addEventListener('click', createAccount);
+            }
+
 
             function setupTransactionListener() {
                 if (unsubscribeTransactions) {
@@ -643,28 +663,26 @@
                 const accountDocRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts`, ACCOUNT_ID);
                 onSnapshot(accountDocRef, async (docSnapshot) => {
                     if (docSnapshot.exists()) {
-                        logMessage("Account found. Initializing application.");
+                        logMessage("Account found. Initializing dashboard.");
                         hasAccount = true;
-                        deleteAccountBtn.disabled = false;
-                        createAccountBtn.classList.add('hidden');
-                        mainAppView.classList.remove('hidden');
-                        accountStatusElement.textContent = "Your account is active.";
+                        if (noAccountView) noAccountView.classList.add('hidden');
+                        if (dashboardView) dashboardView.classList.remove('hidden');
+                        if (deleteAccountBtn) deleteAccountBtn.disabled = false;
+                        if (accountStatusDashboardElement) accountStatusDashboardElement.textContent = "Account Active";
                         setupTransactionListener();
                     } else {
-                        logMessage("No account found. Showing account creation button.");
+                        logMessage("No account found. Showing account creation prompt.");
                         hasAccount = false;
-                        deleteAccountBtn.disabled = true;
-                        createAccountBtn.classList.remove('hidden');
-                        mainAppView.classList.add('hidden');
-                        accountStatusElement.textContent = "No account found. Create one to get started!";
+                        if (noAccountView) noAccountView.classList.remove('hidden');
+                        if (dashboardView) dashboardView.classList.add('hidden');
+                        if (deleteAccountBtn) deleteAccountBtn.disabled = true;
+                        if (accountStatusElement) accountStatusElement.textContent = "No account found. Create one to get started!";
                         setupTransactionListener(); // Still need to unsubscribe from old listener
                     }
                 }, (error) => {
                     logMessage(`Error checking account existence: ${error.message}`, 'error');
                 });
             }
-            
-            createAccountBtn.addEventListener('click', createAccount);
 
             // API Call for Gemini
             async function callGeminiApi(prompt) {
@@ -750,7 +768,9 @@
                 }
             }
             
-            generateSummaryBtn.addEventListener('click', generateSpendingSummary);
+            if (generateSummaryBtn) {
+                generateSummaryBtn.addEventListener('click', generateSpendingSummary);
+            }
 
             // Function to generate a fun fact using Gemini
             async function generateNewFunFact() {
@@ -777,7 +797,9 @@
                 }
             }
 
-            generateFunFactBtn.addEventListener('click', generateNewFunFact);
+            if (generateFunFactBtn) {
+                generateFunFactBtn.addEventListener('click', generateNewFunFact);
+            }
 
             // Initialize App
             async function initializeFirebaseApp() {
@@ -791,10 +813,13 @@
                     db = getFirestore(app);
                     auth = getAuth(app);
 
-                    // Use the provided initialAuthToken for a persistent session
+                    // Sign in with a persistent session token if available, otherwise sign in anonymously
                     if (initialAuthToken) {
                         await signInWithCustomToken(auth, initialAuthToken);
                         logMessage("Signed in with a persistent session token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        logMessage("Signed in anonymously.");
                     }
 
                     onAuthStateChanged(auth, (user) => {
