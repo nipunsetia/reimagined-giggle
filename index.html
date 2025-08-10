@@ -5,23 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Transaction Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f0f4f8 0%, #eef1f5 100%);
+            font-family: 'Inter', 'sans-serif';
+            background-color: #f3f4f6;
         }
         .container {
-            max-width: 1100px;
-        }
-        .card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border-radius: 1.5rem; /* rounded-3xl */
-            padding: 2.5rem; /* p-10 */
+            max-width: 900px;
         }
         .log-message {
             padding: 4px 8px;
@@ -39,116 +40,61 @@
             color: #991b1b;
             font-weight: bold;
         }
-        .filter-btn.active {
-            background-color: #4f46e5;
-            color: white;
-            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
-        }
-        .filter-btn:not(.active) {
-            background-color: #e5e7eb;
-            color: #4b5563;
-        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4 md:p-8">
-    <div class="container mx-auto">
-        <h1 class="text-5xl font-bold text-gray-800 text-center mb-10 tracking-tight">Financial Flow</h1>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container mx-auto p-8 bg-white shadow-xl rounded-2xl border border-gray-200">
+        <h1 class="text-4xl font-extrabold text-gray-800 text-center mb-6">Daily Transaction Log</h1>
 
-        <!-- Account Management and Summary -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <div class="card p-6 col-span-full md:col-span-1">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM6.5 9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM13.5 9a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg>
-                    My Accounts
-                </h2>
-                <div id="user-info" class="mb-4">
-                    <p class="text-xs text-gray-500">User ID: <span id="user-id" class="font-mono bg-gray-100 px-2 py-1 rounded-md text-gray-700">Loading...</span></p>
-                </div>
-                <div class="flex flex-col gap-4">
-                    <div>
-                        <label for="account-select" class="block text-sm font-medium text-gray-700 mb-1">Current Account</label>
-                        <select id="account-select" class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"></select>
-                    </div>
-                    <div class="flex gap-2">
-                        <button id="add-account-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                            Create Account
-                        </button>
-                        <button id="delete-account-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                            Delete Account
-                        </button>
-                    </div>
-                </div>
+        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200 mb-6">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Account Management</h2>
+            <div id="user-info" class="mb-4">
+                <p class="text-sm text-gray-600">User ID: <span id="user-id" class="font-mono bg-gray-200 px-2 py-1 rounded-md">Loading...</span></p>
             </div>
-
-            <!-- Total Balance Card -->
-            <div class="card p-6 flex flex-col justify-between md:col-span-1">
-                <div>
-                    <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
-                        Total Balance
-                    </h2>
-                    <span id="total-balance" class="text-5xl font-extrabold text-gray-900">₹0.00</span>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-grow">
+                    <label for="account-select" class="block text-sm font-medium text-gray-700">Select Account</label>
+                    <select id="account-select" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></select>
                 </div>
-            </div>
-
-            <!-- Monthly Summary Card -->
-            <div class="card p-6 md:col-span-2 lg:col-span-1">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18H4v-3a6 6 0 0112 0v3z"/></svg>
-                    Monthly Summary
-                </h2>
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center text-lg font-medium text-gray-700">
-                        <span>Income:</span>
-                        <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
-                    </div>
-                    <div class="flex justify-between items-center text-lg font-medium text-gray-700">
-                        <span>Expenses:</span>
-                        <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
-                    </div>
-                    <hr class="my-2 border-gray-200">
-                    <div class="flex justify-between items-center text-xl font-bold text-gray-800">
-                        <span>Net Balance:</span>
-                        <span id="monthly-balance" class="text-2xl font-extrabold">₹0.00</span>
-                    </div>
+                <div class="flex-shrink-0 flex items-end">
+                    <button id="add-account-btn" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
+                        Create New Account
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Transaction Form and Filters -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Controls and Form -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <!-- Transaction Form -->
-            <div class="card p-6 col-span-2">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
-                    Record Transaction
-                </h2>
+            <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-700 mb-4">Add/Edit Transaction</h2>
                 <form id="transaction-form" class="space-y-4">
                     <input type="hidden" id="transaction-id">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                            <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                         </div>
                         <div>
                             <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                            <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                         <div>
                             <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
-                            <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                         </div>
                         <div>
                             <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
-                            <select id="type" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <select id="type" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 <option value="expense" selected>Expense</option>
                                 <option value="income">Income</option>
                             </select>
                         </div>
-                        <div class="flex items-end">
-                            <button type="submit" id="submit-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                        <div>
+                            <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
                                 Add Transaction
                             </button>
                         </div>
@@ -156,85 +102,105 @@
                 </form>
             </div>
             
-            <!-- Settings Card -->
-            <div class="card p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.25 10a.75.75 0 01-.75.75H4.25a.75.75 0 010-1.5h12.25a.75.75 0 01.75.75zM15 14.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM12.5 12a.5.5 0 100 1 .5.5 0 000-1zM15 5.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM12.5 3a.5.5 0 100 1 .5.5 0 000-1z"/></svg>
-                    Settings
-                </h2>
-                <div class="space-y-4">
-                    <div>
-                        <label for="currency-select" class="block text-sm font-medium text-gray-700">Select Currency</label>
-                        <select id="currency-select" class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="INR">Indian Rupee (₹)</option>
-                            <option value="USD">US Dollar ($)</option>
-                        </select>
+            <!-- Summary and Filters -->
+            <div class="flex flex-col space-y-4">
+                <!-- Currency and Filters -->
+                <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Settings</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="currency-select" class="block text-sm font-medium text-gray-700">Select Currency</label>
+                            <select id="currency-select" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="INR">Indian Rupee (₹)</option>
+                                <option value="USD">US Dollar ($)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Filter Transactions</label>
+                            <div class="mt-1 flex space-x-2">
+                                <button onclick="setFilter('all')" class="filter-btn active w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">All</button>
+                                <button onclick="setFilter('income')" class="filter-btn w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">Income</button>
+                                <button onclick="setFilter('expense')" class="filter-btn w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">Expenses</button>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Filter Transactions</label>
-                        <div class="mt-1 flex space-x-2">
-                            <button onclick="setFilter('all')" class="filter-btn active flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">All</button>
-                            <button onclick="setFilter('income')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Income</button>
-                            <button onclick="setFilter('expense')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Expenses</button>
+                </div>
+
+                <!-- Monthly Summary -->
+                <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Monthly Summary</h2>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <span>Total Income:</span>
+                            <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <span>Total Expenses:</span>
+                            <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
+                        </div>
+                        <hr class="my-2 border-gray-200">
+                        <div class="flex justify-between items-center text-xl font-semibold text-gray-800">
+                            <span>Net Balance:</span>
+                            <span id="monthly-balance" class="text-2xl font-extrabold text-gray-800">₹0.00</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Transaction List and Log -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Transaction List -->
-            <div class="card p-6 col-span-2">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4h12V3a1 1 0 011-1h.25a.75.75 0 010 1.5H18v14a2 2 0 01-2 2H4a2 2 0 01-2-2V4a1 1 0 011-1h1.25a.75.75 0 010 1.5H4v12a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V4zM16 4.5V17a1 1 0 001-1V4.5h-1zm-1-1v1.5a.5.5 0 01-.5.5h-11a.5.5 0 01-.5-.5V3.5a.5.5 0 01.5-.5h11a.5.5 0 01.5.5z"/></svg>
-                    Transaction History
-                </h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transaction-list" class="bg-white divide-y divide-gray-200">
-                            <!-- Transactions will be added here by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Transaction List -->
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Transaction History</h2>
+            
+            <!-- Balance Display -->
+            <div class="mb-6 p-4 rounded-xl bg-gray-100 flex justify-between items-center shadow-inner">
+                <span class="text-xl font-semibold text-gray-600">Current Balance:</span>
+                <span id="total-balance" class="text-2xl font-extrabold text-gray-800">₹0.00</span>
             </div>
 
-            <!-- Log Card -->
-            <div class="card p-6 col-span-1">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 11V6h2v5H9zm0 2h2v2H9v-2z"/></svg>
-                        App Log
-                    </h2>
-                    <button id="clear-log-btn" class="text-sm text-red-500 hover:text-red-700 font-medium transition duration-200">Clear Log</button>
-                </div>
-                <div id="log-display" class="bg-gray-50 p-4 rounded-lg h-60 overflow-y-auto border border-gray-200 text-sm">
-                    <p class="text-gray-500 italic">Logs will appear here...</p>
-                </div>
+            <!-- Transaction Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tl-lg">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tr-lg">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-list" class="bg-white divide-y divide-gray-200">
+                        <!-- Transactions will be added here by JavaScript -->
+                    </tbody>
+                </table>
             </div>
         </div>
-
+        
+        <!-- Log Display Section -->
+        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-700">Application Log</h2>
+                <button id="clear-log-btn" class="text-sm text-red-600 hover:text-red-800 font-medium transition duration-200">Clear Log</button>
+            </div>
+            <div id="log-display" class="bg-white p-4 rounded-md h-40 overflow-y-auto border border-gray-300 text-sm">
+                <p class="text-gray-500 italic">Logs will appear here...</p>
+            </div>
+        </div>
     </div>
 
     <!-- Modal for adding new accounts -->
-    <div id="account-modal" class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
-        <div class="relative mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white animate-fade-in-down">
-            <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Create New Account</h3>
-            <div class="mb-4">
-                <input type="text" id="new-account-name" placeholder="Enter a name for your new account" class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl shadow-inner text-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-            </div>
-            <div class="flex gap-4">
-                <button id="modal-create-btn" class="flex-1 px-4 py-3 bg-indigo-600 text-white font-medium rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none transition-colors duration-300">Create</button>
-                <button id="modal-cancel-btn" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl shadow-lg hover:bg-gray-300 focus:outline-none transition-colors duration-300">Cancel</button>
+    <div id="account-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Create New Account</h3>
+                <div class="mt-2 px-7 py-3">
+                    <input type="text" id="new-account-name" placeholder="Enter account name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="modal-create-btn" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">Create</button>
+                    <button id="modal-cancel-btn" class="mt-2 px-4 py-2 bg-gray-200 text-gray-700 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none">Cancel</button>
+                </div>
             </div>
         </div>
     </div>
@@ -242,7 +208,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // IMPORTANT: Replace this with your actual Firebase project configuration.
         // You can find this in your Firebase Console under Project settings -> Your apps.
@@ -254,10 +220,10 @@
           messagingSenderId: "862714037551",
           appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
         };
-
+        
         // This variable is used to build Firestore paths.
-        // It must be the same as the projectId in your firebaseConfig.
-        const appId = "daily-expense-tracker-4a115";
+        // It must be the same as the appId in your firebaseConfig.
+        const appId = "1:862714037551:web:00d29aeef2fc3c33880dda";
 
         // Initialize Firebase
         let db, auth;
@@ -276,7 +242,6 @@
         const monthlyBalanceElement = document.getElementById('monthly-balance');
         const accountSelect = document.getElementById('account-select');
         const addAccountBtn = document.getElementById('add-account-btn');
-        const deleteAccountBtn = document.getElementById('delete-account-btn');
         const userIdElement = document.getElementById('user-id');
         const accountModal = document.getElementById('account-modal');
         const modalCreateBtn = document.getElementById('modal-create-btn');
@@ -303,7 +268,7 @@
                 initialMessage.remove();
             }
         }
-
+        
         clearLogBtn.addEventListener('click', () => {
             logDisplay.innerHTML = '<p class="text-gray-500 italic">Logs will appear here...</p>';
         });
@@ -312,7 +277,7 @@
         function getCurrencySymbol() {
             return currentCurrency === 'INR' ? '₹' : '$';
         }
-
+        
         // Modal functions
         addAccountBtn.addEventListener('click', () => {
             accountModal.classList.remove('hidden');
@@ -346,11 +311,8 @@
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
 
-            // Sort transactions by date (newest first)
-            const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
-
             // Filter transactions based on the current filter
-            const filteredTransactions = sortedTransactions.filter(t => {
+            const filteredTransactions = transactions.filter(t => {
                 if (currentFilter === 'all') return true;
                 return t.type === currentFilter;
             });
@@ -374,8 +336,8 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm capitalize text-gray-500">${transaction.type}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${amountClass}">${sign} ${formattedAmount}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                            <button onclick="editTransaction('${transaction.id}')" class="text-blue-600 hover:text-blue-800 transition-colors duration-200">Edit</button>
-                            <button onclick="deleteTransaction('${transaction.id}')" class="text-red-600 hover:text-red-800 transition-colors duration-200">Delete</button>
+                            <button onclick="editTransaction('${transaction.id}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">Edit</button>
+                            <button onclick="deleteTransaction('${transaction.id}')" class="text-red-600 hover:text-red-900 transition-colors duration-200">Delete</button>
                         </td>
                     `;
                     transactionList.appendChild(row);
@@ -405,10 +367,10 @@
             totalBalanceElement.textContent = `${getCurrencySymbol()}${total.toFixed(2)}`;
             if (total < 0) {
                 totalBalanceElement.classList.add('text-red-600');
-                totalBalanceElement.classList.remove('text-gray-900');
+                totalBalanceElement.classList.remove('text-gray-800');
             } else {
                 totalBalanceElement.classList.remove('text-red-600');
-                totalBalanceElement.classList.add('text-gray-900');
+                totalBalanceElement.classList.add('text-gray-800');
             }
 
             monthlyIncomeElement.textContent = `${getCurrencySymbol()}${monthlyIncome.toFixed(2)}`;
@@ -429,17 +391,19 @@
             currentFilter = filterType;
             // Update button styles
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
+                btn.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white', 'active');
+                btn.classList.add('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
                 if (btn.textContent.toLowerCase() === filterType || (btn.textContent.toLowerCase() === 'all' && filterType === 'all')) {
-                    btn.classList.add('active');
+                    btn.classList.add('bg-blue-500', 'hover:bg-blue-600', 'text-white', 'active');
+                    btn.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
                 }
             });
             renderTransactions();
         }
-
+        
         // Export setFilter globally for onclick
         window.setFilter = setFilter;
-
+        
         // Function to handle form submission (Add/Edit)
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -461,7 +425,7 @@
                 type: type,
                 timestamp: new Date().toISOString()
             };
-
+            
             try {
                 if (editingTransactionId) {
                     const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, editingTransactionId);
@@ -480,7 +444,7 @@
 
             form.reset();
         });
-
+        
         // Function to edit a transaction
         window.editTransaction = function(id) {
             const transaction = transactions.find(t => t.id === id);
@@ -495,7 +459,7 @@
                 logMessage(`Editing transaction with ID: ${id}`);
             }
         }
-
+        
         // Function to delete a transaction
         window.deleteTransaction = async function(id) {
             if (!currentAccountId) {
@@ -510,7 +474,7 @@
                 logMessage(`Error deleting transaction: ${error.message}`, 'error');
             }
         }
-
+        
         // Handle currency change
         currencySelect.addEventListener('change', (e) => {
             currentCurrency = e.target.value;
@@ -546,16 +510,10 @@
                 }
                 accountSelect.value = currentAccountId;
                 logMessage(`Account list rendered. Current account ID: ${currentAccountId}`);
-                deleteAccountBtn.disabled = false; // Enable delete button
-                deleteAccountBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             } else {
                 accountSelect.innerHTML = `<option value="">No accounts available</option>`;
                 currentAccountId = null;
-                transactions = [];
-                renderTransactions();
                 logMessage("No accounts found. Please create a new account.");
-                deleteAccountBtn.disabled = true; // Disable delete button
-                deleteAccountBtn.classList.add('opacity-50', 'cursor-not-allowed');
             }
             setupTransactionListener();
         }
@@ -574,42 +532,6 @@
                 logMessage(`Error adding account: ${error.message}`, 'error');
             }
         }
-
-        // New function to delete an account and its transactions
-        async function deleteAccount() {
-            if (!currentAccountId) {
-                logMessage("No account is currently selected.", 'error');
-                return;
-            }
-
-            const accountName = accounts.find(a => a.id === currentAccountId)?.name || 'this account';
-
-            if (confirm(`Are you sure you want to permanently delete the account "${accountName}" and ALL of its transactions? This action cannot be undone.`)) {
-                logMessage(`Deleting account "${accountName}"...`);
-                try {
-                    // First, delete all transactions in the subcollection
-                    const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
-                    const transactionSnapshot = await getDocs(transactionsCollectionRef);
-
-                    const deletePromises = transactionSnapshot.docs.map(tDoc => deleteDoc(tDoc.ref));
-                    await Promise.all(deletePromises);
-                    logMessage(`Deleted ${transactionSnapshot.docs.length} transactions.`);
-
-                    // Then, delete the account document itself
-                    const accountDocRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts`, currentAccountId);
-                    await deleteDoc(accountDocRef);
-
-                    logMessage(`Account "${accountName}" deleted successfully.`);
-                } catch (error) {
-                    logMessage(`Error deleting account: ${error.message}`, 'error');
-                }
-            } else {
-                logMessage("Account deletion cancelled.");
-            }
-        }
-
-        // Add event listener to the new delete account button
-        deleteAccountBtn.addEventListener('click', deleteAccount);
 
         function setupTransactionListener() {
             if (unsubscribeTransactions) {
@@ -651,10 +573,10 @@
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-
+                
                 await signInAnonymously(auth);
                 logMessage("Signed in anonymously.");
-
+                
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
@@ -670,7 +592,7 @@
                 logMessage(`Firebase initialization or sign-in failed: ${error.message}`, 'error');
             }
         }
-
+        
         document.addEventListener('DOMContentLoaded', initializeFirebaseApp);
     </script>
 </body>
