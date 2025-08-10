@@ -97,9 +97,12 @@
                 userId = user.uid;
                 userIdDisplay.textContent = userId;
                 
-                const superUserDocRef = doc(db, 'artifacts', appId, 'public', 'admin', 'superuser');
+                // CORRECTED: This path now has an even number of segments (6),
+                // making it a valid document reference. It points to a
+                // 'superuser' document within a 'superusers' collection.
+                const superUserDocRef = doc(db, 'artifacts', appId, 'public', 'superusers', userId);
                 const superUserDoc = await getDoc(superUserDocRef);
-                isSuperUser = superUserDoc.exists() && superUserDoc.data().uid === userId;
+                isSuperUser = superUserDoc.exists();
                 
                 loadingScreen.classList.add('hidden');
                 appContainer.classList.remove('hidden');
