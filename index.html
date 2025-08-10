@@ -18,7 +18,7 @@
     </script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', 'sans-serif';
             background-color: #f3f4f6;
         }
         .container {
@@ -210,9 +210,9 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables for Firebase
+        // Firebase configuration and initialization using global variables provided by the Canvas environment.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Initialize Firebase
@@ -555,15 +555,24 @@
 
         // Initialize App
         async function initializeFirebaseApp() {
-            if (Object.keys(firebaseConfig).length === 0) {
-                logMessage("Firebase config is missing.", 'error');
+            if (!firebaseConfig) {
+                logMessage("Firebase configuration is not available. The app cannot run.", 'error');
                 return;
             }
+
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    logMessage("Signed in with custom token.");
+                } else {
+                    await signInAnonymously(auth);
+                    logMessage("Signed in anonymously.");
+                }
+
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
@@ -571,19 +580,12 @@
                         logMessage(`User authenticated with ID: ${userId}`);
                         fetchAccounts();
                     } else {
-                        logMessage("No user is signed in.");
+                        logMessage("User signed out.");
+                        // Handle signed out state if necessary
                     }
                 });
-
-                if (initialAuthToken) {
-                    logMessage("Signing in with custom token...");
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    logMessage("Signing in anonymously...");
-                    await signInAnonymously(auth);
-                }
             } catch (error) {
-                logMessage(`Firebase initialization failed: ${error.message}`, 'error');
+                logMessage(`Firebase initialization or sign-in failed: ${error.message}`, 'error');
             }
         }
         
@@ -591,4 +593,3 @@
     </script>
 </body>
 </html>
-
