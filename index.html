@@ -71,6 +71,13 @@
         .animate-pop-in {
             animation: pop-in 0.5s ease-in-out;
         }
+        .blinking-dot {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body class="flex items-start justify-center min-h-screen p-4 md:p-8">
@@ -85,6 +92,19 @@
 
         <!-- Main Application View -->
         <div id="main-app-view" class="space-y-6">
+            <!-- Firebase Configuration Error Message -->
+            <div id="config-error-view" class="text-center p-10 hidden">
+                <div class="card p-10 flex flex-col items-center max-w-lg mx-auto bg-red-50 border-red-200">
+                    <i class="fas fa-exclamation-triangle text-8xl text-red-500 mb-6 animate-pop-in"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Setup Error</h2>
+                    <p class="text-gray-600 mb-6 max-w-md">
+                        FinTrack Pro is unable to connect to its database because the necessary configuration is missing.
+                        Please ensure the app is properly configured.
+                    </p>
+                    <p id="error-details" class="text-sm text-red-500 italic"></p>
+                </div>
+            </div>
+
             <!-- Account Creation Prompt (visible if no account exists) -->
             <div id="no-account-view" class="text-center p-10 hidden">
                 <div class="card p-10 flex flex-col items-center max-w-lg mx-auto">
@@ -96,7 +116,10 @@
                     <button id="create-account-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
                         Create My Account
                     </button>
-                    <p id="account-status" class="mt-4 text-sm text-gray-500 italic">Account loading...</p>
+                    <p id="account-status" class="mt-4 text-sm text-gray-500 italic">
+                        <span id="loading-dot" class="blinking-dot">●</span>
+                        Initializing app...
+                    </p>
                 </div>
             </div>
 
@@ -306,14 +329,13 @@
 
         <script type="module">
             import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-            import { getAuth, signInWithCustomToken, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+            import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
             import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
             // IMPORTANT: The following global variables are provided by the canvas environment.
             // DO NOT change them.
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
             // Initialize Firebase
             let db, auth;
@@ -349,6 +371,9 @@
             const generateFunFactBtn = document.getElementById('generate-fun-fact-btn');
             const generateSummaryBtn = document.getElementById('generate-summary-btn');
             const summaryContent = document.getElementById('summary-content');
+            const configErrorView = document.getElementById('config-error-view');
+            const errorDetailsElement = document.getElementById('error-details');
+            const mainAppView = document.getElementById('main-app-view');
 
             let transactions = [];
             let currentCurrency = '₹';
@@ -374,7 +399,7 @@
                 logDisplay.prepend(logEntry); // Prepend to show newest first
                 // Remove the initial "Logs will appear here..." message if it exists
                 const initialMessage = logDisplay.querySelector('p');
-                if (initialMessage) {
+                if (initialMessage && initialMessage.textContent.includes('Logs will appear here')) {
                     initialMessage.remove();
                 }
             }
@@ -676,7 +701,11 @@
                         if (noAccountView) noAccountView.classList.remove('hidden');
                         if (dashboardView) dashboardView.classList.add('hidden');
                         if (deleteAccountBtn) deleteAccountBtn.disabled = true;
-                        if (accountStatusElement) accountStatusElement.textContent = "No account found. Create one to get started!";
+                        if (accountStatusElement) {
+                            accountStatusElement.textContent = "No account found. Create one to get started!";
+                            const loadingDot = document.getElementById('loading-dot');
+                            if (loadingDot) loadingDot.classList.add('hidden');
+                        }
                         setupTransactionListener(); // Still need to unsubscribe from old listener
                     }
                 }, (error) => {
@@ -805,23 +834,24 @@
             async function initializeFirebaseApp() {
                 if (Object.keys(firebaseConfig).length === 0) {
                      logMessage("Firebase configuration is missing. The app cannot run.", 'error');
+                     if (mainAppView) mainAppView.classList.add('hidden');
+                     if (configErrorView) configErrorView.classList.remove('hidden');
+                     if (errorDetailsElement) errorDetailsElement.textContent = "Check the console for more details.";
                      return;
                 }
+                
+                if (mainAppView) mainAppView.classList.remove('hidden');
+                if (configErrorView) configErrorView.classList.add('hidden');
 
                 try {
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
 
-                    // Sign in with a persistent session token if available, otherwise sign in anonymously
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        logMessage("Signed in with a persistent session token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        logMessage("Signed in anonymously.");
-                    }
-
+                    // Sign in anonymously as a reliable starting point
+                    await signInAnonymously(auth);
+                    logMessage("Signed in anonymously.");
+                    
                     onAuthStateChanged(auth, (user) => {
                         if (user) {
                             userId = user.uid;
@@ -835,6 +865,9 @@
                     });
                 } catch (error) {
                     logMessage(`Firebase initialization or sign-in failed: ${error.message}`, 'error');
+                    if (mainAppView) mainAppView.classList.add('hidden');
+                    if (configErrorView) configErrorView.classList.remove('hidden');
+                    if (errorDetailsElement) errorDetailsElement.textContent = `Error details: ${error.message}`;
                 }
             }
 
