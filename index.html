@@ -7,9 +7,19 @@ import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnap
 // Lucide React icons are used for a modern look.
 import { Plus, Trash2, Copy, Eye, EyeOff } from 'lucide-react';
 
-// This is the global app ID, which is automatically provided.
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+// Hardcoded Firebase configuration for GitHub Pages deployment.
+// Using the provided details from the user.
+const firebaseConfig = {
+  apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
+  authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
+  projectId: "daily-expense-tracker-4a115",
+  storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
+  messagingSenderId: "862714037551",
+  appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
+};
+
+// We will use the projectId as a unique app identifier for Firestore paths.
+const appId = firebaseConfig.projectId;
 
 // Main App Component
 export default function App() {
@@ -27,12 +37,6 @@ export default function App() {
   // Initialize Firebase and set up authentication
   useEffect(() => {
     // This effect runs only once to initialize Firebase
-    if (Object.keys(firebaseConfig).length === 0) {
-      setMessage('Firebase config is not available.');
-      setLoading(false);
-      return;
-    }
-
     try {
       const app = initializeApp(firebaseConfig);
       const firestoreDb = getFirestore(app);
@@ -52,15 +56,10 @@ export default function App() {
         setLoading(false);
       });
 
-      // Sign in with the custom token if available, otherwise anonymously
+      // Sign in anonymously since we don't have a custom token.
       const signIn = async () => {
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         try {
-          if (initialAuthToken) {
-            await signInWithCustomToken(authService, initialAuthToken);
-          } else {
-            await signInAnonymously(authService);
-          }
+          await signInAnonymously(authService);
         } catch (error) {
           console.error("Firebase Auth error:", error);
           setMessage(`Authentication failed. Please try again. Error: ${error.message}`);
