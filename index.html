@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Transaction Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 900px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container mx-auto p-8 bg-white shadow-xl rounded-2xl border border-gray-200">
+        <h1 class="text-4xl font-extrabold text-gray-800 text-center mb-6">Daily Transaction Log</h1>
+
+        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200 mb-6">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Account Management</h2>
+            <div id="user-info" class="mb-4">
+                <p class="text-sm text-gray-600">User ID: <span id="user-id" class="font-mono bg-gray-200 px-2 py-1 rounded-md">Loading...</span></p>
+            </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-grow">
+                    <label for="account-select" class="block text-sm font-medium text-gray-700">Select Account</label>
+                    <select id="account-select" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></select>
+                </div>
+                <div class="flex-shrink-0 flex items-end">
+                    <button id="add-account-btn" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
+                        Create New Account
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls and Form -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <!-- Transaction Form -->
+            <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-700 mb-4">Add/Edit Transaction</h2>
+                <form id="transaction-form" class="space-y-4">
+                    <input type="hidden" id="transaction-id">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                            <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
+                            <select id="type" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="expense" selected>Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
+                                Add Transaction
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Summary and Filters -->
+            <div class="flex flex-col space-y-4">
+                <!-- Currency and Filters -->
+                <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Settings</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="currency-select" class="block text-sm font-medium text-gray-700">Select Currency</label>
+                            <select id="currency-select" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="INR">Indian Rupee (₹)</option>
+                                <option value="USD">US Dollar ($)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Filter Transactions</label>
+                            <div class="mt-1 flex space-x-2">
+                                <button onclick="setFilter('all')" class="filter-btn active w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">All</button>
+                                <button onclick="setFilter('income')" class="filter-btn w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">Income</button>
+                                <button onclick="setFilter('expense')" class="filter-btn w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">Expenses</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Summary -->
+                <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Monthly Summary</h2>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <span>Total Income:</span>
+                            <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <span>Total Expenses:</span>
+                            <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
+                        </div>
+                        <hr class="my-2 border-gray-200">
+                        <div class="flex justify-between items-center text-xl font-semibold text-gray-800">
+                            <span>Net Balance:</span>
+                            <span id="monthly-balance" class="text-2xl font-extrabold text-gray-800">₹0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction List -->
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-6">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Transaction History</h2>
+            
+            <!-- Balance Display -->
+            <div class="mb-6 p-4 rounded-xl bg-gray-100 flex justify-between items-center shadow-inner">
+                <span class="text-xl font-semibold text-gray-600">Current Balance:</span>
+                <span id="total-balance" class="text-2xl font-extrabold text-gray-800">₹0.00</span>
+            </div>
+
+            <!-- Transaction Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tl-lg">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tr-lg">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-list" class="bg-white divide-y divide-gray-200">
+                        <!-- Transactions will be added here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for adding new accounts -->
+    <div id="account-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Create New Account</h3>
+                <div class="mt-2 px-7 py-3">
+                    <input type="text" id="new-account-name" placeholder="Enter account name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="modal-create-btn" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">Create</button>
+                    <button id="modal-cancel-btn" class="mt-2 px-4 py-2 bg-gray-200 text-gray-700 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        let db, auth;
+        let userId = null;
+        let unsubscribeTransactions = null;
+        let accounts = [];
+        let currentAccountId = null;
+
+        const form = document.getElementById('transaction-form');
+        const transactionList = document.getElementById('transaction-list');
+        const totalBalanceElement = document.getElementById('total-balance');
+        const currencySelect = document.getElementById('currency-select');
+        const submitButton = document.getElementById('submit-button');
+        const monthlyIncomeElement = document.getElementById('monthly-income');
+        const monthlyExpensesElement = document.getElementById('monthly-expenses');
+        const monthlyBalanceElement = document.getElementById('monthly-balance');
+        const accountSelect = document.getElementById('account-select');
+        const addAccountBtn = document.getElementById('add-account-btn');
+        const userIdElement = document.getElementById('user-id');
+        const accountModal = document.getElementById('account-modal');
+        const modalCreateBtn = document.getElementById('modal-create-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const newAccountNameInput = document.getElementById('new-account-name');
+
+        let transactions = [];
+        let currentCurrency = 'INR';
+        let currentFilter = 'all';
+        let editingTransactionId = null;
+
+        // Function to get the currency symbol
+        function getCurrencySymbol() {
+            return currentCurrency === 'INR' ? '₹' : '$';
+        }
+        
+        // Modal functions
+        addAccountBtn.addEventListener('click', () => {
+            accountModal.classList.remove('hidden');
+        });
+
+        modalCancelBtn.addEventListener('click', () => {
+            accountModal.classList.add('hidden');
+            newAccountNameInput.value = '';
+        });
+
+        modalCreateBtn.addEventListener('click', async () => {
+            const accountName = newAccountNameInput.value.trim();
+            if (accountName) {
+                try {
+                    await addAccount(accountName);
+                    accountModal.classList.add('hidden');
+                    newAccountNameInput.value = '';
+                } catch (error) {
+                    console.error("Error creating account: ", error);
+                }
+            }
+        });
+
+        // Function to render transactions and update balance
+        function renderTransactions() {
+            transactionList.innerHTML = ''; // Clear the current list
+            let total = 0;
+            let monthlyIncome = 0;
+            let monthlyExpenses = 0;
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            // Filter transactions based on the current filter
+            const filteredTransactions = transactions.filter(t => {
+                if (currentFilter === 'all') return true;
+                return t.type === currentFilter;
+            });
+
+            if (filteredTransactions.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 italic">No transactions recorded yet.</td>
+                `;
+                transactionList.appendChild(row);
+            } else {
+                filteredTransactions.forEach((transaction) => {
+                    const row = document.createElement('tr');
+                    const amountClass = transaction.type === 'income' ? 'text-green-600' : 'text-red-600';
+                    const sign = transaction.type === 'income' ? '+' : '-';
+                    const formattedAmount = `${getCurrencySymbol()}${Math.abs(transaction.amount).toFixed(2)}`;
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transaction.date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.description}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm capitalize text-gray-500">${transaction.type}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${amountClass}">${sign} ${formattedAmount}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button onclick="editTransaction('${transaction.id}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">Edit</button>
+                            <button onclick="deleteTransaction('${transaction.id}')" class="text-red-600 hover:text-red-900 transition-colors duration-200">Delete</button>
+                        </td>
+                    `;
+                    transactionList.appendChild(row);
+                });
+            }
+
+            // Recalculate total balance for all transactions, regardless of filter
+            transactions.forEach(t => {
+                if (t.type === 'income') {
+                    total += parseFloat(t.amount);
+                } else {
+                    total -= parseFloat(t.amount);
+                }
+
+                // Calculate monthly summary
+                const transactionDate = new Date(t.date);
+                if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
+                    if (t.type === 'income') {
+                        monthlyIncome += parseFloat(t.amount);
+                    } else {
+                        monthlyExpenses += parseFloat(t.amount);
+                    }
+                }
+            });
+
+            // Update balance displays
+            totalBalanceElement.textContent = `${getCurrencySymbol()}${total.toFixed(2)}`;
+            if (total < 0) {
+                totalBalanceElement.classList.add('text-red-600');
+                totalBalanceElement.classList.remove('text-gray-800');
+            } else {
+                totalBalanceElement.classList.remove('text-red-600');
+                totalBalanceElement.classList.add('text-gray-800');
+            }
+
+            monthlyIncomeElement.textContent = `${getCurrencySymbol()}${monthlyIncome.toFixed(2)}`;
+            monthlyExpensesElement.textContent = `${getCurrencySymbol()}${monthlyExpenses.toFixed(2)}`;
+            const monthlyBalance = monthlyIncome - monthlyExpenses;
+            monthlyBalanceElement.textContent = `${getCurrencySymbol()}${monthlyBalance.toFixed(2)}`;
+            if (monthlyBalance < 0) {
+                monthlyBalanceElement.classList.add('text-red-600');
+                monthlyBalanceElement.classList.remove('text-gray-800');
+            } else {
+                monthlyBalanceElement.classList.remove('text-red-600');
+                monthlyBalanceElement.classList.add('text-gray-800');
+            }
+        }
+
+        // Function to set the transaction filter
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            // Update button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white', 'active');
+                btn.classList.add('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
+                if (btn.textContent.toLowerCase() === filterType || (btn.textContent.toLowerCase() === 'all' && filterType === 'all')) {
+                    btn.classList.add('bg-blue-500', 'hover:bg-blue-600', 'text-white', 'active');
+                    btn.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
+                }
+            });
+            renderTransactions();
+        }
+        
+        // Export setFilter globally for onclick
+        window.setFilter = setFilter;
+        
+        // Function to handle form submission (Add/Edit)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!currentAccountId) {
+                console.error("No account selected.");
+                return;
+            }
+
+            const date = document.getElementById('date').value;
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+
+            const transactionData = {
+                date: date,
+                description: description,
+                amount: amount,
+                type: type,
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                if (editingTransactionId) {
+                    const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, editingTransactionId);
+                    await setDoc(transactionRef, transactionData);
+                    editingTransactionId = null;
+                    submitButton.textContent = "Add Transaction";
+                } else {
+                    const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
+                    await addDoc(transactionsCollectionRef, transactionData);
+                }
+            } catch (error) {
+                console.error("Error adding/updating transaction: ", error);
+            }
+
+            form.reset();
+        });
+        
+        // Function to edit a transaction
+        window.editTransaction = function(id) {
+            const transaction = transactions.find(t => t.id === id);
+            if (transaction) {
+                document.getElementById('date').value = transaction.date;
+                document.getElementById('description').value = transaction.description;
+                document.getElementById('amount').value = transaction.amount;
+                document.getElementById('type').value = transaction.type;
+                editingTransactionId = id;
+                submitButton.textContent = "Update Transaction";
+                document.getElementById('date').focus();
+            }
+        }
+        
+        // Function to delete a transaction
+        window.deleteTransaction = async function(id) {
+            if (!currentAccountId) {
+                console.error("No account selected.");
+                return;
+            }
+            try {
+                const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, id);
+                await deleteDoc(transactionRef);
+            } catch (error) {
+                console.error("Error deleting transaction: ", error);
+            }
+        }
+        
+        // Handle currency change
+        currencySelect.addEventListener('change', (e) => {
+            currentCurrency = e.target.value;
+            renderTransactions();
+        });
+
+        async function fetchAccounts() {
+            if (!userId) return;
+            const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
+            onSnapshot(accountsCollectionRef, (snapshot) => {
+                accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAccounts();
+            }, (error) => {
+                console.error("Error fetching accounts: ", error);
+            });
+        }
+
+        function renderAccounts() {
+            accountSelect.innerHTML = '';
+            if (accounts.length > 0) {
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.id;
+                    option.textContent = account.name;
+                    accountSelect.appendChild(option);
+                });
+                // Select the first account or the previously selected one
+                if (!currentAccountId || !accounts.find(acc => acc.id === currentAccountId)) {
+                    currentAccountId = accounts[0].id;
+                }
+                accountSelect.value = currentAccountId;
+            } else {
+                accountSelect.innerHTML = `<option value="">No accounts available</option>`;
+                currentAccountId = null;
+            }
+            setupTransactionListener();
+        }
+
+        async function addAccount(name) {
+            if (!userId) return;
+            const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
+            await addDoc(accountsCollectionRef, { name: name, createdAt: new Date().toISOString() });
+        }
+
+        function setupTransactionListener() {
+            if (unsubscribeTransactions) {
+                unsubscribeTransactions(); // Unsubscribe from the old listener
+            }
+
+            if (currentAccountId) {
+                const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
+                unsubscribeTransactions = onSnapshot(transactionsCollectionRef, (snapshot) => {
+                    transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTransactions();
+                }, (error) => {
+                    console.error("Error fetching transactions: ", error);
+                });
+            } else {
+                transactions = [];
+                renderTransactions();
+            }
+        }
+
+        accountSelect.addEventListener('change', (e) => {
+            currentAccountId = e.target.value;
+            setupTransactionListener();
+        });
+
+        // Initialize App
+        async function initializeFirebaseApp() {
+            if (Object.keys(firebaseConfig).length === 0) {
+                console.error("Firebase config is missing.");
+                return;
+            }
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Moved the auth listener here to ensure 'auth' is defined
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdElement.textContent = userId;
+                        // Fetch user's accounts
+                        fetchAccounts();
+                    } else {
+                        console.log("No user is signed in.");
+                    }
+                });
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase initialization failed: ", error);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', initializeFirebaseApp);
+    </script>
+</body>
+</html>
