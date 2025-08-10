@@ -3,544 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Finance Tracker</title>
-    <!-- Tailwind CSS from CDN -->
+    <title>Daily Transaction Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js for Pie Chart -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDK -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', 'sans-serif';
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .log-message {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            margin-top: 4px;
+            word-wrap: break-word;
+        }
+        .log-info {
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+        .log-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container mx-auto p-8 bg-white shadow-xl rounded-2xl border border-gray-200">
+        <h1 class="text-4xl font-extrabold text-gray-800 text-center mb-6">Daily Transaction Log</h1>
+
+        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200 mb-6">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Account Management</h2>
+            <div id="user-info" class="mb-4">
+                <p class="text-sm text-gray-600">User ID: <span id="user-id" class="font-mono bg-gray-200 px-2 py-1 rounded-md">Loading...</span></p>
+            </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-grow">
+                    <label for="account-select" class="block text-sm font-medium text-gray-700">Select Account</label>
+                    <select id="account-select" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></select>
+                </div>
+                <div class="flex-shrink-0 flex items-end">
+                    <button id="add-account-btn" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
+                        Create New Account
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls and Form -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <!-- Transaction Form -->
+            <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-700 mb-4">Add/Edit Transaction</h2>
+                <form id="transaction-form" class="space-y-4">
+                    <input type="hidden" id="transaction-id">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                            <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
+                            <select id="type" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="expense" selected>Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
+                                Add Transaction
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Summary and Filters -->
+            <div class="flex flex-col space-y-4">
+                <!-- Currency and Filters -->
+                <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Settings</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="currency-select" class="block text-sm font-medium text-gray-700">Select Currency</label>
+                            <select id="currency-select" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="INR">Indian Rupee (₹)</option>
+                                <option value="USD">US Dollar ($)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Filter Transactions</label>
+                            <div class="mt-1 flex space-x-2">
+                                <button onclick="setFilter('all')" class="filter-btn active w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">All</button>
+                                <button onclick="setFilter('income')" class="filter-btn w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">Income</button>
+                                <button onclick="setFilter('expense')" class="filter-btn w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">Expenses</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Summary -->
+                <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Monthly Summary</h2>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <span>Total Income:</span>
+                            <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <span>Total Expenses:</span>
+                            <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
+                        </div>
+                        <hr class="my-2 border-gray-200">
+                        <div class="flex justify-between items-center text-xl font-semibold text-gray-800">
+                            <span>Net Balance:</span>
+                            <span id="monthly-balance" class="text-2xl font-extrabold text-gray-800">₹0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction List -->
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Transaction History</h2>
+            
+            <!-- Balance Display -->
+            <div class="mb-6 p-4 rounded-xl bg-gray-100 flex justify-between items-center shadow-inner">
+                <span class="text-xl font-semibold text-gray-600">Current Balance:</span>
+                <span id="total-balance" class="text-2xl font-extrabold text-gray-800">₹0.00</span>
+            </div>
+
+            <!-- Transaction Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tl-lg">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tr-lg">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-list" class="bg-white divide-y divide-gray-200">
+                        <!-- Transactions will be added here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Log Display Section -->
+        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-700">Application Log</h2>
+                <button id="clear-log-btn" class="text-sm text-red-600 hover:text-red-800 font-medium transition duration-200">Clear Log</button>
+            </div>
+            <div id="log-display" class="bg-white p-4 rounded-md h-40 overflow-y-auto border border-gray-300 text-sm">
+                <p class="text-gray-500 italic">Logs will appear here...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for adding new accounts -->
+    <div id="account-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Create New Account</h3>
+                <div class="mt-2 px-7 py-3">
+                    <input type="text" id="new-account-name" placeholder="Enter account name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="modal-create-btn" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">Create</button>
+                    <button id="modal-cancel-btn" class="mt-2 px-4 py-2 bg-gray-200 text-gray-700 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, getDoc, onSnapshot, serverTimestamp, addDoc, deleteDoc, where, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: These global variables are provided by the hosting environment.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // --- Core Application State & Services ---
-        let app = null;
-        let auth = null;
-        let db = null;
-        let userId = null;
-        let isSuperUser = false;
-        let transactions = [];
-        let filterCategory = 'All';
-        let chartInstance = null;
-
-        // --- DOM Elements ---
-        const appContainer = document.getElementById('app-container');
-        const loadingScreen = document.getElementById('loading-screen');
-        const errorMessage = document.getElementById('error-message');
-        const adminDashboard = document.getElementById('admin-dashboard');
-        const userDashboard = document.getElementById('user-dashboard');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const funFactText = document.getElementById('fun-fact');
-        const transactionForm = document.getElementById('transaction-form');
-        const transactionHistoryList = document.getElementById('transaction-history-list');
-        const savingsDisplay = document.getElementById('savings-display');
-        const pieChartCanvas = document.getElementById('expense-pie-chart');
-        const categoryFilter = document.getElementById('category-filter');
-        const modal = document.getElementById('modal');
-        const modalMessage = document.getElementById('modal-message');
-        const modalCloseBtn = document.getElementById('modal-close-btn');
-
-        // --- Initial Setup and Event Listeners ---
-        window.onload = async function() {
-            console.log("Window loaded. Starting application initialization...");
-            try {
-                initializeAppAndAuth();
-            } catch (e) {
-                console.error("Initialization failed:", e);
-                displayError("Initialization failed. Check console for details.");
-            }
+        // IMPORTANT: Replace this with your actual Firebase project configuration.
+        // You can find this in your Firebase Console under Project settings -> Your apps.
+        const firebaseConfig = {
+          // Paste your configuration here. It should look like this:
+          // apiKey: "...",
+          // authDomain: "...",
+          // projectId: "...",
+          // storageBucket: "...",
+          // messagingSenderId: "...",
+          // appId: "..."
         };
+        
+        // This is a placeholder value for the appId, since your configuration above will have one.
+        const appId = "REPLACE_WITH_YOUR_APP_ID_FROM_FIREBASE_CONFIG";
 
-        modalCloseBtn.addEventListener('click', () => modal.classList.add('hidden'));
-        transactionForm.addEventListener('submit', handleAddTransaction);
-        categoryFilter.addEventListener('change', (e) => {
-            filterCategory = e.target.value;
-            renderTransactions(transactions);
-            renderPieChart(transactions);
+        // Initialize Firebase
+        let db, auth;
+        let userId = null;
+        let unsubscribeTransactions = null;
+        let accounts = [];
+        let currentAccountId = null;
+
+        const form = document.getElementById('transaction-form');
+        const transactionList = document.getElementById('transaction-list');
+        const totalBalanceElement = document.getElementById('total-balance');
+        const currencySelect = document.getElementById('currency-select');
+        const submitButton = document.getElementById('submit-button');
+        const monthlyIncomeElement = document.getElementById('monthly-income');
+        const monthlyExpensesElement = document.getElementById('monthly-expenses');
+        const monthlyBalanceElement = document.getElementById('monthly-balance');
+        const accountSelect = document.getElementById('account-select');
+        const addAccountBtn = document.getElementById('add-account-btn');
+        const userIdElement = document.getElementById('user-id');
+        const accountModal = document.getElementById('account-modal');
+        const modalCreateBtn = document.getElementById('modal-create-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const newAccountNameInput = document.getElementById('new-account-name');
+        const logDisplay = document.getElementById('log-display');
+        const clearLogBtn = document.getElementById('clear-log-btn');
+
+        let transactions = [];
+        let currentCurrency = 'INR';
+        let currentFilter = 'all';
+        let editingTransactionId = null;
+
+        // Function to handle logging to the UI
+        function logMessage(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-message ${type === 'error' ? 'log-error' : 'log-info'}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDisplay.appendChild(logEntry);
+            logDisplay.scrollTop = logDisplay.scrollHeight; // Auto-scroll to the bottom
+            // Remove the initial "Logs will appear here..." message if it exists
+            const initialMessage = logDisplay.querySelector('p');
+            if (initialMessage) {
+                initialMessage.remove();
+            }
+        }
+        
+        clearLogBtn.addEventListener('click', () => {
+            logDisplay.innerHTML = '<p class="text-gray-500 italic">Logs will appear here...</p>';
         });
 
-        // --- Initialization Functions ---
-        function initializeAppAndAuth() {
-            try {
-                if (Object.keys(firebaseConfig).length === 0) {
-                    throw new Error("Firebase config is missing or empty.");
-                }
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                
-                onAuthStateChanged(auth, handleAuthStateChange);
-            } catch (e) {
-                console.error("Firebase initialization error:", e);
-                displayError("Failed to initialize Firebase. Please try again.");
-                throw e;
-            }
+        // Function to get the currency symbol
+        function getCurrencySymbol() {
+            return currentCurrency === 'INR' ? '₹' : '$';
         }
+        
+        // Modal functions
+        addAccountBtn.addEventListener('click', () => {
+            accountModal.classList.remove('hidden');
+        });
 
-        async function handleAuthStateChange(user) {
-            console.log("Auth state changed. User:", user);
-            if (user) {
-                userId = user.uid;
-                userIdDisplay.textContent = userId;
-                
-                const superUserDocRef = doc(db, 'artifacts', appId, 'public', 'admin', 'superuser');
-                const superUserDoc = await getDoc(superUserDocRef);
-                isSuperUser = superUserDoc.exists() && superUserDoc.data().uid === userId;
-                
-                loadingScreen.classList.add('hidden');
-                appContainer.classList.remove('hidden');
+        modalCancelBtn.addEventListener('click', () => {
+            accountModal.classList.add('hidden');
+            newAccountNameInput.value = '';
+        });
 
-                if (isSuperUser) {
-                    adminDashboard.classList.remove('hidden');
-                    // Admin logic is not fully implemented in this version, focusing on user features.
-                } else {
-                    userDashboard.classList.remove('hidden');
-                    setupTransactionListener();
-                    getDynamicFunFact();
-                }
-            } else {
-                console.log("No user found. Attempting sign-in...");
+        modalCreateBtn.addEventListener('click', async () => {
+            const accountName = newAccountNameInput.value.trim();
+            if (accountName) {
                 try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        console.log("Signed in with custom token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("Signed in anonymously.");
-                    }
-                } catch (e) {
-                    console.error("Sign-in failed:", e);
-                    displayError("Failed to authenticate. Check console for details.");
+                    await addAccount(accountName);
+                    accountModal.classList.add('hidden');
+                    newAccountNameInput.value = '';
+                } catch (error) {
+                    logMessage(`Error creating account: ${error.message}`, 'error');
                 }
             }
-        }
-        
-        // --- Error and UI Helpers ---
-        function displayError(message) {
-            loadingScreen.classList.add('hidden');
-            appContainer.classList.add('hidden');
-            errorMessage.classList.remove('hidden');
-            errorMessage.textContent = `Error: ${message}`;
-        }
-        
-        function showModal(message) {
-            modalMessage.textContent = message;
-            modal.classList.remove('hidden');
-        }
+        });
 
-        // --- LLM API Call for Dynamic Fun Facts ---
-        async function getDynamicFunFact() {
-            funFactText.textContent = 'Generating a fun fact...';
-            try {
-                const prompt = "Give me a single, interesting fun fact about finance, budgeting, or money.";
-                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                const payload = { contents: chatHistory };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                
-                const response = await fetchWithRetry(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-                
-                if (result && result.candidates?.length > 0 && result.candidates[0].content?.parts?.length > 0) {
-                    const fact = result.candidates[0].content.parts[0].text;
-                    funFactText.textContent = fact;
-                } else {
-                    throw new Error("Invalid response from API");
-                }
-            } catch (error) {
-                console.error("Error fetching fun fact:", error);
-                funFactText.textContent = "Error loading fun fact.";
-            }
-        }
+        // Function to render transactions and update balance
+        function renderTransactions() {
+            transactionList.innerHTML = ''; // Clear the current list
+            let total = 0;
+            let monthlyIncome = 0;
+            let monthlyExpenses = 0;
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
 
-        // --- LLM API Call for Currency Conversion ---
-        async function getExchangeRate(fromCurrency, toCurrency) {
-            if (fromCurrency === toCurrency) return 1;
-            try {
-                const prompt = `Give me a single number representing the current exchange rate from ${fromCurrency} to ${toCurrency}. Only provide the number, no text.`;
-                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                const payload = { contents: chatHistory };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                
-                const response = await fetchWithRetry(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
+            // Filter transactions based on the current filter
+            const filteredTransactions = transactions.filter(t => {
+                if (currentFilter === 'all') return true;
+                return t.type === currentFilter;
+            });
 
-                if (result && result.candidates?.length > 0 && result.candidates[0].content?.parts?.length > 0) {
-                    const rateString = result.candidates[0].content.parts[0].text;
-                    const rate = parseFloat(rateString);
-                    if (isNaN(rate)) {
-                        throw new Error("Invalid exchange rate format from API.");
-                    }
-                    return rate;
-                } else {
-                    throw new Error("Invalid response from API for currency conversion.");
-                }
-            } catch (error) {
-                console.error("Error fetching exchange rate:", error);
-                showModal("Failed to get exchange rate. Using a default rate. Check console for details.");
-                // Fallback rates
-                const fallbacks = {
-                    'USD_INR': 83,
-                    'EUR_INR': 90,
-                    'AUD_INR': 55
-                };
-                return fallbacks[`${fromCurrency}_${toCurrency}`] || 1;
-            }
-        }
-
-        // --- Firebase Data Listener ---
-        function setupTransactionListener() {
-            const transactionsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'transactions');
-            onSnapshot(transactionsCollectionRef, (snapshot) => {
-                transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderTransactions(transactions);
-                renderPieChart(transactions);
-                calculateMonthlySavings(transactions);
-            }, (error) => console.error("Error fetching transactions:", error));
-        }
-
-        // --- UI Logic and Handlers ---
-        async function handleAddTransaction(e) {
-            e.preventDefault();
-            const amountInput = transactionForm.querySelector('[name="amount"]');
-            const currencyInput = transactionForm.querySelector('[name="currency"]');
-            const typeInput = transactionForm.querySelector('[name="type"]:checked');
-            const dateInput = transactionForm.querySelector('[name="date"]');
-            const categoryInput = transactionForm.querySelector('[name="category"]');
-            const descriptionInput = transactionForm.querySelector('[name="description"]');
-
-            if (!amountInput.value || !dateInput.value || !typeInput) {
-                showModal("Please fill out all required fields.");
-                return;
-            }
-
-            try {
-                const amount = parseFloat(amountInput.value);
-                const originalCurrency = currencyInput.value;
-                const type = typeInput.value;
-                let amountInINR = amount;
-                
-                // Convert amount to INR if not already
-                if (originalCurrency !== 'INR') {
-                    const rate = await getExchangeRate(originalCurrency, 'INR');
-                    amountInINR = amount * rate;
-                }
-
-                const newTransaction = {
-                    amount: amountInINR,
-                    originalAmount: amount,
-                    currency: originalCurrency,
-                    type: type,
-                    date: dateInput.value,
-                    category: categoryInput.value,
-                    description: descriptionInput.value,
-                    createdAt: serverTimestamp(),
-                };
-
-                const transactionsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'transactions');
-                await addDoc(transactionsCollectionRef, newTransaction);
-                
-                // Reset form
-                amountInput.value = '';
-                dateInput.value = new Date().toISOString().split('T')[0];
-                descriptionInput.value = '';
-                
-                showModal("Transaction added successfully!");
-            } catch (error) {
-                console.error("Error adding transaction:", error);
-                showModal("Failed to add transaction. Please try again.");
-            }
-        }
-        
-        async function handleDeleteTransaction(id) {
-            try {
-                const transactionDocRef = doc(db, 'artifacts', appId, 'users', userId, 'transactions', id);
-                await deleteDoc(transactionDocRef);
-                showModal("Transaction deleted successfully!");
-            } catch (error) {
-                console.error("Error deleting transaction:", error);
-                showModal("Failed to delete transaction. Please try again.");
-            }
-        }
-
-        function calculateMonthlySavings(transactions) {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-
-            const monthlyIncome = transactions
-                .filter(t => t.type === 'income' && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
-                .reduce((total, t) => total + t.amount, 0);
-
-            const monthlyExpenses = transactions
-                .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
-                .reduce((total, t) => total + t.amount, 0);
-
-            const savings = (monthlyIncome - monthlyExpenses) * 0.20;
-            savingsDisplay.innerHTML = `
-                <div class="text-lg text-gray-400">Calculated Monthly Savings:</div>
-                <div class="text-3xl font-extrabold text-indigo-400">₹${savings.toFixed(2)}</div>
-            `;
-        }
-
-        // --- UI Rendering Functions ---
-        function renderTransactions(currentTransactions) {
-            transactionHistoryList.innerHTML = '';
-            
-            let filteredTransactions = currentTransactions;
-            if (filterCategory !== 'All') {
-                filteredTransactions = currentTransactions.filter(t => t.category === filterCategory);
-            }
-            
-            if (filteredTransactions.length > 0) {
-                const sortedTransactions = filteredTransactions.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
-                sortedTransactions.forEach(t => {
-                    const isExpense = t.type === 'expense';
-                    const amountClass = isExpense ? 'text-red-400' : 'text-green-400';
-                    const sign = isExpense ? '-' : '+';
-                    
-                    const transactionItem = document.createElement('li');
-                    transactionItem.className = "bg-gray-700 p-4 rounded-lg flex justify-between items-center transition-transform transform hover:scale-[1.02] shadow-md group";
-                    transactionItem.innerHTML = `
-                        <div>
-                            <div class="font-semibold text-lg ${amountClass}">${sign}₹${t.amount.toFixed(2)}</div>
-                            <div class="text-sm text-gray-400">${t.description || "No description"}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-medium text-indigo-300">${t.category}</div>
-                            <div class="text-xs text-gray-500">${t.date} (${t.currency})</div>
-                        </div>
-                        <button class="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity" onclick="handleDeleteTransaction('${t.id}')">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    `;
-                    transactionHistoryList.appendChild(transactionItem);
-                });
+            if (filteredTransactions.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 italic">No transactions recorded yet.</td>
+                `;
+                transactionList.appendChild(row);
             } else {
-                transactionHistoryList.innerHTML = '<p class="text-gray-400 text-center italic">No transactions to display.</p>';
+                filteredTransactions.forEach((transaction) => {
+                    const row = document.createElement('tr');
+                    const amountClass = transaction.type === 'income' ? 'text-green-600' : 'text-red-600';
+                    const sign = transaction.type === 'income' ? '+' : '-';
+                    const formattedAmount = `${getCurrencySymbol()}${Math.abs(transaction.amount).toFixed(2)}`;
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transaction.date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.description}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm capitalize text-gray-500">${transaction.type}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${amountClass}">${sign} ${formattedAmount}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button onclick="editTransaction('${transaction.id}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">Edit</button>
+                            <button onclick="deleteTransaction('${transaction.id}')" class="text-red-600 hover:text-red-900 transition-colors duration-200">Delete</button>
+                        </td>
+                    `;
+                    transactionList.appendChild(row);
+                });
             }
-        }
 
-        function renderPieChart(transactions) {
-            const expenses = transactions.filter(t => t.type === 'expense');
-            const spendingByCategory = expenses.reduce((acc, t) => {
-                acc[t.category] = (acc[t.category] || 0) + t.amount;
-                return acc;
-            }, {});
+            // Recalculate total balance for all transactions, regardless of filter
+            transactions.forEach(t => {
+                if (t.type === 'income') {
+                    total += parseFloat(t.amount);
+                } else {
+                    total -= parseFloat(t.amount);
+                }
 
-            const labels = Object.keys(spendingByCategory);
-            const data = Object.values(spendingByCategory);
-            const backgroundColors = [
-                '#a78bfa', '#f87171', '#fbbf24', '#34d399', '#60a5fa', '#e879f9', '#f472b6', '#cbd5e1'
-            ];
-
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
-            chartInstance = new Chart(pieChartCanvas, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: backgroundColors,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e5e7eb', // gray-200
-                            }
-                        }
+                // Calculate monthly summary
+                const transactionDate = new Date(t.date);
+                if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
+                    if (t.type === 'income') {
+                        monthlyIncome += parseFloat(t.amount);
+                    } else {
+                        monthlyExpenses += parseFloat(t.amount);
                     }
                 }
             });
-        }
-        
-        // Expose function to global scope for onclick attribute
-        window.handleDeleteTransaction = handleDeleteTransaction;
-        
-        // --- Utility function for API calls with exponential backoff ---
-        async function fetchWithRetry(url, options) {
-            let retries = 0;
-            const maxRetries = 5;
-            const baseDelay = 1000;
 
-            while (retries < maxRetries) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.status === 429) {
-                        const delay = baseDelay * Math.pow(2, retries);
-                        console.warn(`API call failed with status 429. Retrying in ${delay}ms...`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        retries++;
-                        continue;
-                    }
-                    if (!response.ok) {
-                        throw new Error(`API error: ${response.statusText}`);
-                    }
-                    return response;
-                } catch (e) {
-                    const delay = baseDelay * Math.pow(2, retries);
-                    console.error(`Fetch attempt ${retries + 1} failed: ${e.message}`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    retries++;
-                }
+            // Update balance displays
+            totalBalanceElement.textContent = `${getCurrencySymbol()}${total.toFixed(2)}`;
+            if (total < 0) {
+                totalBalanceElement.classList.add('text-red-600');
+                totalBalanceElement.classList.remove('text-gray-800');
+            } else {
+                totalBalanceElement.classList.remove('text-red-600');
+                totalBalanceElement.classList.add('text-gray-800');
             }
-            throw new Error(`Failed to fetch from ${url} after ${maxRetries} retries.`);
+
+            monthlyIncomeElement.textContent = `${getCurrencySymbol()}${monthlyIncome.toFixed(2)}`;
+            monthlyExpensesElement.textContent = `${getCurrencySymbol()}${monthlyExpenses.toFixed(2)}`;
+            const monthlyBalance = monthlyIncome - monthlyExpenses;
+            monthlyBalanceElement.textContent = `${getCurrencySymbol()}${monthlyBalance.toFixed(2)}`;
+            if (monthlyBalance < 0) {
+                monthlyBalanceElement.classList.add('text-red-600');
+                monthlyBalanceElement.classList.remove('text-gray-800');
+            } else {
+                monthlyBalanceElement.classList.remove('text-red-600');
+                monthlyBalanceElement.classList.add('text-gray-800');
+            }
         }
-    </script>
-</head>
-<body class="bg-gray-900 font-sans text-gray-100 antialiased">
 
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="min-h-screen flex flex-col items-center justify-center p-8">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500"></div>
-        <p class="mt-4 text-xl text-gray-400">Loading application...</p>
-    </div>
-    
-    <!-- Error Screen (hidden by default) -->
-    <div id="error-message" class="hidden min-h-screen flex flex-col items-center justify-center p-8 text-red-400">
-        <p class="text-xl font-bold">An error occurred.</p>
-        <p class="mt-2 text-center" id="error-text"></p>
-        <p class="mt-4 text-sm text-gray-500">Please check the developer console (F12) for more details.</p>
-    </div>
+        // Function to set the transaction filter
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            // Update button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white', 'active');
+                btn.classList.add('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
+                if (btn.textContent.toLowerCase() === filterType || (btn.textContent.toLowerCase() === 'all' && filterType === 'all')) {
+                    btn.classList.add('bg-blue-500', 'hover:bg-blue-600', 'text-white', 'active');
+                    btn.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
+                }
+            });
+            renderTransactions();
+        }
+        
+        // Export setFilter globally for onclick
+        window.setFilter = setFilter;
+        
+        // Function to handle form submission (Add/Edit)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-    <!-- Main App Container (hidden by default) -->
-    <div id="app-container" class="hidden min-h-screen">
-        <!-- Modal for alerts -->
-        <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
-            <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl text-gray-100 max-w-sm w-full border border-indigo-500">
-                <p id="modal-message" class="text-lg text-center mb-4"></p>
-                <button id="modal-close-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg">
-                    Close
-                </button>
-            </div>
-        </div>
+            if (!currentAccountId) {
+                logMessage("No account selected. Please create or select an account.", 'error');
+                return;
+            }
 
-        <!-- Admin Dashboard (Hidden for now, focus on user features) -->
-        <div id="admin-dashboard" class="hidden"></div>
+            const date = document.getElementById('date').value;
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
 
-        <!-- User Dashboard -->
-        <div id="user-dashboard" class="p-4 sm:p-8 flex flex-col lg:flex-row gap-8 font-inter">
-            <!-- Main Content Area -->
-            <div class="flex-grow flex flex-col gap-8">
-                <!-- Header -->
-                <header class="bg-gray-800 p-6 rounded-2xl shadow-lg flex items-center justify-between">
-                    <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 font-serif">
-                        अवाtar
-                    </h1>
-                    <div class="text-sm font-mono text-gray-400">
-                        User ID: <span id="user-id-display" class="block break-all mt-1 text-gray-300"></span>
-                    </div>
-                </header>
+            const transactionData = {
+                date: date,
+                description: description,
+                amount: amount,
+                type: type,
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                if (editingTransactionId) {
+                    const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, editingTransactionId);
+                    await setDoc(transactionRef, transactionData);
+                    logMessage(`Transaction '${description}' updated successfully.`);
+                    editingTransactionId = null;
+                    submitButton.textContent = "Add Transaction";
+                } else {
+                    const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
+                    await addDoc(transactionsCollectionRef, transactionData);
+                    logMessage(`Transaction '${description}' added successfully.`);
+                }
+            } catch (error) {
+                logMessage(`Error adding/updating transaction: ${error.message}`, 'error');
+            }
 
-                <!-- Fun Facts Section -->
-                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-4 text-indigo-300">Daily Financial Insight</h2>
-                    <p id="fun-fact" class="italic text-gray-400">Generating a fun fact...</p>
-                </div>
+            form.reset();
+        });
+        
+        // Function to edit a transaction
+        window.editTransaction = function(id) {
+            const transaction = transactions.find(t => t.id === id);
+            if (transaction) {
+                document.getElementById('date').value = transaction.date;
+                document.getElementById('description').value = transaction.description;
+                document.getElementById('amount').value = transaction.amount;
+                document.getElementById('type').value = transaction.type;
+                editingTransactionId = id;
+                submitButton.textContent = "Update Transaction";
+                document.getElementById('date').focus();
+                logMessage(`Editing transaction with ID: ${id}`);
+            }
+        }
+        
+        // Function to delete a transaction
+        window.deleteTransaction = async function(id) {
+            if (!currentAccountId) {
+                logMessage("No account selected.", 'error');
+                return;
+            }
+            try {
+                const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, id);
+                await deleteDoc(transactionRef);
+                logMessage(`Transaction with ID ${id} deleted successfully.`);
+            } catch (error) {
+                logMessage(`Error deleting transaction: ${error.message}`, 'error');
+            }
+        }
+        
+        // Handle currency change
+        currencySelect.addEventListener('change', (e) => {
+            currentCurrency = e.target.value;
+            renderTransactions();
+            logMessage(`Currency changed to ${currentCurrency}.`);
+        });
 
-                <!-- Transaction Input Form -->
-                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-4 text-indigo-300">Add New Transaction</h2>
-                    <form id="transaction-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Type and Amount -->
-                        <div class="flex items-center gap-4 sm:col-span-2">
-                            <label class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
-                                <input type="radio" name="type" value="income" class="mr-2">
-                                <span class="font-bold text-green-400">Income</span>
-                            </label>
-                            <label class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
-                                <input type="radio" name="type" value="expense" class="mr-2">
-                                <span class="font-bold text-red-400">Expense</span>
-                            </label>
-                        </div>
-                        <input type="number" name="amount" placeholder="Amount" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <select name="currency" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="INR">INR (₹)</option>
-                            <option value="USD">USD ($)</option>
-                            <option value="EUR">EUR (€)</option>
-                            <option value="AUD">AUD (A$)</option>
-                        </select>
-                        <input type="date" name="date" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <select name="category" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="Food">Food</option>
-                            <option value="Utilities">Utilities</option>
-                            <option value="Personal Betterment">Personal Betterment</option>
-                            <option value="Health">Health</option>
-                            <option value="Vehicle">Vehicle</option>
-                            <option value="Hobbies">Hobbies</option>
-                            <option value="Rent">Rent</option>
-                            <option value="Shopping">Shopping</option>
-                            <option value="Transport">Transport</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        <textarea name="description" placeholder="Description (optional)" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none sm:col-span-2"></textarea>
-                        <button type="submit" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 sm:col-span-2">
-                            Add Transaction
-                        </button>
-                    </form>
-                </div>
+        async function fetchAccounts() {
+            if (!userId) return;
+            logMessage("Fetching accounts...");
+            const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
+            onSnapshot(accountsCollectionRef, (snapshot) => {
+                accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAccounts();
+                logMessage("Accounts updated from Firestore.");
+            }, (error) => {
+                logMessage(`Error fetching accounts: ${error.message}`, 'error');
+            });
+        }
+
+        function renderAccounts() {
+            accountSelect.innerHTML = '';
+            if (accounts.length > 0) {
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.id;
+                    option.textContent = account.name;
+                    accountSelect.appendChild(option);
+                });
+                // Select the first account or the previously selected one
+                if (!currentAccountId || !accounts.find(acc => acc.id === currentAccountId)) {
+                    currentAccountId = accounts[0].id;
+                }
+                accountSelect.value = currentAccountId;
+                logMessage(`Account list rendered. Current account ID: ${currentAccountId}`);
+            } else {
+                accountSelect.innerHTML = `<option value="">No accounts available</option>`;
+                currentAccountId = null;
+                logMessage("No accounts found. Please create a new account.");
+            }
+            setupTransactionListener();
+        }
+
+        async function addAccount(name) {
+            if (!userId) {
+                logMessage("User not authenticated.", 'error');
+                return;
+            }
+            logMessage(`Attempting to add new account: ${name}`);
+            const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
+            try {
+                const docRef = await addDoc(accountsCollectionRef, { name: name, createdAt: new Date().toISOString() });
+                logMessage(`Account '${name}' created with ID: ${docRef.id}`);
+            } catch (error) {
+                logMessage(`Error adding account: ${error.message}`, 'error');
+            }
+        }
+
+        function setupTransactionListener() {
+            if (unsubscribeTransactions) {
+                unsubscribeTransactions(); // Unsubscribe from the old listener
+                logMessage("Unsubscribed from previous transaction listener.");
+            }
+
+            if (currentAccountId) {
+                logMessage(`Setting up transaction listener for account ID: ${currentAccountId}`);
+                const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
+                unsubscribeTransactions = onSnapshot(transactionsCollectionRef, (snapshot) => {
+                    transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTransactions();
+                    logMessage("Transactions updated from Firestore.");
+                }, (error) => {
+                    logMessage(`Error fetching transactions: ${error.message}`, 'error');
+                });
+            } else {
+                transactions = [];
+                renderTransactions();
+                logMessage("No account selected, transaction listener not active.");
+            }
+        }
+
+        accountSelect.addEventListener('change', (e) => {
+            currentAccountId = e.target.value;
+            logMessage(`Account changed to ID: ${currentAccountId}`);
+            setupTransactionListener();
+        });
+
+        // Initialize App
+        async function initializeFirebaseApp() {
+            if (Object.keys(firebaseConfig).length === 0) {
+                 logMessage("Firebase configuration is missing. The app cannot run.", 'error');
+                 return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
                 
-                <!-- Savings and Pie Chart -->
-                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div id="savings-display" class="flex flex-col items-center justify-center p-4">
-                        <div class="text-lg text-gray-400">Calculated Monthly Savings:</div>
-                        <div class="text-3xl font-extrabold text-indigo-400">₹0.00</div>
-                    </div>
-                    <div class="h-64">
-                        <h2 class="text-2xl font-bold mb-4 text-indigo-300">Expense Breakdown</h2>
-                        <canvas id="expense-pie-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Transaction History Sidebar -->
-            <div class="w-full lg:w-1/3 flex-shrink-0 bg-gray-800 p-6 rounded-2xl shadow-lg flex flex-col">
-                <h2 class="text-2xl font-bold mb-4 text-indigo-300">
-                    Transaction History
-                </h2>
-                <div class="mb-4">
-                    <label for="category-filter" class="block text-sm font-medium text-gray-400">Filter by Category:</label>
-                    <select id="category-filter" class="w-full mt-1 p-2 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="All">All Categories</option>
-                        <option value="Food">Food</option>
-                        <option value="Utilities">Utilities</option>
-                        <option value="Personal Betterment">Personal Betterment</option>
-                        <option value="Health">Health</option>
-                        <option value="Vehicle">Vehicle</option>
-                        <option value="Hobbies">Hobbies</option>
-                        <option value="Rent">Rent</option>
-                        <option value="Shopping">Shopping</option>
-                        <option value="Transport">Transport</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <ul id="transaction-history-list" class="flex-grow overflow-y-auto space-y-3"></ul>
-            </div>
-        </div>
-    </div>
+                await signInAnonymously(auth);
+                logMessage("Signed in anonymously.");
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdElement.textContent = userId;
+                        logMessage(`User authenticated with ID: ${userId}`);
+                        fetchAccounts();
+                    } else {
+                        logMessage("User signed out.");
+                        // Handle signed out state if necessary
+                    }
+                });
+            } catch (error) {
+                logMessage(`Firebase initialization or sign-in failed: ${error.message}`, 'error');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', initializeFirebaseApp);
+    </script>
 </body>
 </html>
