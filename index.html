@@ -63,6 +63,14 @@
         .slide-in-right.open {
             transform: translateX(0);
         }
+        @keyframes pop-in {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: pop-in 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body class="flex items-start justify-center min-h-screen p-4 md:p-8">
@@ -119,9 +127,28 @@
                         <i class="fas fa-lightbulb text-purple-500 mr-2"></i>
                         Frugal Fun Facts
                     </h2>
-                    <p id="fun-fact" class="text-lg text-gray-700 italic text-center transition-opacity duration-500 ease-in-out">
-                        Jokes will appear here!
+                    <p id="fun-fact" class="text-lg text-gray-700 italic text-center transition-all duration-500 ease-in-out">
+                        Click the button below for a finance joke!
                     </p>
+                    <button id="generate-fun-fact-btn" class="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                        ✨ Generate Fun Fact
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI-Powered Financial Insights -->
+            <div class="card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-brain text-emerald-500 mr-2"></i>
+                        Financial Insights
+                    </h2>
+                    <button id="generate-summary-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                        ✨ Generate Spending Summary
+                    </button>
+                </div>
+                <div id="summary-content" class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <p class="text-gray-500 italic">Your personalized summary will appear here. It may take a moment to generate.</p>
                 </div>
             </div>
 
@@ -166,26 +193,19 @@
                     </form>
                 </div>
                 
-                <!-- Account Management -->
-                <div class="card p-6">
+                <!-- Account Placeholder / Info -->
+                <div class="card p-6 flex flex-col justify-between">
                     <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                         <i class="fas fa-folder-open text-indigo-500 mr-2"></i>
-                        My Accounts
+                        Your Account
                     </h2>
-                    <div class="flex flex-col gap-4">
-                        <div>
-                            <label for="account-select" class="block text-sm font-medium text-gray-700 mb-1">Current Account</label>
-                            <select id="account-select" class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"></select>
-                        </div>
-                        <div class="flex gap-2">
-                            <button id="add-account-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                                Create Account
-                            </button>
-                            <button id="delete-account-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
-                                Delete Account
-                            </button>
-                        </div>
+                    <div class="space-y-2">
+                        <p class="text-gray-600">Your data is stored under a single, dedicated account.</p>
+                        <p id="account-status" class="text-gray-500 italic">Account loading...</p>
                     </div>
+                    <button id="create-account-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 hidden mt-4">
+                        Create My Account
+                    </button>
                 </div>
             </div>
             
@@ -238,6 +258,18 @@
                     <p id="user-id" class="font-mono bg-gray-100 px-2 py-1 mt-2 rounded-md text-gray-700 break-all">Loading...</p>
                 </div>
             </div>
+
+            <!-- Data Reset Card -->
+            <div class="card p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-trash-alt text-red-500 mr-2"></i>
+                    Reset All Data
+                </h2>
+                <p class="text-gray-600 mb-4">This will permanently delete your account and all transactions. This action cannot be undone.</p>
+                <button id="delete-account-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
+                    Delete My Account
+                </button>
+            </div>
             
             <!-- App Log Card -->
             <div class="card p-6">
@@ -254,26 +286,11 @@
             </div>
         </div>
 
-
-        <!-- Modal for adding new accounts -->
-        <div id="account-modal" class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
-            <div class="relative mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white animate-fade-in-down">
-                <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Create New Account</h3>
-                <div class="mb-4">
-                    <input type="text" id="new-account-name" placeholder="Enter a name for your new account" class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl shadow-inner text-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                </div>
-                <div class="flex gap-4">
-                    <button id="modal-create-btn" class="flex-1 px-4 py-3 bg-blue-600 text-white font-medium rounded-xl shadow-lg hover:bg-blue-700 focus:outline-none transition-colors duration-300">Create</button>
-                    <button id="modal-cancel-btn" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl shadow-lg hover:bg-gray-300 focus:outline-none transition-colors duration-300">Cancel</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Modal for deleting an account -->
         <div id="delete-modal" class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
             <div class="relative mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white animate-fade-in-down">
                 <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Confirm Deletion</h3>
-                <p id="delete-modal-message" class="text-gray-600 mb-6 text-center">Are you sure you want to permanently delete this account and all its transactions? This action cannot be undone.</p>
+                <p id="delete-modal-message" class="text-gray-600 mb-6 text-center">Are you sure you want to permanently delete your account and all its transactions? This action cannot be undone.</p>
                 <div class="flex gap-4">
                     <button id="delete-modal-confirm-btn" class="flex-1 px-4 py-3 bg-red-600 text-white font-medium rounded-xl shadow-lg hover:bg-red-700 focus:outline-none transition-colors duration-300">Delete</button>
                     <button id="delete-modal-cancel-btn" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl shadow-lg hover:bg-gray-300 focus:outline-none transition-colors duration-300">Cancel</button>
@@ -296,25 +313,17 @@
             let db, auth;
             let userId = null;
             let unsubscribeTransactions = null;
-            let accounts = [];
-            let currentAccountId = null;
+            let hasAccount = false;
+            const ACCOUNT_ID = 'main_account'; // Fixed ID for the single account
 
             const form = document.getElementById('transaction-form');
             const transactionList = document.getElementById('transaction-list');
             const totalBalanceElement = document.getElementById('total-balance');
-            const currencySelect = document.getElementById('currency-select');
             const submitButton = document.getElementById('submit-button');
             const monthlyIncomeElement = document.getElementById('monthly-income');
             const monthlyExpensesElement = document.getElementById('monthly-expenses');
             const monthlyBalanceElement = document.getElementById('monthly-balance');
-            const accountSelect = document.getElementById('account-select');
-            const addAccountBtn = document.getElementById('add-account-btn');
-            const deleteAccountBtn = document.getElementById('delete-account-btn');
             const userIdElement = document.getElementById('user-id');
-            const accountModal = document.getElementById('account-modal');
-            const modalCreateBtn = document.getElementById('modal-create-btn');
-            const modalCancelBtn = document.getElementById('modal-cancel-btn');
-            const newAccountNameInput = document.getElementById('new-account-name');
             const logDisplay = document.getElementById('log-display');
             const clearLogBtn = document.getElementById('clear-log-btn');
             const deleteModal = document.getElementById('delete-modal');
@@ -325,17 +334,486 @@
             const toggleInfoPanelBtn = document.getElementById('toggle-info-panel-btn');
             const closeInfoPanelBtn = document.getElementById('close-info-panel-btn');
             const funFactElement = document.getElementById('fun-fact');
+            const createAccountBtn = document.getElementById('create-account-btn');
+            const deleteAccountBtn = document.getElementById('delete-account-btn');
+            const accountStatusElement = document.getElementById('account-status');
+            const mainAppView = document.getElementById('main-app-view');
+            const generateFunFactBtn = document.getElementById('generate-fun-fact-btn');
+            const generateSummaryBtn = document.getElementById('generate-summary-btn');
+            const summaryContent = document.getElementById('summary-content');
 
             let transactions = [];
-            let currentCurrency = 'INR';
+            let currentCurrency = '₹';
             let currentFilter = 'all';
             let editingTransactionId = null;
 
-            // Frugal fun facts and jokes
-            const funFacts = [
-                "What's a banker's favorite type of music? A loan-ly tune!",
-                "My bank told me I had insufficient funds, I didn’t know I had to have fun to be a member!",
-                "How do you know when a stock is about to crash? It starts acting a little unhinged.",
-                "Why did the money get a bigger home? It was trying to make a little interest.",
-                "My friend wants to be a financial advisor, but I told him I'd have to see his bank account. He said, 'Don't worry, you won't see anything.'",
-                "I bought s
+            // Toggling the Info Panel
+            toggleInfoPanelBtn.addEventListener('click', () => {
+                infoPanel.classList.toggle('slide-in-right');
+                infoPanel.classList.toggle('open');
+            });
+
+            closeInfoPanelBtn.addEventListener('click', () => {
+                infoPanel.classList.remove('open');
+                infoPanel.classList.add('slide-in-right');
+            });
+
+            // Function to handle logging to the UI
+            function logMessage(message, type = 'info') {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-message ${type === 'error' ? 'log-error' : 'log-info'}`;
+                logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logDisplay.appendChild(logEntry);
+                logDisplay.scrollTop = logDisplay.scrollHeight; // Auto-scroll to the bottom
+                // Remove the initial "Logs will appear here..." message if it exists
+                const initialMessage = logDisplay.querySelector('p');
+                if (initialMessage) {
+                    initialMessage.remove();
+                }
+            }
+
+            clearLogBtn.addEventListener('click', () => {
+                logDisplay.innerHTML = '<p class="text-gray-500 italic">Logs will appear here...</p>';
+            });
+
+            // Modal functions for deleting an account
+            deleteAccountBtn.addEventListener('click', () => {
+                deleteModal.classList.remove('hidden');
+            });
+            
+            deleteModalConfirmBtn.addEventListener('click', async () => {
+                deleteModal.classList.add('hidden');
+                await deleteAccount();
+            });
+
+            deleteModalCancelBtn.addEventListener('click', () => {
+                deleteModal.classList.add('hidden');
+                logMessage("Account deletion cancelled.");
+            });
+
+            // Function to render transactions and update balance
+            function renderTransactions() {
+                transactionList.innerHTML = ''; // Clear the current list
+                let total = 0;
+                let monthlyIncome = 0;
+                let monthlyExpenses = 0;
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+
+                // Sort transactions by date (newest first)
+                const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                // Filter transactions based on the current filter
+                const filteredTransactions = sortedTransactions.filter(t => {
+                    if (currentFilter === 'all') return true;
+                    return t.type === currentFilter;
+                });
+
+                if (filteredTransactions.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 italic">No transactions recorded yet.</td>
+                    `;
+                    transactionList.appendChild(row);
+                } else {
+                    filteredTransactions.forEach((transaction) => {
+                        const row = document.createElement('tr');
+                        const amountClass = transaction.type === 'income' ? 'text-green-600' : 'text-red-600';
+                        const sign = transaction.type === 'income' ? '+' : '-';
+                        const formattedAmount = `${currentCurrency}${Math.abs(transaction.amount).toFixed(2)}`;
+                        
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transaction.date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.description}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm capitalize text-gray-500">${transaction.type}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${amountClass}">${sign} ${formattedAmount}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <button onclick="editTransaction('${transaction.id}')" class="text-blue-600 hover:text-blue-800 transition-colors duration-200">Edit</button>
+                                <button onclick="deleteTransaction('${transaction.id}')" class="text-red-600 hover:text-red-800 transition-colors duration-200">Delete</button>
+                            </td>
+                        `;
+                        transactionList.appendChild(row);
+                    });
+                }
+
+                // Recalculate total balance for all transactions, regardless of filter
+                transactions.forEach(t => {
+                    if (t.type === 'income') {
+                        total += parseFloat(t.amount);
+                    } else {
+                        total -= parseFloat(t.amount);
+                    }
+
+                    // Calculate monthly summary
+                    const transactionDate = new Date(t.date);
+                    if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
+                        if (t.type === 'income') {
+                            monthlyIncome += parseFloat(t.amount);
+                        } else {
+                            monthlyExpenses += parseFloat(t.amount);
+                        }
+                    }
+                });
+
+                // Update balance displays
+                totalBalanceElement.textContent = `${currentCurrency}${total.toFixed(2)}`;
+                if (total < 0) {
+                    totalBalanceElement.classList.add('text-red-600');
+                    totalBalanceElement.classList.remove('text-gray-900');
+                } else {
+                    totalBalanceElement.classList.remove('text-red-600');
+                    totalBalanceElement.classList.add('text-gray-900');
+                }
+
+                monthlyIncomeElement.textContent = `${currentCurrency}${monthlyIncome.toFixed(2)}`;
+                monthlyExpensesElement.textContent = `${currentCurrency}${monthlyExpenses.toFixed(2)}`;
+                const monthlyBalance = monthlyIncome - monthlyExpenses;
+                monthlyBalanceElement.textContent = `${currentCurrency}${monthlyBalance.toFixed(2)}`;
+                if (monthlyBalance < 0) {
+                    monthlyBalanceElement.classList.add('text-red-600');
+                    monthlyBalanceElement.classList.remove('text-gray-800');
+                } else {
+                    monthlyBalanceElement.classList.remove('text-red-600');
+                    monthlyBalanceElement.classList.add('text-gray-800');
+                }
+            }
+
+            // Function to set the transaction filter
+            function setFilter(filterType) {
+                currentFilter = filterType;
+                // Update button styles
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.textContent.toLowerCase() === filterType || (btn.textContent.toLowerCase() === 'all' && filterType === 'all')) {
+                        btn.classList.add('active');
+                    }
+                });
+                renderTransactions();
+            }
+
+            // Export setFilter globally for onclick
+            window.setFilter = setFilter;
+
+            // Handle form submission (Add/Edit)
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                if (!hasAccount) {
+                    logMessage("No account exists. Please create one.", 'error');
+                    return;
+                }
+
+                const date = document.getElementById('date').value;
+                const description = document.getElementById('description').value;
+                const amount = parseFloat(document.getElementById('amount').value);
+                const type = document.getElementById('type').value;
+
+                const transactionData = {
+                    date: date,
+                    description: description,
+                    amount: amount,
+                    type: type,
+                    timestamp: new Date().toISOString()
+                };
+
+                try {
+                    if (editingTransactionId) {
+                        const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`, editingTransactionId);
+                        await setDoc(transactionRef, transactionData);
+                        logMessage(`Transaction '${description}' updated successfully.`);
+                        editingTransactionId = null;
+                        submitButton.textContent = "Add Transaction";
+                    } else {
+                        const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`);
+                        await addDoc(transactionsCollectionRef, transactionData);
+                        logMessage(`Transaction '${description}' added successfully.`);
+                    }
+                } catch (error) {
+                    logMessage(`Error adding/updating transaction: ${error.message}`, 'error');
+                }
+
+                form.reset();
+            });
+
+            // Function to edit a transaction
+            window.editTransaction = function(id) {
+                const transaction = transactions.find(t => t.id === id);
+                if (transaction) {
+                    document.getElementById('date').value = transaction.date;
+                    document.getElementById('description').value = transaction.description;
+                    document.getElementById('amount').value = transaction.amount;
+                    document.getElementById('type').value = transaction.type;
+                    editingTransactionId = id;
+                    submitButton.textContent = "Update Transaction";
+                    document.getElementById('date').focus();
+                    logMessage(`Editing transaction with ID: ${id}`);
+                }
+            }
+
+            // Function to delete a transaction
+            window.deleteTransaction = async function(id) {
+                if (!hasAccount) {
+                    logMessage("No account selected.", 'error');
+                    return;
+                }
+                try {
+                    const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`, id);
+                    await deleteDoc(transactionRef);
+                    logMessage(`Transaction with ID ${id} deleted successfully.`);
+                } catch (error) {
+                    logMessage(`Error deleting transaction: ${error.message}`, 'error');
+                }
+            }
+
+            async function createAccount() {
+                if (!userId) {
+                    logMessage("User not authenticated.", 'error');
+                    return;
+                }
+                logMessage(`Attempting to create a new account for user ID: ${userId}`);
+                const accountDocRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts`, ACCOUNT_ID);
+                try {
+                    await setDoc(accountDocRef, { name: 'Main Account', createdAt: new Date().toISOString() });
+                    logMessage(`Account 'Main Account' created successfully.`);
+                } catch (error) {
+                    logMessage(`Error creating account: ${error.message}`, 'error');
+                }
+            }
+
+            // Function to delete an account and its transactions
+            async function deleteAccount() {
+                if (!hasAccount) {
+                    logMessage("No account is currently selected.", 'error');
+                    return;
+                }
+                
+                logMessage(`Deleting user's account and all data...`);
+                try {
+                    // First, delete all transactions in the subcollection
+                    const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`);
+                    const transactionSnapshot = await getDocs(transactionsCollectionRef);
+
+                    const deletePromises = transactionSnapshot.docs.map(tDoc => deleteDoc(tDoc.ref));
+                    await Promise.all(deletePromises);
+                    logMessage(`Deleted ${transactionSnapshot.docs.length} transactions.`);
+
+                    // Then, delete the account document itself
+                    const accountDocRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts`, ACCOUNT_ID);
+                    await deleteDoc(accountDocRef);
+                    
+                    hasAccount = false;
+                    transactions = [];
+                    renderTransactions();
+                    logMessage(`Account and all user data deleted successfully. A new account can now be created.`);
+                } catch (error) {
+                    logMessage(`Error deleting account: ${error.message}`, 'error');
+                }
+            }
+
+            function setupTransactionListener() {
+                if (unsubscribeTransactions) {
+                    unsubscribeTransactions(); // Unsubscribe from the old listener
+                    logMessage("Unsubscribed from previous transaction listener.");
+                }
+
+                if (hasAccount) {
+                    logMessage(`Setting up transaction listener for account.`);
+                    const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${ACCOUNT_ID}/transactions`);
+                    unsubscribeTransactions = onSnapshot(transactionsCollectionRef, (snapshot) => {
+                        transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderTransactions();
+                        logMessage("Transactions updated from Firestore.");
+                    }, (error) => {
+                        logMessage(`Error fetching transactions: ${error.message}`, 'error');
+                    });
+                } else {
+                    transactions = [];
+                    renderTransactions();
+                    logMessage("No account exists, transaction listener not active.");
+                }
+            }
+
+            // Check if an account exists for the user
+            async function checkAndInitializeAccount() {
+                if (!userId) {
+                    return;
+                }
+                logMessage("Checking for existing account...");
+                const accountDocRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts`, ACCOUNT_ID);
+                onSnapshot(accountDocRef, async (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        logMessage("Account found. Initializing application.");
+                        hasAccount = true;
+                        deleteAccountBtn.disabled = false;
+                        createAccountBtn.classList.add('hidden');
+                        mainAppView.classList.remove('hidden');
+                        accountStatusElement.textContent = "Your account is active.";
+                        setupTransactionListener();
+                    } else {
+                        logMessage("No account found. Showing account creation button.");
+                        hasAccount = false;
+                        deleteAccountBtn.disabled = true;
+                        createAccountBtn.classList.remove('hidden');
+                        mainAppView.classList.add('hidden');
+                        accountStatusElement.textContent = "No account found. Create one to get started!";
+                        setupTransactionListener(); // Still need to unsubscribe from old listener
+                    }
+                }, (error) => {
+                    logMessage(`Error checking account existence: ${error.message}`, 'error');
+                });
+            }
+            
+            createAccountBtn.addEventListener('click', createAccount);
+
+            // API Call for Gemini
+            async function callGeminiApi(prompt) {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                let retries = 0;
+                const maxRetries = 5;
+                const initialDelay = 1000; // 1 second
+
+                while (retries < maxRetries) {
+                    try {
+                        const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                        const payload = { contents: chatHistory };
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            if (result.candidates && result.candidates.length > 0 &&
+                                result.candidates[0].content && result.candidates[0].content.parts &&
+                                result.candidates[0].content.parts.length > 0) {
+                                return result.candidates[0].content.parts[0].text;
+                            } else {
+                                throw new Error('Invalid API response structure.');
+                            }
+                        } else if (response.status === 429) {
+                            // Exponential backoff on rate limit
+                            const delay = initialDelay * Math.pow(2, retries);
+                            logMessage(`API rate limit exceeded. Retrying in ${delay / 1000} seconds...`, 'info');
+                            await new Promise(res => setTimeout(res, delay));
+                            retries++;
+                        } else {
+                            throw new Error(`API call failed with status: ${response.status}`);
+                        }
+                    } catch (error) {
+                        logMessage(`An error occurred during API call: ${error.message}`, 'error');
+                        throw error;
+                    }
+                }
+                throw new Error("Maximum retries exceeded. API call failed.");
+            }
+
+            // Function to generate a spending summary using Gemini
+            async function generateSpendingSummary() {
+                if (transactions.length === 0) {
+                    summaryContent.innerHTML = `<p class="text-gray-500 italic">Please add some transactions first to generate a summary.</p>`;
+                    return;
+                }
+                
+                generateSummaryBtn.disabled = true;
+                generateSummaryBtn.innerHTML = `
+                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                    Generating...
+                `;
+                summaryContent.innerHTML = `
+                    <div class="flex items-center justify-center p-4 text-blue-500">
+                        <i class="fas fa-spinner fa-spin text-xl mr-2"></i>
+                        <span class="text-sm">Analyzing your transactions...</span>
+                    </div>
+                `;
+
+                // Create a clean prompt with transaction data
+                const transactionDataForPrompt = transactions.map(t => ({
+                    date: t.date,
+                    description: t.description,
+                    amount: t.amount,
+                    type: t.type
+                }));
+                const prompt = `Based on the following financial transactions, provide a concise spending summary. Highlight key spending categories, mention any notable trends (e.g., increased spending on food), and offer one or two simple, personalized tips. Format the response as a friendly paragraph followed by a short bulleted list for the tips. Transactions: ${JSON.stringify(transactionDataForPrompt)}`;
+
+                try {
+                    const result = await callGeminiApi(prompt);
+                    summaryContent.innerHTML = `<p class="text-gray-800 whitespace-pre-wrap">${result}</p>`;
+                    logMessage("Successfully generated financial summary.");
+                } catch (error) {
+                    summaryContent.innerHTML = `<p class="text-red-500 italic">Error generating summary. Please check the app log.</p>`;
+                } finally {
+                    generateSummaryBtn.disabled = false;
+                    generateSummaryBtn.innerHTML = `✨ Generate Spending Summary`;
+                }
+            }
+            
+            generateSummaryBtn.addEventListener('click', generateSpendingSummary);
+
+            // Function to generate a fun fact using Gemini
+            async function generateNewFunFact() {
+                generateFunFactBtn.disabled = true;
+                generateFunFactBtn.innerHTML = `
+                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                    Generating...
+                `;
+                funFactElement.textContent = "Fetching a new joke...";
+                funFactElement.classList.remove('animate-pop-in');
+
+                const prompt = "Please generate a single, short, and witty joke or a 'fun fact' related to finance, money, or budgeting. Do not include a title or introduction, just the joke or fact itself.";
+
+                try {
+                    const result = await callGeminiApi(prompt);
+                    funFactElement.classList.add('animate-pop-in');
+                    funFactElement.textContent = result;
+                    logMessage("Successfully generated a new fun fact.");
+                } catch (error) {
+                    funFactElement.textContent = "Couldn't get a joke right now. Try again later!";
+                } finally {
+                    generateFunFactBtn.disabled = false;
+                    generateFunFactBtn.innerHTML = `✨ Generate Fun Fact`;
+                }
+            }
+
+            generateFunFactBtn.addEventListener('click', generateNewFunFact);
+
+            // Initialize App
+            async function initializeFirebaseApp() {
+                if (Object.keys(firebaseConfig).length === 0) {
+                     logMessage("Firebase configuration is missing. The app cannot run.", 'error');
+                     return;
+                }
+
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    // Use the provided initialAuthToken for a persistent session
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        logMessage("Signed in with a persistent session token.");
+                    }
+
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            userIdElement.textContent = userId;
+                            logMessage(`User authenticated with ID: ${userId}`);
+                            checkAndInitializeAccount();
+                            setFilter('all'); // Set default filter
+                        } else {
+                            logMessage("User signed out.");
+                        }
+                    });
+                } catch (error) {
+                    logMessage(`Firebase initialization or sign-in failed: ${error.message}`, 'error');
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', initializeFirebaseApp);
+        </script>
+    </body>
+</html>
