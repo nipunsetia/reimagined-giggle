@@ -51,14 +51,17 @@
             <div id="user-info" class="mb-4">
                 <p class="text-sm text-gray-600">User ID: <span id="user-id" class="font-mono bg-gray-200 px-2 py-1 rounded-md">Loading...</span></p>
             </div>
-            <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex flex-col md:flex-row gap-4 items-end">
                 <div class="flex-grow">
                     <label for="account-select" class="block text-sm font-medium text-gray-700">Select Account</label>
                     <select id="account-select" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></select>
                 </div>
-                <div class="flex-shrink-0 flex items-end">
+                <div class="flex-shrink-0 flex gap-2">
                     <button id="add-account-btn" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
                         Create New Account
+                    </button>
+                    <button id="delete-account-btn" class="w-full md:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
+                        Delete Account
                     </button>
                 </div>
             </div>
@@ -222,8 +225,8 @@
         };
         
         // This variable is used to build Firestore paths.
-        // It must be the same as the appId in your firebaseConfig.
-        const appId = "1:862714037551:web:00d29aeef2fc3c33880dda";
+        // It must be the same as the projectId in your firebaseConfig.
+        const appId = "daily-expense-tracker-4a115";
 
         // Initialize Firebase
         let db, auth;
@@ -242,6 +245,7 @@
         const monthlyBalanceElement = document.getElementById('monthly-balance');
         const accountSelect = document.getElementById('account-select');
         const addAccountBtn = document.getElementById('add-account-btn');
+        const deleteAccountBtn = document.getElementById('delete-account-btn');
         const userIdElement = document.getElementById('user-id');
         const accountModal = document.getElementById('account-modal');
         const modalCreateBtn = document.getElementById('modal-create-btn');
@@ -510,10 +514,14 @@
                 }
                 accountSelect.value = currentAccountId;
                 logMessage(`Account list rendered. Current account ID: ${currentAccountId}`);
+                deleteAccountBtn.disabled = false; // Enable delete button
             } else {
                 accountSelect.innerHTML = `<option value="">No accounts available</option>`;
                 currentAccountId = null;
+                transactions = [];
+                renderTransactions();
                 logMessage("No accounts found. Please create a new account.");
+                deleteAccountBtn.disabled = true; // Disable delete button
             }
             setupTransactionListener();
         }
@@ -532,6 +540,42 @@
                 logMessage(`Error adding account: ${error.message}`, 'error');
             }
         }
+
+        // New function to delete an account and its transactions
+        async function deleteAccount() {
+            if (!currentAccountId) {
+                logMessage("No account is currently selected.", 'error');
+                return;
+            }
+            
+            const accountName = accounts.find(a => a.id === currentAccountId)?.name || 'this account';
+
+            if (confirm(`Are you sure you want to permanently delete the account "${accountName}" and ALL of its transactions? This action cannot be undone.`)) {
+                logMessage(`Deleting account "${accountName}"...`);
+                try {
+                    // First, delete all transactions in the subcollection
+                    const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
+                    const transactionSnapshot = await getDocs(transactionsCollectionRef);
+                    
+                    const deletePromises = transactionSnapshot.docs.map(tDoc => deleteDoc(tDoc.ref));
+                    await Promise.all(deletePromises);
+                    logMessage(`Deleted ${transactionSnapshot.docs.length} transactions.`);
+
+                    // Then, delete the account document itself
+                    const accountDocRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts`, currentAccountId);
+                    await deleteDoc(accountDocRef);
+                    
+                    logMessage(`Account "${accountName}" deleted successfully.`);
+                } catch (error) {
+                    logMessage(`Error deleting account: ${error.message}`, 'error');
+                }
+            } else {
+                logMessage("Account deletion cancelled.");
+            }
+        }
+        
+        // Add event listener to the new delete account button
+        deleteAccountBtn.addEventListener('click', deleteAccount);
 
         function setupTransactionListener() {
             if (unsubscribeTransactions) {
