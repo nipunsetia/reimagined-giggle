@@ -24,6 +24,22 @@
         .container {
             max-width: 900px;
         }
+        .log-message {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            margin-top: 4px;
+            word-wrap: break-word;
+        }
+        .log-info {
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+        .log-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
@@ -133,7 +149,7 @@
         </div>
 
         <!-- Transaction List -->
-        <div class="bg-gray-50 rounded-xl border border-gray-200 p-6">
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6">
             <h2 class="text-2xl font-bold text-gray-700 mb-4">Transaction History</h2>
             
             <!-- Balance Display -->
@@ -158,6 +174,17 @@
                         <!-- Transactions will be added here by JavaScript -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+        
+        <!-- Log Display Section -->
+        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-700">Application Log</h2>
+                <button id="clear-log-btn" class="text-sm text-red-600 hover:text-red-800 font-medium transition duration-200">Clear Log</button>
+            </div>
+            <div id="log-display" class="bg-white p-4 rounded-md h-40 overflow-y-auto border border-gray-300 text-sm">
+                <p class="text-gray-500 italic">Logs will appear here...</p>
             </div>
         </div>
     </div>
@@ -210,11 +237,32 @@
         const modalCreateBtn = document.getElementById('modal-create-btn');
         const modalCancelBtn = document.getElementById('modal-cancel-btn');
         const newAccountNameInput = document.getElementById('new-account-name');
+        const logDisplay = document.getElementById('log-display');
+        const clearLogBtn = document.getElementById('clear-log-btn');
+
 
         let transactions = [];
         let currentCurrency = 'INR';
         let currentFilter = 'all';
         let editingTransactionId = null;
+
+        // Function to handle logging to the UI
+        function logMessage(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-message ${type === 'error' ? 'log-error' : 'log-info'}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDisplay.appendChild(logEntry);
+            logDisplay.scrollTop = logDisplay.scrollHeight; // Auto-scroll to the bottom
+            // Remove the initial "Logs will appear here..." message if it exists
+            const initialMessage = logDisplay.querySelector('p');
+            if (initialMessage) {
+                initialMessage.remove();
+            }
+        }
+        
+        clearLogBtn.addEventListener('click', () => {
+            logDisplay.innerHTML = '<p class="text-gray-500 italic">Logs will appear here...</p>';
+        });
 
         // Function to get the currency symbol
         function getCurrencySymbol() {
@@ -239,7 +287,7 @@
                     accountModal.classList.add('hidden');
                     newAccountNameInput.value = '';
                 } catch (error) {
-                    console.error("Error creating account: ", error);
+                    logMessage(`Error creating account: ${error.message}`, 'error');
                 }
             }
         });
@@ -352,7 +400,7 @@
             e.preventDefault();
 
             if (!currentAccountId) {
-                console.error("No account selected.");
+                logMessage("No account selected. Please create or select an account.", 'error');
                 return;
             }
 
@@ -373,14 +421,16 @@
                 if (editingTransactionId) {
                     const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, editingTransactionId);
                     await setDoc(transactionRef, transactionData);
+                    logMessage(`Transaction '${description}' updated successfully.`);
                     editingTransactionId = null;
                     submitButton.textContent = "Add Transaction";
                 } else {
                     const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
                     await addDoc(transactionsCollectionRef, transactionData);
+                    logMessage(`Transaction '${description}' added successfully.`);
                 }
             } catch (error) {
-                console.error("Error adding/updating transaction: ", error);
+                logMessage(`Error adding/updating transaction: ${error.message}`, 'error');
             }
 
             form.reset();
@@ -397,20 +447,22 @@
                 editingTransactionId = id;
                 submitButton.textContent = "Update Transaction";
                 document.getElementById('date').focus();
+                logMessage(`Editing transaction with ID: ${id}`);
             }
         }
         
         // Function to delete a transaction
         window.deleteTransaction = async function(id) {
             if (!currentAccountId) {
-                console.error("No account selected.");
+                logMessage("No account selected.", 'error');
                 return;
             }
             try {
                 const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, id);
                 await deleteDoc(transactionRef);
+                logMessage(`Transaction with ID ${id} deleted successfully.`);
             } catch (error) {
-                console.error("Error deleting transaction: ", error);
+                logMessage(`Error deleting transaction: ${error.message}`, 'error');
             }
         }
         
@@ -418,16 +470,19 @@
         currencySelect.addEventListener('change', (e) => {
             currentCurrency = e.target.value;
             renderTransactions();
+            logMessage(`Currency changed to ${currentCurrency}.`);
         });
 
         async function fetchAccounts() {
             if (!userId) return;
+            logMessage("Fetching accounts...");
             const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
             onSnapshot(accountsCollectionRef, (snapshot) => {
                 accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderAccounts();
+                logMessage("Accounts updated from Firestore.");
             }, (error) => {
-                console.error("Error fetching accounts: ", error);
+                logMessage(`Error fetching accounts: ${error.message}`, 'error');
             });
         }
 
@@ -445,47 +500,63 @@
                     currentAccountId = accounts[0].id;
                 }
                 accountSelect.value = currentAccountId;
+                logMessage(`Account list rendered. Current account ID: ${currentAccountId}`);
             } else {
                 accountSelect.innerHTML = `<option value="">No accounts available</option>`;
                 currentAccountId = null;
+                logMessage("No accounts found. Please create a new account.");
             }
             setupTransactionListener();
         }
 
         async function addAccount(name) {
-            if (!userId) return;
+            if (!userId) {
+                logMessage("User not authenticated.", 'error');
+                return;
+            }
+            logMessage(`Attempting to add new account: ${name}`);
             const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
-            await addDoc(accountsCollectionRef, { name: name, createdAt: new Date().toISOString() });
+            try {
+                const docRef = await addDoc(accountsCollectionRef, { name: name, createdAt: new Date().toISOString() });
+                logMessage(`Account '${name}' created with ID: ${docRef.id}`);
+            } catch (error) {
+                logMessage(`Error adding account: ${error.message}`, 'error');
+            }
         }
 
         function setupTransactionListener() {
             if (unsubscribeTransactions) {
                 unsubscribeTransactions(); // Unsubscribe from the old listener
+                logMessage("Unsubscribed from previous transaction listener.");
             }
 
             if (currentAccountId) {
+                logMessage(`Setting up transaction listener for account ID: ${currentAccountId}`);
                 const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
                 unsubscribeTransactions = onSnapshot(transactionsCollectionRef, (snapshot) => {
                     transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderTransactions();
+                    logMessage("Transactions updated from Firestore.");
                 }, (error) => {
-                    console.error("Error fetching transactions: ", error);
+                    logMessage(`Error fetching transactions: ${error.message}`, 'error');
                 });
             } else {
                 transactions = [];
                 renderTransactions();
+                logMessage("No account selected, transaction listener not active.");
             }
         }
 
         accountSelect.addEventListener('change', (e) => {
             currentAccountId = e.target.value;
+            logMessage(`Account changed to ID: ${currentAccountId}`);
             setupTransactionListener();
         });
 
         // Initialize App
         async function initializeFirebaseApp() {
             if (Object.keys(firebaseConfig).length === 0) {
-                console.error("Firebase config is missing.");
+                logMessage("Firebase config is missing.", 'error');
                 return;
             }
             try {
@@ -493,25 +564,26 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Moved the auth listener here to ensure 'auth' is defined
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
                         userIdElement.textContent = userId;
-                        // Fetch user's accounts
+                        logMessage(`User authenticated with ID: ${userId}`);
                         fetchAccounts();
                     } else {
-                        console.log("No user is signed in.");
+                        logMessage("No user is signed in.");
                     }
                 });
 
                 if (initialAuthToken) {
+                    logMessage("Signing in with custom token...");
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
+                    logMessage("Signing in anonymously...");
                     await signInAnonymously(auth);
                 }
             } catch (error) {
-                console.error("Firebase initialization failed: ", error);
+                logMessage(`Firebase initialization failed: ${error.message}`, 'error');
             }
         }
         
@@ -519,3 +591,4 @@
     </script>
 </body>
 </html>
+
