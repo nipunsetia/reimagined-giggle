@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Tracker</title>
+    <title>Advanced Finance Tracker</title>
     <!-- Tailwind CSS from CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Pie Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, getDoc, onSnapshot, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, getDoc, onSnapshot, serverTimestamp, addDoc, deleteDoc, where, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // IMPORTANT: These global variables are provided by the hosting environment.
-        // DO NOT modify them. For local testing, you would replace these with your own Firebase config.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -24,7 +25,10 @@
         let db = null;
         let userId = null;
         let isSuperUser = false;
-        
+        let transactions = [];
+        let filterCategory = 'All';
+        let chartInstance = null;
+
         // --- DOM Elements ---
         const appContainer = document.getElementById('app-container');
         const loadingScreen = document.getElementById('loading-screen');
@@ -33,12 +37,11 @@
         const userDashboard = document.getElementById('user-dashboard');
         const userIdDisplay = document.getElementById('user-id-display');
         const funFactText = document.getElementById('fun-fact');
-        const inviteEmailInput = document.getElementById('invite-email-input');
-        const sendInviteBtn = document.getElementById('send-invite-btn');
-        const invitesList = document.getElementById('invites-list');
         const transactionForm = document.getElementById('transaction-form');
         const transactionHistoryList = document.getElementById('transaction-history-list');
-        const spendingAnalysisContainer = document.getElementById('spending-analysis-container');
+        const savingsDisplay = document.getElementById('savings-display');
+        const pieChartCanvas = document.getElementById('expense-pie-chart');
+        const categoryFilter = document.getElementById('category-filter');
         const modal = document.getElementById('modal');
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -55,10 +58,11 @@
         };
 
         modalCloseBtn.addEventListener('click', () => modal.classList.add('hidden'));
-        sendInviteBtn.addEventListener('click', handleSendInvite);
-        transactionForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await handleAddTransaction();
+        transactionForm.addEventListener('submit', handleAddTransaction);
+        categoryFilter.addEventListener('change', (e) => {
+            filterCategory = e.target.value;
+            renderTransactions(transactions);
+            renderPieChart(transactions);
         });
 
         // --- Initialization Functions ---
@@ -71,7 +75,6 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
-                // Set up auth state listener
                 onAuthStateChanged(auth, handleAuthStateChange);
             } catch (e) {
                 console.error("Firebase initialization error:", e);
@@ -86,25 +89,22 @@
                 userId = user.uid;
                 userIdDisplay.textContent = userId;
                 
-                // Check for superuser status
                 const superUserDocRef = doc(db, 'artifacts', appId, 'public', 'admin', 'superuser');
                 const superUserDoc = await getDoc(superUserDocRef);
                 isSuperUser = superUserDoc.exists() && superUserDoc.data().uid === userId;
                 
+                loadingScreen.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+
                 if (isSuperUser) {
-                    console.log("User is an admin. Displaying admin dashboard.");
-                    loadingScreen.classList.add('hidden');
                     adminDashboard.classList.remove('hidden');
-                    setupInviteListener();
+                    // Admin logic is not fully implemented in this version, focusing on user features.
                 } else {
-                    console.log("User is a regular user. Displaying user dashboard.");
-                    loadingScreen.classList.add('hidden');
                     userDashboard.classList.remove('hidden');
                     setupTransactionListener();
+                    getDynamicFunFact();
                 }
-                getDynamicFunFact();
             } else {
-                // If no user, try to sign in
                 console.log("No user found. Attempting sign-in...");
                 try {
                     if (initialAuthToken) {
@@ -144,40 +144,12 @@
                 const apiKey = "";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
                 
-                let response;
-                let result;
-                let success = false;
-                let retries = 0;
-                const maxRetries = 5;
-                const baseDelay = 1000;
-
-                while (retries < maxRetries && !success) {
-                    try {
-                        response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        if (response.status === 429) {
-                            const delay = baseDelay * Math.pow(2, retries);
-                            console.warn(`API call failed with status 429. Retrying in ${delay}ms...`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            retries++;
-                            continue;
-                        }
-                        if (!response.ok) {
-                            throw new Error(`API error: ${response.statusText}`);
-                        }
-                        result = await response.json();
-                        success = true;
-                    } catch (e) {
-                        const delay = baseDelay * Math.pow(2, retries);
-                        console.error(`Fetch attempt ${retries + 1} failed: ${e.message}`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        retries++;
-                        if (retries >= maxRetries) throw e;
-                    }
-                }
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
                 
                 if (result && result.candidates?.length > 0 && result.candidates[0].content?.parts?.length > 0) {
                     const fact = result.candidates[0].content.parts[0].text;
@@ -191,70 +163,101 @@
             }
         }
 
-        // --- Firebase Data Listeners ---
-        function setupInviteListener() {
-            const invitesCollectionRef = collection(db, 'artifacts', appId, 'public', 'invites');
-            onSnapshot(invitesCollectionRef, (snapshot) => {
-                const currentInvites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderInvites(currentInvites);
-            }, (error) => console.error("Error fetching invites:", error));
+        // --- LLM API Call for Currency Conversion ---
+        async function getExchangeRate(fromCurrency, toCurrency) {
+            if (fromCurrency === toCurrency) return 1;
+            try {
+                const prompt = `Give me a single number representing the current exchange rate from ${fromCurrency} to ${toCurrency}. Only provide the number, no text.`;
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result && result.candidates?.length > 0 && result.candidates[0].content?.parts?.length > 0) {
+                    const rateString = result.candidates[0].content.parts[0].text;
+                    const rate = parseFloat(rateString);
+                    if (isNaN(rate)) {
+                        throw new Error("Invalid exchange rate format from API.");
+                    }
+                    return rate;
+                } else {
+                    throw new Error("Invalid response from API for currency conversion.");
+                }
+            } catch (error) {
+                console.error("Error fetching exchange rate:", error);
+                showModal("Failed to get exchange rate. Using a default rate. Check console for details.");
+                // Fallback rates
+                const fallbacks = {
+                    'USD_INR': 83,
+                    'EUR_INR': 90,
+                    'AUD_INR': 55
+                };
+                return fallbacks[`${fromCurrency}_${toCurrency}`] || 1;
+            }
         }
 
+        // --- Firebase Data Listener ---
         function setupTransactionListener() {
             const transactionsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'transactions');
             onSnapshot(transactionsCollectionRef, (snapshot) => {
-                const currentTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                analyzeSpending(currentTransactions);
-                renderTransactions(currentTransactions);
+                transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTransactions(transactions);
+                renderPieChart(transactions);
+                calculateMonthlySavings(transactions);
             }, (error) => console.error("Error fetching transactions:", error));
         }
 
         // --- UI Logic and Handlers ---
-        async function handleSendInvite() {
-            const email = inviteEmailInput.value;
-            if (!email) { showModal("Please enter a valid email address."); return; }
-            try {
-                const invitesCollectionRef = collection(db, 'artifacts', appId, 'public', 'invites');
-                await addDoc(invitesCollectionRef, {
-                    email: email,
-                    status: 'pending',
-                    createdAt: serverTimestamp(),
-                    invitedBy: userId,
-                });
-                inviteEmailInput.value = '';
-                showModal("Invite sent successfully!");
-            } catch (error) {
-                console.error("Error sending invite:", error);
-                showModal("Failed to send invite. Please try again.");
-            }
-        }
-
-        async function handleAddTransaction() {
+        async function handleAddTransaction(e) {
+            e.preventDefault();
             const amountInput = transactionForm.querySelector('[name="amount"]');
+            const currencyInput = transactionForm.querySelector('[name="currency"]');
+            const typeInput = transactionForm.querySelector('[name="type"]:checked');
             const dateInput = transactionForm.querySelector('[name="date"]');
             const categoryInput = transactionForm.querySelector('[name="category"]');
             const descriptionInput = transactionForm.querySelector('[name="description"]');
 
-            if (!amountInput.value || !dateInput.value) {
-                showModal("Please fill out all required fields (Amount and Date).");
+            if (!amountInput.value || !dateInput.value || !typeInput) {
+                showModal("Please fill out all required fields.");
                 return;
             }
 
             try {
+                const amount = parseFloat(amountInput.value);
+                const originalCurrency = currencyInput.value;
+                const type = typeInput.value;
+                let amountInINR = amount;
+                
+                // Convert amount to INR if not already
+                if (originalCurrency !== 'INR') {
+                    const rate = await getExchangeRate(originalCurrency, 'INR');
+                    amountInINR = amount * rate;
+                }
+
                 const newTransaction = {
-                    amount: parseFloat(amountInput.value),
+                    amount: amountInINR,
+                    originalAmount: amount,
+                    currency: originalCurrency,
+                    type: type,
                     date: dateInput.value,
                     category: categoryInput.value,
                     description: descriptionInput.value,
                     createdAt: serverTimestamp(),
                 };
+
                 const transactionsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'transactions');
                 await addDoc(transactionsCollectionRef, newTransaction);
                 
                 // Reset form
                 amountInput.value = '';
                 dateInput.value = new Date().toISOString().split('T')[0];
-                categoryInput.value = 'Food';
                 descriptionInput.value = '';
                 
                 showModal("Transaction added successfully!");
@@ -263,76 +266,149 @@
                 showModal("Failed to add transaction. Please try again.");
             }
         }
-
-        function analyzeSpending(transactions) {
-            const spendingByDay = { Sunday: 0, Monday: 0, Tuesday: 0, Wednesday: 0, Thursday: 0, Friday: 0, Saturday: 0 };
-            const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            transactions.forEach(t => {
-                const date = new Date(t.date);
-                const dayName = daysOfWeek[date.getDay()];
-                spendingByDay[dayName] += t.amount;
-            });
-            const totalSpending = Object.values(spendingByDay).reduce((acc, val) => acc + val, 0);
-            
-            spendingAnalysisContainer.innerHTML = '';
-            for (const day in spendingByDay) {
-                const percentage = totalSpending > 0 ? ((spendingByDay[day] / totalSpending) * 100).toFixed(1) : 0;
-                const total = spendingByDay[day].toFixed(2);
-                
-                const dayElement = document.createElement('div');
-                dayElement.className = "bg-gray-700 p-4 rounded-lg text-center flex flex-col justify-between";
-                dayElement.innerHTML = `
-                    <span class="font-semibold text-gray-300">${day.substring(0, 3)}</span>
-                    <span class="text-xl font-bold text-indigo-400">$${total}</span>
-                    <span class="text-sm text-gray-400">${percentage}%</span>
-                `;
-                spendingAnalysisContainer.appendChild(dayElement);
+        
+        async function handleDeleteTransaction(id) {
+            try {
+                const transactionDocRef = doc(db, 'artifacts', appId, 'users', userId, 'transactions', id);
+                await deleteDoc(transactionDocRef);
+                showModal("Transaction deleted successfully!");
+            } catch (error) {
+                console.error("Error deleting transaction:", error);
+                showModal("Failed to delete transaction. Please try again.");
             }
+        }
+
+        function calculateMonthlySavings(transactions) {
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
+            const monthlyIncome = transactions
+                .filter(t => t.type === 'income' && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
+                .reduce((total, t) => total + t.amount, 0);
+
+            const monthlyExpenses = transactions
+                .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
+                .reduce((total, t) => total + t.amount, 0);
+
+            const savings = (monthlyIncome - monthlyExpenses) * 0.20;
+            savingsDisplay.innerHTML = `
+                <div class="text-lg text-gray-400">Calculated Monthly Savings:</div>
+                <div class="text-3xl font-extrabold text-indigo-400">₹${savings.toFixed(2)}</div>
+            `;
         }
 
         // --- UI Rendering Functions ---
-        function renderInvites(currentInvites) {
-            invitesList.innerHTML = '';
-            if (currentInvites.length > 0) {
-                currentInvites.forEach(invite => {
-                    const statusClass = invite.status === 'pending' ? 'bg-yellow-800 text-yellow-300' : 'bg-green-800 text-green-300';
-                    const inviteItem = document.createElement('li');
-                    inviteItem.className = "flex justify-between items-center p-3";
-                    inviteItem.innerHTML = `
-                        <span class="text-gray-300">${invite.email}</span>
-                        <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusClass}">
-                            ${invite.status}
-                        </span>
-                    `;
-                    invitesList.appendChild(inviteItem);
-                });
-            } else {
-                invitesList.innerHTML = '<p class="text-gray-400 text-center italic">No invites sent yet.</p>';
-            }
-        }
-
         function renderTransactions(currentTransactions) {
             transactionHistoryList.innerHTML = '';
-            if (currentTransactions.length > 0) {
-                const sortedTransactions = currentTransactions.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
+            
+            let filteredTransactions = currentTransactions;
+            if (filterCategory !== 'All') {
+                filteredTransactions = currentTransactions.filter(t => t.category === filterCategory);
+            }
+            
+            if (filteredTransactions.length > 0) {
+                const sortedTransactions = filteredTransactions.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
                 sortedTransactions.forEach(t => {
+                    const isExpense = t.type === 'expense';
+                    const amountClass = isExpense ? 'text-red-400' : 'text-green-400';
+                    const sign = isExpense ? '-' : '+';
+                    
                     const transactionItem = document.createElement('li');
-                    transactionItem.className = "bg-gray-700 p-4 rounded-lg flex justify-between items-center transition-transform transform hover:scale-[1.02] shadow-md";
+                    transactionItem.className = "bg-gray-700 p-4 rounded-lg flex justify-between items-center transition-transform transform hover:scale-[1.02] shadow-md group";
                     transactionItem.innerHTML = `
                         <div>
-                            <div class="font-semibold text-lg text-gray-200">$${t.amount.toFixed(2)}</div>
+                            <div class="font-semibold text-lg ${amountClass}">${sign}₹${t.amount.toFixed(2)}</div>
                             <div class="text-sm text-gray-400">${t.description || "No description"}</div>
                         </div>
                         <div class="text-right">
                             <div class="text-sm font-medium text-indigo-300">${t.category}</div>
-                            <div class="text-xs text-gray-500">${t.date}</div>
+                            <div class="text-xs text-gray-500">${t.date} (${t.currency})</div>
                         </div>
+                        <button class="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity" onclick="handleDeleteTransaction('${t.id}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     `;
                     transactionHistoryList.appendChild(transactionItem);
                 });
             } else {
-                transactionHistoryList.innerHTML = '<p class="text-gray-400 text-center italic">No transactions added yet.</p>';
+                transactionHistoryList.innerHTML = '<p class="text-gray-400 text-center italic">No transactions to display.</p>';
             }
+        }
+
+        function renderPieChart(transactions) {
+            const expenses = transactions.filter(t => t.type === 'expense');
+            const spendingByCategory = expenses.reduce((acc, t) => {
+                acc[t.category] = (acc[t.category] || 0) + t.amount;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(spendingByCategory);
+            const data = Object.values(spendingByCategory);
+            const backgroundColors = [
+                '#a78bfa', '#f87171', '#fbbf24', '#34d399', '#60a5fa', '#e879f9', '#f472b6', '#cbd5e1'
+            ];
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(pieChartCanvas, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e5e7eb', // gray-200
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Expose function to global scope for onclick attribute
+        window.handleDeleteTransaction = handleDeleteTransaction;
+        
+        // --- Utility function for API calls with exponential backoff ---
+        async function fetchWithRetry(url, options) {
+            let retries = 0;
+            const maxRetries = 5;
+            const baseDelay = 1000;
+
+            while (retries < maxRetries) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status === 429) {
+                        const delay = baseDelay * Math.pow(2, retries);
+                        console.warn(`API call failed with status 429. Retrying in ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        retries++;
+                        continue;
+                    }
+                    if (!response.ok) {
+                        throw new Error(`API error: ${response.statusText}`);
+                    }
+                    return response;
+                } catch (e) {
+                    const delay = baseDelay * Math.pow(2, retries);
+                    console.error(`Fetch attempt ${retries + 1} failed: ${e.message}`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    retries++;
+                }
+            }
+            throw new Error(`Failed to fetch from ${url} after ${maxRetries} retries.`);
         }
     </script>
 </head>
@@ -363,26 +439,11 @@
             </div>
         </div>
 
-        <!-- Admin Dashboard -->
-        <div id="admin-dashboard" class="hidden text-gray-100 p-8 flex flex-col items-center">
-            <h1 class="text-4xl font-extrabold mb-8 text-indigo-400">Admin Dashboard</h1>
-            <div class="w-full max-w-2xl bg-gray-800 rounded-2xl shadow-xl p-6 mb-8">
-                <h2 class="text-2xl font-bold mb-4 text-indigo-300">Manage Invites</h2>
-                <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                    <input id="invite-email-input" type="email" placeholder="Enter email to invite" class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-200">
-                    <button id="send-invite-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
-                        Send Invite
-                    </button>
-                </div>
-                <div class="space-y-4">
-                    <h3 class="text-xl font-semibold text-indigo-200">Invite Status</h3>
-                    <ul id="invites-list" class="divide-y divide-gray-700"></ul>
-                </div>
-            </div>
-        </div>
+        <!-- Admin Dashboard (Hidden for now, focus on user features) -->
+        <div id="admin-dashboard" class="hidden"></div>
 
         <!-- User Dashboard -->
-        <div id="user-dashboard" class="hidden p-4 sm:p-8 flex flex-col lg:flex-row gap-8 font-inter">
+        <div id="user-dashboard" class="p-4 sm:p-8 flex flex-col lg:flex-row gap-8 font-inter">
             <!-- Main Content Area -->
             <div class="flex-grow flex flex-col gap-8">
                 <!-- Header -->
@@ -405,13 +466,34 @@
                 <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
                     <h2 class="text-2xl font-bold mb-4 text-indigo-300">Add New Transaction</h2>
                     <form id="transaction-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <input type="number" name="amount" placeholder="Amount (e.g., 25.50)" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <!-- Type and Amount -->
+                        <div class="flex items-center gap-4 sm:col-span-2">
+                            <label class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                                <input type="radio" name="type" value="income" class="mr-2">
+                                <span class="font-bold text-green-400">Income</span>
+                            </label>
+                            <label class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                                <input type="radio" name="type" value="expense" class="mr-2">
+                                <span class="font-bold text-red-400">Expense</span>
+                            </label>
+                        </div>
+                        <input type="number" name="amount" placeholder="Amount" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <select name="currency" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="INR">INR (₹)</option>
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="AUD">AUD (A$)</option>
+                        </select>
                         <input type="date" name="date" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <select name="category" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <option value="Food">Food</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Personal Betterment">Personal Betterment</option>
+                            <option value="Health">Health</option>
+                            <option value="Vehicle">Vehicle</option>
+                            <option value="Hobbies">Hobbies</option>
                             <option value="Rent">Rent</option>
                             <option value="Shopping">Shopping</option>
-                            <option value="Utilities">Utilities</option>
                             <option value="Transport">Transport</option>
                             <option value="Other">Other</option>
                         </select>
@@ -421,17 +503,41 @@
                         </button>
                     </form>
                 </div>
-
-                <!-- Spending Analysis Section -->
-                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-4 text-indigo-300">Spending by Day of Week</h2>
-                    <div id="spending-analysis-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4"></div>
+                
+                <!-- Savings and Pie Chart -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div id="savings-display" class="flex flex-col items-center justify-center p-4">
+                        <div class="text-lg text-gray-400">Calculated Monthly Savings:</div>
+                        <div class="text-3xl font-extrabold text-indigo-400">₹0.00</div>
+                    </div>
+                    <div class="h-64">
+                        <h2 class="text-2xl font-bold mb-4 text-indigo-300">Expense Breakdown</h2>
+                        <canvas id="expense-pie-chart"></canvas>
+                    </div>
                 </div>
             </div>
 
             <!-- Transaction History Sidebar -->
             <div class="w-full lg:w-1/3 flex-shrink-0 bg-gray-800 p-6 rounded-2xl shadow-lg flex flex-col">
-                <h2 class="text-2xl font-bold mb-4 text-indigo-300">Transaction History</h2>
+                <h2 class="text-2xl font-bold mb-4 text-indigo-300">
+                    Transaction History
+                </h2>
+                <div class="mb-4">
+                    <label for="category-filter" class="block text-sm font-medium text-gray-400">Filter by Category:</label>
+                    <select id="category-filter" class="w-full mt-1 p-2 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="All">All Categories</option>
+                        <option value="Food">Food</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Personal Betterment">Personal Betterment</option>
+                        <option value="Health">Health</option>
+                        <option value="Vehicle">Vehicle</option>
+                        <option value="Hobbies">Hobbies</option>
+                        <option value="Rent">Rent</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
                 <ul id="transaction-history-list" class="flex-grow overflow-y-auto space-y-3"></ul>
             </div>
         </div>
