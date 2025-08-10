@@ -1,599 +1,309 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Transaction Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                },
-            },
-        };
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', 'sans-serif';
-            background-color: #f3f4f6;
-        }
-        .container {
-            max-width: 900px;
-        }
-        .log-message {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.875rem;
-            margin-top: 4px;
-            word-wrap: break-word;
-        }
-        .log-info {
-            background-color: #e2e8f0;
-            color: #4a5568;
-        }
-        .log-error {
-            background-color: #fee2e2;
-            color: #991b1b;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="container mx-auto p-8 bg-white shadow-xl rounded-2xl border border-gray-200">
-        <h1 class="text-4xl font-extrabold text-gray-800 text-center mb-6">Daily Transaction Log</h1>
+import { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where } from 'firebase/firestore';
 
-        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200 mb-6">
-            <h2 class="text-2xl font-bold text-gray-700 mb-4">Account Management</h2>
-            <div id="user-info" class="mb-4">
-                <p class="text-sm text-gray-600">User ID: <span id="user-id" class="font-mono bg-gray-200 px-2 py-1 rounded-md">Loading...</span></p>
-            </div>
-            <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex-grow">
-                    <label for="account-select" class="block text-sm font-medium text-gray-700">Select Account</label>
-                    <select id="account-select" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></select>
-                </div>
-                <div class="flex-shrink-0 flex items-end">
-                    <button id="add-account-btn" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
-                        Create New Account
-                    </button>
-                </div>
-            </div>
+// Tailwind CSS is automatically included in this environment.
+// Lucide React icons are used for a modern look.
+import { Plus, Trash2, Copy, Eye, EyeOff } from 'lucide-react';
+
+// This is the global app ID, which is automatically provided.
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+// Main App Component
+export default function App() {
+  const [db, setDb] = useState(null);
+  const [auth, setAuth] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [expenses, setExpenses] = useState([]);
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [userSessionId, setUserSessionId] = useState('');
+  const [message, setMessage] = useState('');
+  const [showSessionId, setShowSessionId] = useState(false);
+
+  // Initialize Firebase and set up authentication
+  useEffect(() => {
+    // This effect runs only once to initialize Firebase
+    if (Object.keys(firebaseConfig).length === 0) {
+      setMessage('Firebase config is not available.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      const firestoreDb = getFirestore(app);
+      const authService = getAuth(app);
+      setDb(firestoreDb);
+      setAuth(authService);
+
+      // Listen for auth state changes
+      const unsubscribe = onAuthStateChanged(authService, async (user) => {
+        if (user) {
+          setUserId(user.uid);
+          setMessage('');
+        } else {
+          // If no user is authenticated, we will wait for a session ID to be provided
+          setUserId(null);
+        }
+        setLoading(false);
+      });
+
+      // Sign in with the custom token if available, otherwise anonymously
+      const signIn = async () => {
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        try {
+          if (initialAuthToken) {
+            await signInWithCustomToken(authService, initialAuthToken);
+          } else {
+            await signInAnonymously(authService);
+          }
+        } catch (error) {
+          console.error("Firebase Auth error:", error);
+          setMessage(`Authentication failed. Please try again. Error: ${error.message}`);
+        }
+      };
+
+      if (!authService.currentUser) {
+        signIn();
+      }
+
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Firebase initialization error:", error);
+      setMessage(`Initialization failed. Please check the console for details. Error: ${error.message}`);
+      setLoading(false);
+    }
+  }, []);
+
+  // Effect to listen for expenses after a session ID is set
+  useEffect(() => {
+    if (db && userId && userSessionId) {
+      const expensesCollectionPath = `artifacts/${appId}/users/${userSessionId}/expenses`;
+      const q = collection(db, expensesCollectionPath);
+
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const expensesData = [];
+        querySnapshot.forEach((doc) => {
+          expensesData.push({ id: doc.id, ...doc.data() });
+        });
+        // Sort expenses by timestamp in descending order
+        expensesData.sort((a, b) => b.timestamp - a.timestamp);
+        setExpenses(expensesData);
+      }, (error) => {
+        console.error("Error fetching expenses:", error);
+        setMessage(`Failed to load expenses. Error: ${error.message}`);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [db, userId, userSessionId, appId]);
+
+  // Handle adding a new expense
+  const addExpense = async () => {
+    if (!description || !amount || !userSessionId) {
+      setMessage('Please enter a description, amount, and a valid session ID.');
+      return;
+    }
+
+    // Check if the amount is a valid number
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      setMessage('Please enter a valid positive number for the amount.');
+      return;
+    }
+
+    try {
+      const expensesCollectionPath = `artifacts/${appId}/users/${userSessionId}/expenses`;
+      await addDoc(collection(db, expensesCollectionPath), {
+        description: description,
+        amount: numericAmount,
+        timestamp: Date.now(),
+      });
+      setDescription('');
+      setAmount('');
+      setMessage('Expense saved!');
+    } catch (e) {
+      console.error("Error adding document: ", e);
+      setMessage(`Error: Could not save expense. ${e.message}`);
+    }
+  };
+
+  // Handle deleting an expense
+  const deleteExpense = async (id) => {
+    if (!userSessionId) {
+      setMessage('Please enter a valid session ID to delete expenses.');
+      return;
+    }
+
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'users', userSessionId, 'expenses', id);
+      await deleteDoc(docRef);
+      setMessage('Expense deleted.');
+    } catch (e) {
+      console.error("Error removing document: ", e);
+      setMessage(`Error: Could not delete expense. ${e.message}`);
+    }
+  };
+
+  // Generate a new random session ID
+  const generateSessionId = () => {
+    const newId = `guest-${crypto.randomUUID()}`;
+    setUserSessionId(newId);
+    setMessage(`New session ID created. Copy and save it to log in next time.`);
+  };
+
+  // Copy text to clipboard using the deprecated but functional method for this environment
+  const copyToClipboard = (text) => {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    try {
+      document.execCommand('copy');
+      setMessage('Session ID copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      setMessage('Failed to copy. Please manually select and copy the text.');
+    }
+    document.body.removeChild(el);
+  };
+  
+  // Custom modal for messages instead of alert
+  const MessageBox = ({ message, onClose }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+      <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-2xl">
+        <p className="text-gray-800">{message}</p>
+        <div className="mt-4 text-right">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-semibold text-white transition-colors bg-blue-500 rounded-md hover:bg-blue-600"
+          >
+            OK
+          </button>
         </div>
-
-        <!-- Controls and Form -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <!-- Transaction Form -->
-            <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
-                <h2 class="text-2xl font-bold text-gray-700 mb-4">Add/Edit Transaction</h2>
-                <form id="transaction-form" class="space-y-4">
-                    <input type="hidden" id="transaction-id">
-                    <div class="grid grid-cols-1 gap-4">
-                        <div>
-                            <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                            <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                            <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                        <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
-                            <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
-                            <select id="type" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <option value="expense" selected>Expense</option>
-                                <option value="income">Income</option>
-                            </select>
-                        </div>
-                        <div>
-                            <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out transform hover:scale-105">
-                                Add Transaction
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Summary and Filters -->
-            <div class="flex flex-col space-y-4">
-                <!-- Currency and Filters -->
-                <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
-                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Settings</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="currency-select" class="block text-sm font-medium text-gray-700">Select Currency</label>
-                            <select id="currency-select" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <option value="INR">Indian Rupee (₹)</option>
-                                <option value="USD">US Dollar ($)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Filter Transactions</label>
-                            <div class="mt-1 flex space-x-2">
-                                <button onclick="setFilter('all')" class="filter-btn active w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">All</button>
-                                <button onclick="setFilter('income')" class="filter-btn w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">Income</button>
-                                <button onclick="setFilter('expense')" class="filter-btn w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-200">Expenses</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Monthly Summary -->
-                <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
-                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Monthly Summary</h2>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
-                            <span>Total Income:</span>
-                            <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
-                        </div>
-                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
-                            <span>Total Expenses:</span>
-                            <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
-                        </div>
-                        <hr class="my-2 border-gray-200">
-                        <div class="flex justify-between items-center text-xl font-semibold text-gray-800">
-                            <span>Net Balance:</span>
-                            <span id="monthly-balance" class="text-2xl font-extrabold text-gray-800">₹0.00</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Transaction List -->
-        <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6">
-            <h2 class="text-2xl font-bold text-gray-700 mb-4">Transaction History</h2>
-            
-            <!-- Balance Display -->
-            <div class="mb-6 p-4 rounded-xl bg-gray-100 flex justify-between items-center shadow-inner">
-                <span class="text-xl font-semibold text-gray-600">Current Balance:</span>
-                <span id="total-balance" class="text-2xl font-extrabold text-gray-800">₹0.00</span>
-            </div>
-
-            <!-- Transaction Table -->
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tl-lg">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Description</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider rounded-tr-lg">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transaction-list" class="bg-white divide-y divide-gray-200">
-                        <!-- Transactions will be added here by JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Log Display Section -->
-        <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-700">Application Log</h2>
-                <button id="clear-log-btn" class="text-sm text-red-600 hover:text-red-800 font-medium transition duration-200">Clear Log</button>
-            </div>
-            <div id="log-display" class="bg-white p-4 rounded-md h-40 overflow-y-auto border border-gray-300 text-sm">
-                <p class="text-gray-500 italic">Logs will appear here...</p>
-            </div>
-        </div>
+      </div>
     </div>
+  );
 
-    <!-- Modal for adding new accounts -->
-    <div id="account-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3 text-center">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Create New Account</h3>
-                <div class="mt-2 px-7 py-3">
-                    <input type="text" id="new-account-name" placeholder="Enter account name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                </div>
-                <div class="items-center px-4 py-3">
-                    <button id="modal-create-btn" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">Create</button>
-                    <button id="modal-cancel-btn" class="mt-2 px-4 py-2 bg-gray-200 text-gray-700 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none">Cancel</button>
-                </div>
-            </div>
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 font-inter">
+      <div className="w-full max-w-lg p-8 m-4 bg-white rounded-xl shadow-2xl transition-all duration-300">
+        <style>
+          {`
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+            .font-inter {
+              font-family: 'Inter', sans-serif;
+            }
+          `}
+        </style>
+        <div className="flex items-center justify-center mb-6">
+          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">
+            Avarta
+          </h1>
         </div>
+
+        <div className="mb-6 space-y-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Session ID:
+          </label>
+          <div className="relative flex items-center space-x-2">
+            <input
+              type={showSessionId ? "text" : "password"}
+              className="flex-1 block w-full p-3 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              placeholder="Enter your session ID or create a new one"
+              value={userSessionId}
+              onChange={(e) => setUserSessionId(e.target.value)}
+            />
+            <button
+              onClick={() => setShowSessionId(!showSessionId)}
+              className="p-2 transition-colors duration-200 bg-gray-200 rounded-lg hover:bg-gray-300"
+              aria-label={showSessionId ? "Hide session ID" : "Show session ID"}
+            >
+              {showSessionId ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+            <button
+              onClick={() => copyToClipboard(userSessionId)}
+              disabled={!userSessionId}
+              className="p-2 transition-colors duration-200 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+              aria-label="Copy session ID"
+            >
+              <Copy size={18} />
+            </button>
+          </div>
+          <div className="flex justify-between space-x-2">
+            <button
+              onClick={generateSessionId}
+              className="flex-1 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 bg-green-500 rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            >
+              Create New Session
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-6 p-4 rounded-lg bg-gray-50 shadow-inner">
+          <h2 className="mb-4 text-xl font-semibold text-gray-800">Add New Expense</h2>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Description (e.g., Coffee)"
+              className="block w-full p-3 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Amount (e.g., 4.50)"
+              className="block w-full p-3 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <button
+              onClick={addExpense}
+              disabled={!userSessionId}
+              className="flex items-center justify-center w-full px-4 py-3 text-sm font-semibold text-white transition-colors duration-200 bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            >
+              <Plus size={20} className="mr-2" />
+              Add Expense
+            </button>
+          </div>
+        </div>
+
+        <h2 className="mb-4 text-xl font-semibold text-gray-800">Recent Expenses</h2>
+        {userSessionId && expenses.length > 0 ? (
+          <ul className="space-y-3">
+            {expenses.map((expense) => (
+              <li
+                key={expense.id}
+                className="flex items-center justify-between p-4 transition-all duration-200 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{expense.description}</p>
+                  <p className="text-lg font-bold text-gray-700">
+                    ${expense.amount.toFixed(2)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => deleteExpense(expense.id)}
+                  className="p-2 transition-colors duration-200 bg-red-100 rounded-full text-red-500 hover:bg-red-200"
+                  aria-label="Delete expense"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="p-4 text-sm text-center text-gray-500 bg-gray-50 rounded-lg">
+            {userSessionId ? "No expenses found. Start adding some!" : "Enter a session ID to view expenses."}
+          </p>
+        )}
+      </div>
+
+      {message && <MessageBox message={message} onClose={() => setMessage('')} />}
     </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // IMPORTANT: Replace this with your actual Firebase project configuration.
-        // You can find this in your Firebase Console under Project settings -> Your apps.
-        const firebaseConfig = {
-          apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
-          authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
-          projectId: "daily-expense-tracker-4a115",
-          storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
-          messagingSenderId: "862714037551",
-          appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
-        };
-        
-        // This variable is used to build Firestore paths.
-        // It must be the same as the appId in your firebaseConfig.
-        const appId = "1:862714037551:web:00d29aeef2fc3c33880dda";
-
-        // Initialize Firebase
-        let db, auth;
-        let userId = null;
-        let unsubscribeTransactions = null;
-        let accounts = [];
-        let currentAccountId = null;
-
-        const form = document.getElementById('transaction-form');
-        const transactionList = document.getElementById('transaction-list');
-        const totalBalanceElement = document.getElementById('total-balance');
-        const currencySelect = document.getElementById('currency-select');
-        const submitButton = document.getElementById('submit-button');
-        const monthlyIncomeElement = document.getElementById('monthly-income');
-        const monthlyExpensesElement = document.getElementById('monthly-expenses');
-        const monthlyBalanceElement = document.getElementById('monthly-balance');
-        const accountSelect = document.getElementById('account-select');
-        const addAccountBtn = document.getElementById('add-account-btn');
-        const userIdElement = document.getElementById('user-id');
-        const accountModal = document.getElementById('account-modal');
-        const modalCreateBtn = document.getElementById('modal-create-btn');
-        const modalCancelBtn = document.getElementById('modal-cancel-btn');
-        const newAccountNameInput = document.getElementById('new-account-name');
-        const logDisplay = document.getElementById('log-display');
-        const clearLogBtn = document.getElementById('clear-log-btn');
-
-        let transactions = [];
-        let currentCurrency = 'INR';
-        let currentFilter = 'all';
-        let editingTransactionId = null;
-
-        // Function to handle logging to the UI
-        function logMessage(message, type = 'info') {
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-message ${type === 'error' ? 'log-error' : 'log-info'}`;
-            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logDisplay.appendChild(logEntry);
-            logDisplay.scrollTop = logDisplay.scrollHeight; // Auto-scroll to the bottom
-            // Remove the initial "Logs will appear here..." message if it exists
-            const initialMessage = logDisplay.querySelector('p');
-            if (initialMessage) {
-                initialMessage.remove();
-            }
-        }
-        
-        clearLogBtn.addEventListener('click', () => {
-            logDisplay.innerHTML = '<p class="text-gray-500 italic">Logs will appear here...</p>';
-        });
-
-        // Function to get the currency symbol
-        function getCurrencySymbol() {
-            return currentCurrency === 'INR' ? '₹' : '$';
-        }
-        
-        // Modal functions
-        addAccountBtn.addEventListener('click', () => {
-            accountModal.classList.remove('hidden');
-        });
-
-        modalCancelBtn.addEventListener('click', () => {
-            accountModal.classList.add('hidden');
-            newAccountNameInput.value = '';
-        });
-
-        modalCreateBtn.addEventListener('click', async () => {
-            const accountName = newAccountNameInput.value.trim();
-            if (accountName) {
-                try {
-                    await addAccount(accountName);
-                    accountModal.classList.add('hidden');
-                    newAccountNameInput.value = '';
-                } catch (error) {
-                    logMessage(`Error creating account: ${error.message}`, 'error');
-                }
-            }
-        });
-
-        // Function to render transactions and update balance
-        function renderTransactions() {
-            transactionList.innerHTML = ''; // Clear the current list
-            let total = 0;
-            let monthlyIncome = 0;
-            let monthlyExpenses = 0;
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-
-            // Filter transactions based on the current filter
-            const filteredTransactions = transactions.filter(t => {
-                if (currentFilter === 'all') return true;
-                return t.type === currentFilter;
-            });
-
-            if (filteredTransactions.length === 0) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 italic">No transactions recorded yet.</td>
-                `;
-                transactionList.appendChild(row);
-            } else {
-                filteredTransactions.forEach((transaction) => {
-                    const row = document.createElement('tr');
-                    const amountClass = transaction.type === 'income' ? 'text-green-600' : 'text-red-600';
-                    const sign = transaction.type === 'income' ? '+' : '-';
-                    const formattedAmount = `${getCurrencySymbol()}${Math.abs(transaction.amount).toFixed(2)}`;
-                    
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transaction.date}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.description}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm capitalize text-gray-500">${transaction.type}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${amountClass}">${sign} ${formattedAmount}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                            <button onclick="editTransaction('${transaction.id}')" class="text-blue-600 hover:text-blue-900 transition-colors duration-200">Edit</button>
-                            <button onclick="deleteTransaction('${transaction.id}')" class="text-red-600 hover:text-red-900 transition-colors duration-200">Delete</button>
-                        </td>
-                    `;
-                    transactionList.appendChild(row);
-                });
-            }
-
-            // Recalculate total balance for all transactions, regardless of filter
-            transactions.forEach(t => {
-                if (t.type === 'income') {
-                    total += parseFloat(t.amount);
-                } else {
-                    total -= parseFloat(t.amount);
-                }
-
-                // Calculate monthly summary
-                const transactionDate = new Date(t.date);
-                if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
-                    if (t.type === 'income') {
-                        monthlyIncome += parseFloat(t.amount);
-                    } else {
-                        monthlyExpenses += parseFloat(t.amount);
-                    }
-                }
-            });
-
-            // Update balance displays
-            totalBalanceElement.textContent = `${getCurrencySymbol()}${total.toFixed(2)}`;
-            if (total < 0) {
-                totalBalanceElement.classList.add('text-red-600');
-                totalBalanceElement.classList.remove('text-gray-800');
-            } else {
-                totalBalanceElement.classList.remove('text-red-600');
-                totalBalanceElement.classList.add('text-gray-800');
-            }
-
-            monthlyIncomeElement.textContent = `${getCurrencySymbol()}${monthlyIncome.toFixed(2)}`;
-            monthlyExpensesElement.textContent = `${getCurrencySymbol()}${monthlyExpenses.toFixed(2)}`;
-            const monthlyBalance = monthlyIncome - monthlyExpenses;
-            monthlyBalanceElement.textContent = `${getCurrencySymbol()}${monthlyBalance.toFixed(2)}`;
-            if (monthlyBalance < 0) {
-                monthlyBalanceElement.classList.add('text-red-600');
-                monthlyBalanceElement.classList.remove('text-gray-800');
-            } else {
-                monthlyBalanceElement.classList.remove('text-red-600');
-                monthlyBalanceElement.classList.add('text-gray-800');
-            }
-        }
-
-        // Function to set the transaction filter
-        function setFilter(filterType) {
-            currentFilter = filterType;
-            // Update button styles
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white', 'active');
-                btn.classList.add('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
-                if (btn.textContent.toLowerCase() === filterType || (btn.textContent.toLowerCase() === 'all' && filterType === 'all')) {
-                    btn.classList.add('bg-blue-500', 'hover:bg-blue-600', 'text-white', 'active');
-                    btn.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
-                }
-            });
-            renderTransactions();
-        }
-        
-        // Export setFilter globally for onclick
-        window.setFilter = setFilter;
-        
-        // Function to handle form submission (Add/Edit)
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (!currentAccountId) {
-                logMessage("No account selected. Please create or select an account.", 'error');
-                return;
-            }
-
-            const date = document.getElementById('date').value;
-            const description = document.getElementById('description').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const type = document.getElementById('type').value;
-
-            const transactionData = {
-                date: date,
-                description: description,
-                amount: amount,
-                type: type,
-                timestamp: new Date().toISOString()
-            };
-            
-            try {
-                if (editingTransactionId) {
-                    const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, editingTransactionId);
-                    await setDoc(transactionRef, transactionData);
-                    logMessage(`Transaction '${description}' updated successfully.`);
-                    editingTransactionId = null;
-                    submitButton.textContent = "Add Transaction";
-                } else {
-                    const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
-                    await addDoc(transactionsCollectionRef, transactionData);
-                    logMessage(`Transaction '${description}' added successfully.`);
-                }
-            } catch (error) {
-                logMessage(`Error adding/updating transaction: ${error.message}`, 'error');
-            }
-
-            form.reset();
-        });
-        
-        // Function to edit a transaction
-        window.editTransaction = function(id) {
-            const transaction = transactions.find(t => t.id === id);
-            if (transaction) {
-                document.getElementById('date').value = transaction.date;
-                document.getElementById('description').value = transaction.description;
-                document.getElementById('amount').value = transaction.amount;
-                document.getElementById('type').value = transaction.type;
-                editingTransactionId = id;
-                submitButton.textContent = "Update Transaction";
-                document.getElementById('date').focus();
-                logMessage(`Editing transaction with ID: ${id}`);
-            }
-        }
-        
-        // Function to delete a transaction
-        window.deleteTransaction = async function(id) {
-            if (!currentAccountId) {
-                logMessage("No account selected.", 'error');
-                return;
-            }
-            try {
-                const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, id);
-                await deleteDoc(transactionRef);
-                logMessage(`Transaction with ID ${id} deleted successfully.`);
-            } catch (error) {
-                logMessage(`Error deleting transaction: ${error.message}`, 'error');
-            }
-        }
-        
-        // Handle currency change
-        currencySelect.addEventListener('change', (e) => {
-            currentCurrency = e.target.value;
-            renderTransactions();
-            logMessage(`Currency changed to ${currentCurrency}.`);
-        });
-
-        async function fetchAccounts() {
-            if (!userId) return;
-            logMessage("Fetching accounts...");
-            const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
-            onSnapshot(accountsCollectionRef, (snapshot) => {
-                accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderAccounts();
-                logMessage("Accounts updated from Firestore.");
-            }, (error) => {
-                logMessage(`Error fetching accounts: ${error.message}`, 'error');
-            });
-        }
-
-        function renderAccounts() {
-            accountSelect.innerHTML = '';
-            if (accounts.length > 0) {
-                accounts.forEach(account => {
-                    const option = document.createElement('option');
-                    option.value = account.id;
-                    option.textContent = account.name;
-                    accountSelect.appendChild(option);
-                });
-                // Select the first account or the previously selected one
-                if (!currentAccountId || !accounts.find(acc => acc.id === currentAccountId)) {
-                    currentAccountId = accounts[0].id;
-                }
-                accountSelect.value = currentAccountId;
-                logMessage(`Account list rendered. Current account ID: ${currentAccountId}`);
-            } else {
-                accountSelect.innerHTML = `<option value="">No accounts available</option>`;
-                currentAccountId = null;
-                logMessage("No accounts found. Please create a new account.");
-            }
-            setupTransactionListener();
-        }
-
-        async function addAccount(name) {
-            if (!userId) {
-                logMessage("User not authenticated.", 'error');
-                return;
-            }
-            logMessage(`Attempting to add new account: ${name}`);
-            const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
-            try {
-                const docRef = await addDoc(accountsCollectionRef, { name: name, createdAt: new Date().toISOString() });
-                logMessage(`Account '${name}' created with ID: ${docRef.id}`);
-            } catch (error) {
-                logMessage(`Error adding account: ${error.message}`, 'error');
-            }
-        }
-
-        function setupTransactionListener() {
-            if (unsubscribeTransactions) {
-                unsubscribeTransactions(); // Unsubscribe from the old listener
-                logMessage("Unsubscribed from previous transaction listener.");
-            }
-
-            if (currentAccountId) {
-                logMessage(`Setting up transaction listener for account ID: ${currentAccountId}`);
-                const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
-                unsubscribeTransactions = onSnapshot(transactionsCollectionRef, (snapshot) => {
-                    transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderTransactions();
-                    logMessage("Transactions updated from Firestore.");
-                }, (error) => {
-                    logMessage(`Error fetching transactions: ${error.message}`, 'error');
-                });
-            } else {
-                transactions = [];
-                renderTransactions();
-                logMessage("No account selected, transaction listener not active.");
-            }
-        }
-
-        accountSelect.addEventListener('change', (e) => {
-            currentAccountId = e.target.value;
-            logMessage(`Account changed to ID: ${currentAccountId}`);
-            setupTransactionListener();
-        });
-
-        // Initialize App
-        async function initializeFirebaseApp() {
-            if (Object.keys(firebaseConfig).length === 0) {
-                 logMessage("Firebase configuration is missing. The app cannot run.", 'error');
-                 return;
-            }
-
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                await signInAnonymously(auth);
-                logMessage("Signed in anonymously.");
-                
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdElement.textContent = userId;
-                        logMessage(`User authenticated with ID: ${userId}`);
-                        fetchAccounts();
-                    } else {
-                        logMessage("User signed out.");
-                        // Handle signed out state if necessary
-                    }
-                });
-            } catch (error) {
-                logMessage(`Firebase initialization or sign-in failed: ${error.message}`, 'error');
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', initializeFirebaseApp);
-    </script>
-</body>
-</html>
+  );
+}
