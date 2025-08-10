@@ -207,13 +207,23 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase configuration and initialization using global variables provided by the Canvas environment.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // IMPORTANT: Replace this with your actual Firebase project configuration.
+        // You can find this in your Firebase Console under Project settings -> Your apps.
+        const firebaseConfig = {
+          // Paste your configuration here. It should look like this:
+          // apiKey: "...",
+          // authDomain: "...",
+          // projectId: "...",
+          // storageBucket: "...",
+          // messagingSenderId: "...",
+          // appId: "..."
+        };
+        
+        // This is a placeholder value for the appId, since your configuration above will have one.
+        const appId = "REPLACE_WITH_YOUR_APP_ID_FROM_FIREBASE_CONFIG";
 
         // Initialize Firebase
         let db, auth;
@@ -239,7 +249,6 @@
         const newAccountNameInput = document.getElementById('new-account-name');
         const logDisplay = document.getElementById('log-display');
         const clearLogBtn = document.getElementById('clear-log-btn');
-
 
         let transactions = [];
         let currentCurrency = 'INR';
@@ -555,9 +564,9 @@
 
         // Initialize App
         async function initializeFirebaseApp() {
-            if (!firebaseConfig) {
-                logMessage("Firebase configuration is not available. The app cannot run.", 'error');
-                return;
+            if (Object.keys(firebaseConfig).length === 0) {
+                 logMessage("Firebase configuration is missing. The app cannot run.", 'error');
+                 return;
             }
 
             try {
@@ -565,14 +574,9 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                    logMessage("Signed in with custom token.");
-                } else {
-                    await signInAnonymously(auth);
-                    logMessage("Signed in anonymously.");
-                }
-
+                await signInAnonymously(auth);
+                logMessage("Signed in anonymously.");
+                
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
@@ -593,3 +597,4 @@
     </script>
 </body>
 </html>
+
