@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
-import { Brain, ArrowRightLeft, User, XCircle, Trash, ScrollText } from 'lucide-react';
+import { Brain, ArrowRightLeft, User, XCircle, Trash, ScrollText, DollarSign, BarChart3, PieChart, RefreshCcw, LineChart } from 'lucide-react';
 import dayjs from 'dayjs';
 
 // ---- Constants and Initial Data ----
@@ -13,8 +13,21 @@ const categories = [
   "Healthcare", "Debt", "Entertainment", "Shopping", "Education", "Other"
 ];
 
+const financeThoughts = [
+  { type: 'joke', content: 'Why did the piggy bank quit his job? He was tired of the long-term commitment and the constant pressure to be a good role model.' },
+  { type: 'stoic', content: 'Wealth consists not in having great possessions, but in having few wants. - Epictetus' },
+  { type: 'quote', content: 'Greed is good. Greed is right. Greed works. - Gordon Gekko, Wall Street' },
+  { type: 'joke', content: 'What’s the difference between a government bond and an investor? One matures, the other just sits there and gets old.' },
+  { type: 'stoic', content: 'It is not what happens to you, but how you react to it that matters. - Epictetus' },
+  { type: 'quote', content: 'Show me the money! - Jerry Maguire' },
+  { type: 'stoic', content: 'Waste no more time arguing about what a good man should be. Be one. - Marcus Aurelius' },
+  { type: 'joke', content: 'My favorite investment is a mirror, because it reflects a growing asset.' },
+  { type: 'quote', content: 'The first rule of finance is to never tell anyone about it. - Fight Club' },
+  { type: 'stoic', content: 'The only thing you own is your mind. - Marcus Aurelius' },
+  { type: 'quote', content: 'The only thing that I see that is good about the money that I got is that I have enough money to have my voice heard. - Warren Buffett' },
+];
+
 // ---- User-Provided Firebase Configuration ----
-// This configuration links the app to your specific Firebase project.
 const firebaseConfig = {
   apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
   authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
@@ -31,9 +44,28 @@ const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial
 let db;
 let auth;
 
+// ---- Utility Functions for API calls with Exponential Backoff ----
+const fetchWithBackoff = async (url, options, retries = 5, delay = 1000) => {
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`Fetch failed, retrying in ${delay}ms...`, error.message);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return fetchWithBackoff(url, options, retries - 1, delay * 2);
+    } else {
+      throw error;
+    }
+  }
+};
+
 // ---- UI Components ----
 
-// Leaf and Flow Logo (New-age purple-blue)
+// Leaf and Flow Logo (New-age teal-orange)
 const LeafFlowLogo = () => (
   <svg
     width="80"
@@ -44,8 +76,8 @@ const LeafFlowLogo = () => (
   >
     <defs>
       <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{stopColor:'rgb(139, 92, 246)', stopOpacity:1}} />
-        <stop offset="100%" style={{stopColor:'rgb(59, 130, 246)', stopOpacity:1}} />
+        <stop offset="0%" style={{stopColor:'rgb(45, 212, 191)', stopOpacity:1}} />
+        <stop offset="100%" style={{stopColor:'rgb(251, 146, 60)', stopOpacity:1}} />
       </linearGradient>
     </defs>
     <path
@@ -71,6 +103,11 @@ const Icon = ({ name, ...props }) => {
     user: User,
     trash: Trash,
     scrollText: ScrollText,
+    dollarSign: DollarSign,
+    barChart3: BarChart3,
+    pieChart: PieChart,
+    refreshCcw: RefreshCcw,
+    lineChart: LineChart,
   };
   const IconComponent = icons[name];
   return IconComponent ? <IconComponent {...props} /> : null;
@@ -85,7 +122,7 @@ const MessageModal = ({ message, onClose }) => {
         <p className="text-gray-800 text-lg mb-4">{message}</p>
         <button
           onClick={onClose}
-          className="bg-zinc-800 text-white font-bold py-2 px-4 rounded-full hover:bg-zinc-900 transition-colors"
+          className="bg-slate-800 text-white font-bold py-2 px-4 rounded-full hover:bg-slate-900 transition-colors"
         >
           OK
         </button>
@@ -116,7 +153,7 @@ const LogModal = ({ logEntries, onClose }) => {
                 </p>
                 <p className="mt-1 text-gray-800 font-medium">
                   {log.action === 'add' ? 'Added expense: ' : 'Deleted expense: '}
-                  <span className="font-normal text-blue-600">{log.details.name}</span>
+                  <span className="font-normal text-teal-600">{log.details.name}</span>
                   <span className="ml-2 text-sm text-gray-500">({currencySymbols[log.details.currency]} {parseFloat(log.details.amount).toFixed(2)})</span>
                 </p>
                 <p className="mt-2 text-xs font-mono text-gray-600 truncate">User ID: {log.userId}</p>
@@ -135,10 +172,17 @@ const App = () => {
   const [userId, setUserId] = useState(null);
   const [username, setUsername] = useState('');
   const [tempUsername, setTempUsername] = useState('');
-  const [suggestedName, setSuggestedName] = useState('');
   const [expenses, setExpenses] = useState([]);
+  const [budget, setBudget] = useState(0);
+  const [tempBudget, setTempBudget] = useState('');
   const [logEntries, setLogEntries] = useState([]);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [aiInsight, setAiInsight] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [chartType, setChartType] = useState('bar');
+  const [financeThought, setFinanceThought] = useState(null);
+  const [aiBudgetSuggestion, setAiBudgetSuggestion] = useState(null);
+  const [isBudgetGenerating, setIsBudgetGenerating] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
     name: '',
     amount: '',
@@ -157,6 +201,7 @@ const App = () => {
     let unsubscribeAuth = () => {};
     let unsubscribeExpenses = () => {};
     let unsubscribeLogs = () => {};
+    let unsubscribeBudget = () => {};
     let app, authInstance, dbInstance;
 
     const setupFirebase = async () => {
@@ -167,9 +212,6 @@ const App = () => {
         db = dbInstance;
         auth = authInstance;
 
-        // Since the user is providing their own firebaseConfig, the `initialAuthToken`
-        // from the Canvas environment is not valid for this project.
-        // We will sign in anonymously to avoid the `auth/custom-token-mismatch` error.
         console.log("Attempting to sign in anonymously to avoid custom token mismatch.");
         await signInAnonymously(authInstance);
         console.log("Anonymous sign-in successful.");
@@ -183,9 +225,10 @@ const App = () => {
         if (user) {
           console.log("Auth state changed. User is now signed in with UID:", user.uid);
           setUserId(user.uid);
-          // Set up listeners for expenses and logs
-          unsubscribeExpenses = setupRealtimeListener(user.uid);
-          unsubscribeLogs = setupLogRealtimeListener(user.uid);
+          // Set up listeners for expenses, logs, and budget
+          unsubscribeExpenses = setupRealtimeListener(user.uid, 'expenses', setExpenses, 'expenses');
+          unsubscribeLogs = setupRealtimeListener(user.uid, 'logs', setLogEntries, 'logs');
+          unsubscribeBudget = setupRealtimeListener(user.uid, 'budget', setBudget, 'budget');
 
           // After authentication, try to load the saved username
           const userProfileRef = doc(dbInstance, `/artifacts/${appId}/users/${user.uid}/profile_data/username`);
@@ -202,6 +245,7 @@ const App = () => {
           setUsername('');
           setExpenses([]);
           setLogEntries([]);
+          setBudget(0);
           console.log("Auth state changed. No user is signed in.");
         }
       });
@@ -213,7 +257,13 @@ const App = () => {
       unsubscribeAuth();
       unsubscribeExpenses();
       unsubscribeLogs();
+      unsubscribeBudget();
     };
+  }, []);
+
+  useEffect(() => {
+    // Set an initial random finance thought on component load
+    handleNewThought();
   }, []);
 
   // ---- Firestore Functions ----
@@ -226,46 +276,42 @@ const App = () => {
     return collection(db, collectionPath);
   };
 
-  const setupRealtimeListener = (uid) => {
-    const expensesCollectionRef = getCollectionRef(uid, 'expenses');
-    if (!expensesCollectionRef) return;
+  const setupRealtimeListener = (uid, collectionName, setState, dataType) => {
+    const collectionRef = getCollectionRef(uid, collectionName);
+    if (!collectionRef) return;
 
-    const unsubscribeExpenses = onSnapshot(expensesCollectionRef, (snapshot) => {
-      const fetchedExpenses = [];
-      snapshot.forEach(doc => {
-        const expenseData = doc.data();
-        if (expenseData) {
-          // Parse amount to float when retrieving
-          fetchedExpenses.push({
-            id: doc.id,
-            ...expenseData,
-            amount: parseFloat(expenseData.amount),
-            date: expenseData.date?.toDate()
-          });
+    const unsubscribe = onSnapshot(collectionRef, (snapshot) => {
+      if (dataType === 'budget') {
+        const docSnap = snapshot.docs[0];
+        if (docSnap) {
+          setState(parseFloat(docSnap.data().amount));
+        } else {
+          setState(0);
         }
-      });
-      setExpenses(fetchedExpenses.sort((a, b) => b.date - a.date));
+      } else {
+        const fetchedData = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data) {
+            fetchedData.push({
+              id: doc.id,
+              ...data,
+              amount: data.amount ? parseFloat(data.amount) : 0,
+              date: data.date?.toDate(),
+            });
+          }
+        });
+        if (dataType === 'expenses') {
+          setState(fetchedData.sort((a, b) => b.date - a.date));
+        } else {
+          setState(fetchedData.sort((a, b) => b.timestamp - a.timestamp));
+        }
+      }
     }, (error) => {
-      console.error("Error listening to expenses:", error);
-      setMessage("Failed to retrieve expenses. Please try refreshing the page.");
+      console.error(`Error listening to ${collectionName}:`, error);
+      setMessage(`Failed to retrieve ${collectionName}. Please try refreshing the page.`);
     });
-    return unsubscribeExpenses;
-  };
-
-  const setupLogRealtimeListener = (uid) => {
-    const logCollectionRef = getCollectionRef(uid, 'logs');
-    if (!logCollectionRef) return;
-
-    const unsubscribeLogs = onSnapshot(logCollectionRef, (snapshot) => {
-      const fetchedLogs = [];
-      snapshot.forEach(doc => {
-        fetchedLogs.push({ id: doc.id, ...doc.data() });
-      });
-      setLogEntries(fetchedLogs.sort((a, b) => b.timestamp - a.timestamp));
-    }, (error) => {
-      console.error("Error listening to logs:", error);
-    });
-    return unsubscribeLogs;
+    return unsubscribe;
   };
 
   const addLogEntry = async (uid, action, details) => {
@@ -291,7 +337,6 @@ const App = () => {
     const expensesCollectionRef = getCollectionRef(userId, 'expenses');
     if (!expensesCollectionRef) return;
     try {
-      // Convert amount to a number before saving to Firestore
       const expenseDataWithNumberAmount = {
         ...expenseData,
         amount: parseFloat(expenseData.amount),
@@ -323,6 +368,133 @@ const App = () => {
     }
   };
 
+  const saveBudget = async (amount) => {
+    if (!userId) {
+      setMessage("Please set a username first.");
+      return;
+    }
+    const parsedBudget = parseFloat(amount);
+    if (isNaN(parsedBudget) || parsedBudget <= 0) {
+      setMessage("Please enter a valid budget amount.");
+      return;
+    }
+    const budgetCollectionRef = getCollectionRef(userId, 'budget');
+    if (!budgetCollectionRef) return;
+
+    try {
+      const q = query(budgetCollectionRef);
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const budgetDocRef = doc(budgetCollectionRef, querySnapshot.docs[0].id);
+        await setDoc(budgetDocRef, { amount: parsedBudget });
+      } else {
+        await addDoc(budgetCollectionRef, { amount: parsedBudget });
+      }
+      setMessage(`Budget of ${currencySymbols[expenseForm.currency]} ${parsedBudget.toFixed(2)} saved successfully!`);
+    } catch (e) {
+      console.error("Error saving budget:", e);
+      setMessage("Error saving budget. Please try again.");
+    }
+  };
+
+  const getAiInsight = async () => {
+    if (!userId || isGenerating) return;
+    setIsGenerating(true);
+    setAiInsight('Generating your financial insight...');
+
+    const prompt = `Based on the following expense data and currency, provide a concise, friendly, and actionable financial insight. Analyze spending patterns and suggest areas for improvement. Format the response as a single paragraph.
+
+      Here is the user's recent expense data (in ${expenseForm.currency}):
+      ${JSON.stringify(expenses.slice(0, 5).map(e => ({ name: e.name, amount: e.amount, category: e.category, date: dayjs(e.date).format('YYYY-MM-DD') })))}
+
+      Total expenses for the month: ${currencySymbols[expenseForm.currency]} ${totalMonthlyExpenses.toFixed(2)}
+      Monthly budget: ${budget > 0 ? `${currencySymbols[expenseForm.currency]} ${budget.toFixed(2)}` : 'not set'}
+      `;
+
+    let chatHistory = [];
+    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+    const payload = { contents: chatHistory };
+    const apiKey = "";
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+    try {
+      const result = await fetchWithBackoff(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (result.candidates && result.candidates.length > 0 &&
+          result.candidates[0].content && result.candidates[0].content.parts &&
+          result.candidates[0].content.parts.length > 0) {
+        const text = result.candidates[0].content.parts[0].text;
+        setAiInsight(text);
+      } else {
+        setAiInsight("Sorry, I couldn't generate an insight at this time.");
+      }
+    } catch (e) {
+      console.error("Gemini API call failed:", e);
+      setAiInsight("Failed to connect to the AI. Please try again later.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const getAiBudgetSuggestion = async () => {
+    if (!userId || isBudgetGenerating) return;
+    setIsBudgetGenerating(true);
+    setAiBudgetSuggestion(null);
+
+    const prompt = `Based on the following expense data, suggest a reasonable monthly budget. Provide the suggestion as a number and a brief rationale as a string.
+
+    User's expense data in the last 30 days (in ${expenseForm.currency}):
+    ${JSON.stringify(expenses.map(e => ({ amount: e.amount, date: dayjs(e.date).format('YYYY-MM-DD'), category: e.category })))}
+
+    Current total monthly expenses: ${totalMonthlyExpenses.toFixed(2)}
+    Suggest a budget slightly higher than the average monthly spending to allow for flexibility, but still encourage saving.
+    `;
+
+    const payload = {
+        contents: [{
+            parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: "OBJECT",
+                properties: {
+                    "suggestedBudget": { "type": "NUMBER" },
+                    "rationale": { "type": "STRING" }
+                },
+                "propertyOrdering": ["suggestedBudget", "rationale"]
+            }
+        }
+    };
+    const apiKey = "";
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+    try {
+        const response = await fetchWithBackoff(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
+            const json = response.candidates[0].content.parts[0].text;
+            const parsedJson = JSON.parse(json);
+            setAiBudgetSuggestion(parsedJson);
+        } else {
+            setMessage("Failed to get a budget suggestion. Please try again.");
+        }
+    } catch (e) {
+        console.error("Gemini API call failed:", e);
+        setMessage("Failed to connect to the AI for budget suggestion. Please try again later.");
+    } finally {
+        setIsBudgetGenerating(false);
+    }
+};
+
   // ---- UI Logic Handlers ----
   const handleSuggestName = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -346,7 +518,6 @@ const App = () => {
     }
 
     try {
-      // Store the username in a private document for the current user.
       const userProfileRef = doc(db, `/artifacts/${appId}/users/${auth.currentUser.uid}/profile_data/username`);
       await setDoc(userProfileRef, {
         username: tempUsername,
@@ -388,11 +559,15 @@ const App = () => {
       return;
     }
     await addExpenseToDb(expenseForm);
-    // Reset form after submission
     setExpenseForm({
       name: '', amount: '', date: dayjs().format('YYYY-MM-DD'), category: '',
       currency: 'INR', recurring: false, recurrenceType: 'monthly', specificDays: []
     });
+  };
+
+  const handleNewThought = () => {
+    const randomIndex = Math.floor(Math.random() * financeThoughts.length);
+    setFinanceThought(financeThoughts[randomIndex]);
   };
 
   // ---- Rendering Logic ----
@@ -400,22 +575,186 @@ const App = () => {
     exp.currency === expenseForm.currency ? sum + parseFloat(exp.amount) : sum, 0);
 
   const getBarHeight = (amount) => {
-    const maxAmount = expenses.reduce((max, exp) => Math.max(max, exp.amount), 0);
+    const maxAmount = expenses.reduce((max, exp) => Math.max(max, parseFloat(exp.amount)), 0);
     return maxAmount > 0 ? (parseFloat(amount) / maxAmount) * 100 : 0;
   };
 
   const getBarColor = (index) => {
-    const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-pink-500', 'bg-indigo-500'];
+    const colors = ['bg-teal-500', 'bg-orange-500', 'bg-cyan-500', 'bg-rose-500', 'bg-emerald-500'];
     return colors[index % colors.length];
   };
 
+  const getCategoryData = () => {
+    const data = expenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + parseFloat(expense.amount);
+      return acc;
+    }, {});
+    return Object.entries(data).map(([category, amount]) => ({ category, amount }));
+  };
+
+  const getDailySpendingData = () => {
+    const dailyData = expenses
+      .filter(exp => dayjs(exp.date).isAfter(dayjs().subtract(30, 'day')))
+      .reduce((acc, expense) => {
+        const date = dayjs(expense.date).format('YYYY-MM-DD');
+        acc[date] = (acc[date] || 0) + expense.amount;
+        return acc;
+      }, {});
+
+    const sortedDates = Object.keys(dailyData).sort();
+    return sortedDates.map(date => ({
+      date,
+      amount: dailyData[date]
+    }));
+  };
+
+  const PieChartSVG = ({ data }) => {
+    const radius = 100;
+    let startAngle = 0;
+    const colors = ['#2dd4bf', '#f97316', '#06b6d4', '#f43f5e', '#10b981', '#f59e0b'];
+
+    const total = data.reduce((sum, d) => sum + d.amount, 0);
+    
+    if (total === 0) {
+      return (
+        <svg width="250" height="250" viewBox="0 0 250 250" className="mx-auto">
+          <circle cx="125" cy="125" r="100" fill="#e5e7eb" />
+          <text x="125" y="125" textAnchor="middle" fill="#9ca3af" fontSize="16">No Data</text>
+        </svg>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-center relative w-full h-64">
+        <svg width="250" height="250" viewBox="0 0 250 250" className="mx-auto">
+          {data.map((slice, index) => {
+            const angle = (slice.amount / total) * 360;
+            const endAngle = startAngle + angle;
+
+            const x1 = 125 + radius * Math.cos((Math.PI / 180) * startAngle);
+            const y1 = 125 + radius * Math.sin((Math.PI / 180) * startAngle);
+            const x2 = 125 + radius * Math.cos((Math.PI / 180) * endAngle);
+            const y2 = 125 + radius * Math.sin((Math.PI / 180) * endAngle);
+
+            const largeArcFlag = angle > 180 ? 1 : 0;
+
+            const pathData = [
+              `M 125,125`,
+              `L ${x1},${y1}`,
+              `A ${radius},${radius} 0 ${largeArcFlag} 1 ${x2},${y2}`,
+              `Z`
+            ].join(' ');
+
+            const color = colors[index % colors.length];
+            startAngle = endAngle;
+
+            return <path key={index} d={pathData} fill={color} />;
+          })}
+        </svg>
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 mr-4 flex flex-col space-y-2">
+          {data.map((slice, index) => (
+            <div key={index} className="flex items-center">
+              <span className="w-4 h-4 rounded-full" style={{ backgroundColor: colors[index % colors.length] }}></span>
+              <span className="ml-2 text-sm text-gray-700">{slice.category}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+  
+  const LineChartSVG = ({ data }) => {
+    const svgWidth = 600;
+    const svgHeight = 250;
+    const padding = 30;
+  
+    if (data.length === 0) {
+      return (
+        <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="mx-auto">
+          <text x={svgWidth / 2} y={svgHeight / 2} textAnchor="middle" fill="#9ca3af" fontSize="16">Not enough data to draw line chart.</text>
+        </svg>
+      );
+    }
+  
+    const dates = data.map(d => d.date);
+    const amounts = data.map(d => d.amount);
+    const maxAmount = Math.max(...amounts);
+  
+    const scaleX = (index) => padding + (index / (data.length - 1)) * (svgWidth - 2 * padding);
+    const scaleY = (amount) => svgHeight - padding - (amount / maxAmount) * (svgHeight - 2 * padding);
+  
+    const pathData = amounts.map((amount, index) => {
+      const x = scaleX(index);
+      const y = scaleY(amount);
+      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+    }).join(' ');
+  
+    return (
+      <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="mx-auto block">
+        {/* X-Axis */}
+        <line x1={padding} y1={svgHeight - padding} x2={svgWidth - padding} y2={svgHeight - padding} stroke="#e5e7eb" />
+        {/* Y-Axis */}
+        <line x1={padding} y1={padding} x2={padding} y2={svgHeight - padding} stroke="#e5e7eb" />
+  
+        {/* Path */}
+        <path d={pathData} fill="none" stroke="#2dd4bf" strokeWidth="2" />
+  
+        {/* Points */}
+        {data.map((d, index) => (
+          <circle
+            key={index}
+            cx={scaleX(index)}
+            cy={scaleY(d.amount)}
+            r="4"
+            fill="#0f766e"
+            stroke="white"
+            strokeWidth="1"
+            title={`${d.date}: ${currencySymbols[expenseForm.currency]} ${d.amount.toFixed(2)}`}
+          />
+        ))}
+  
+        {/* Labels (simplified) */}
+        {data.length > 1 && (
+          <>
+            <text x={scaleX(0)} y={svgHeight - padding + 20} textAnchor="middle" fontSize="12" fill="#6b7280">
+              {dayjs(dates[0]).format('DD MMM')}
+            </text>
+            <text x={scaleX(data.length - 1)} y={svgHeight - padding + 20} textAnchor="middle" fontSize="12" fill="#6b7280">
+              {dayjs(dates[data.length - 1]).format('DD MMM')}
+            </text>
+          </>
+        )}
+        <text x={padding - 10} y={scaleY(maxAmount)} textAnchor="end" fontSize="12" fill="#6b7280">
+            {currencySymbols[expenseForm.currency]} {maxAmount.toFixed(2)}
+        </text>
+        <text x={padding - 10} y={scaleY(0)} textAnchor="end" fontSize="12" fill="#6b7280">
+            {currencySymbols[expenseForm.currency]} 0
+        </text>
+      </svg>
+    );
+  };
+
+  const BudgetProgressBar = ({ current, total }) => {
+    const percentage = total > 0 ? (current / total) * 100 : 0;
+    const barColor = percentage > 100 ? 'bg-red-500' : 'bg-green-500';
+
+    return (
+      <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div
+          className={`h-2.5 rounded-full transition-all duration-500 ease-in-out ${barColor}`}
+          style={{ width: `${Math.min(percentage, 100)}%` }}
+        ></div>
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-white min-h-screen p-4 md:p-8 font-sans antialiased text-gray-800">
+    <div className="bg-white min-h-screen p-4 md:p-8 font-sans antialiased text-slate-800">
       <MessageModal message={message} onClose={() => setMessage('')} />
       {isLogModalOpen && <LogModal logEntries={logEntries} onClose={() => setIsLogModalOpen(false)} />}
       <div className="container mx-auto max-w-4xl">
         {/* Header Section with Logo and Tagline */}
-        <header className="flex items-center justify-between p-4 md:p-6 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl shadow-lg mb-8">
+        <header className="flex items-center justify-between p-4 md:p-6 bg-gradient-to-r from-teal-500 to-orange-500 rounded-xl shadow-lg mb-8">
           <div className="flex items-center space-x-4">
             <LeafFlowLogo />
             <div className="flex flex-col">
@@ -431,7 +770,7 @@ const App = () => {
           </div>
           <button
             onClick={() => setIsLogModalOpen(true)}
-            className="bg-white text-zinc-800 p-2 rounded-full shadow-md hover:bg-gray-200 transition-colors"
+            className="bg-white text-slate-800 p-2 rounded-full shadow-md hover:bg-gray-200 transition-colors"
             title="View Activity Log"
           >
             <Icon name="scrollText" className="w-6 h-6" />
@@ -442,7 +781,7 @@ const App = () => {
         <main className="space-y-8">
           {/* Username Section */}
           <div className="bg-gray-50 p-6 rounded-xl shadow-md">
-            <h2 className="text-xl font-bold mb-4 flex items-center space-x-2 text-gray-700">
+            <h2 className="text-xl font-bold mb-4 flex items-center space-x-2 text-slate-700">
               <Icon name="user" className="w-5 h-5 text-gray-500" />
               <span>Set Your Username</span>
             </h2>
@@ -452,31 +791,58 @@ const App = () => {
                 value={tempUsername}
                 onChange={(e) => setTempUsername(e.target.value)}
                 placeholder="Enter 8-12 character username"
-                className="w-full md:w-auto flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full md:w-auto flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
               <button
                 onClick={handleSuggestName}
-                className="bg-zinc-800 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-zinc-900 transition-colors"
+                className="bg-slate-800 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-slate-900 transition-colors"
               >
                 Suggest Name
               </button>
               <button
                 onClick={handleSetUsername}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-blue-700 transition-colors"
+                className="bg-teal-600 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-teal-700 transition-colors"
               >
                 Set Username
               </button>
             </div>
             {username && (
-              <p className="mt-4 text-lg font-semibold text-gray-800">
-                Current Username: <span className="text-blue-600">{username}</span>
+              <p className="mt-4 text-lg font-semibold text-slate-800">
+                Current Username: <span className="text-teal-600">{username}</span>
               </p>
+            )}
+            {userId && (
+              <p className="mt-2 text-xs font-mono text-gray-600 truncate">
+                User ID: {userId}
+              </p>
+            )}
+          </div>
+          
+          {/* AI Financial Insight Section */}
+          <div className="bg-gray-50 p-6 rounded-xl shadow-md">
+            <h2 className="text-xl font-bold mb-4 flex items-center space-x-2 text-slate-700">
+              <Icon name="brain" className="w-5 h-5 text-orange-500" />
+              <span>AI Financial Assistant</span>
+            </h2>
+            <div className="flex items-center space-x-4 mb-4">
+              <button
+                onClick={getAiInsight}
+                disabled={isGenerating}
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-orange-600 transition-colors disabled:bg-gray-400"
+              >
+                {isGenerating ? 'Generating...' : 'Get Financial Insight'}
+              </button>
+            </div>
+            {aiInsight && (
+              <div className="bg-white p-4 rounded-lg border border-gray-200 mt-4">
+                <p className="text-slate-700 leading-relaxed">{aiInsight}</p>
+              </div>
             )}
           </div>
 
           {/* Add Expenses Section */}
           <div className="bg-gray-50 p-6 rounded-xl shadow-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-700">Add Expenses</h2>
+            <h2 className="text-xl font-bold mb-4 text-slate-700">Add Expenses</h2>
             <form onSubmit={handleAddExpense} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
@@ -485,7 +851,7 @@ const App = () => {
                   placeholder="Expense Title"
                   value={expenseForm.name}
                   onChange={handleFormChange}
-                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <input
                   type="number"
@@ -494,20 +860,20 @@ const App = () => {
                   placeholder="Amount"
                   value={expenseForm.amount}
                   onChange={handleFormChange}
-                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <input
                   type="date"
                   name="date"
                   value={expenseForm.date}
                   onChange={handleFormChange}
-                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <select
                   name="category"
                   value={expenseForm.category}
                   onChange={handleFormChange}
-                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   <option value="" disabled>Select a category</option>
                   {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -516,7 +882,7 @@ const App = () => {
                   name="currency"
                   value={expenseForm.currency}
                   onChange={handleFormChange}
-                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   <option value="INR">INR (₹)</option>
                   <option value="USD">USD ($)</option>
@@ -535,15 +901,15 @@ const App = () => {
                       className="sr-only peer"
                     />
                     <div className="block bg-gray-300 w-14 h-8 rounded-full"></div>
-                    <div className="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-6 peer-checked:bg-blue-600"></div>
+                    <div className="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-6 peer-checked:bg-orange-600"></div>
                   </div>
-                  <span className="ml-3 text-sm font-medium text-gray-700">Recurring Expense</span>
+                  <span className="ml-3 text-sm font-medium text-slate-700">Recurring Expense</span>
                 </label>
               </div>
 
               {expenseForm.recurring && (
                 <div className="bg-gray-100 p-4 rounded-xl shadow-inner space-y-2">
-                  <h3 className="text-lg font-bold text-gray-700">Recurring Options</h3>
+                  <h3 className="text-lg font-bold text-slate-700">Recurring Options</h3>
                   <div className="flex flex-wrap gap-4">
                     {['daily', 'weekly', 'monthly', 'specific-days'].map(type => (
                       <label key={type} className="flex items-center cursor-pointer">
@@ -553,9 +919,9 @@ const App = () => {
                           value={type}
                           checked={expenseForm.recurrenceType === type}
                           onChange={() => handleRecurrenceChange(type)}
-                          className="form-radio text-blue-600 focus:ring-blue-500"
+                          className="form-radio text-orange-600 focus:ring-orange-500"
                         />
-                        <span className="ml-2 text-sm text-gray-700 capitalize">{type}</span>
+                        <span className="ml-2 text-sm text-slate-700 capitalize">{type}</span>
                       </label>
                     ))}
                   </div>
@@ -568,9 +934,9 @@ const App = () => {
                             type="checkbox"
                             checked={expenseForm.specificDays.includes(day)}
                             onChange={() => handleSpecificDayChange(day)}
-                            className="form-checkbox text-blue-600 focus:ring-blue-500"
+                            className="form-checkbox text-orange-600 focus:ring-orange-500"
                           />
-                          <span className="ml-2 text-gray-700">{day.toUpperCase()}</span>
+                          <span className="ml-2 text-slate-700">{day.toUpperCase()}</span>
                         </label>
                       ))}
                     </div>
@@ -581,7 +947,7 @@ const App = () => {
               <div className="flex justify-center mt-6">
                 <button
                   type="submit"
-                  className="bg-yellow-400 text-zinc-800 font-bold py-3 px-6 rounded-full shadow-lg hover:bg-yellow-500 transition-colors transform hover:scale-105"
+                  className="bg-rose-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-rose-600 transition-colors transform hover:scale-105"
                 >
                   Add Expense
                 </button>
@@ -589,9 +955,74 @@ const App = () => {
             </form>
           </div>
 
+          {/* Budget Tracking Section */}
+          <div className="bg-gray-50 p-6 rounded-xl shadow-md">
+            <h2 className="text-xl font-bold mb-4 flex items-center space-x-2 text-slate-700">
+              <Icon name="dollarSign" className="w-5 h-5 text-emerald-600" />
+              <span>Budget Tracking</span>
+            </h2>
+
+            {/* AI Budget Assistant */}
+            <div className="flex items-center space-x-4 mb-4">
+              <button
+                onClick={getAiBudgetSuggestion}
+                disabled={isBudgetGenerating}
+                className="bg-teal-600 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-teal-700 transition-colors disabled:bg-gray-400"
+              >
+                {isBudgetGenerating ? 'Thinking...' : 'Get AI Budget Suggestion'}
+              </button>
+            </div>
+            {aiBudgetSuggestion && (
+              <div className="bg-white p-4 rounded-lg border border-teal-200 mt-4">
+                <p className="text-slate-700 font-bold">AI Suggested Budget: <span className="text-teal-600">{currencySymbols[expenseForm.currency]} {aiBudgetSuggestion.suggestedBudget.toFixed(2)}</span></p>
+                <p className="text-sm mt-2 text-gray-600">{aiBudgetSuggestion.rationale}</p>
+                <button
+                  onClick={() => saveBudget(aiBudgetSuggestion.suggestedBudget)}
+                  className="mt-4 bg-teal-500 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-teal-600 transition-colors"
+                >
+                  Apply this Budget
+                </button>
+              </div>
+            )}
+
+            {/* Manual Budget Input */}
+            <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-center md:space-x-4 mt-4">
+              <input
+                type="number"
+                step="0.01"
+                value={tempBudget}
+                onChange={(e) => setTempBudget(e.target.value)}
+                placeholder="Set monthly budget manually"
+                className="w-full md:w-auto flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <button
+                onClick={() => saveBudget(tempBudget)}
+                className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-emerald-700 transition-colors"
+              >
+                Save Budget
+              </button>
+            </div>
+            {budget > 0 && (
+              <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-slate-700">
+                    Budget: {currencySymbols[expenseForm.currency]} {budget.toFixed(2)}
+                  </span>
+                  <span className="text-sm font-semibold text-slate-700">
+                    Expenses: {currencySymbols[expenseForm.currency]} {totalMonthlyExpenses.toFixed(2)}
+                  </span>
+                </div>
+                <BudgetProgressBar current={totalMonthlyExpenses} total={budget} />
+                <p className={`text-sm font-bold mt-2 ${totalMonthlyExpenses > budget ? 'text-rose-500' : 'text-emerald-500'}`}>
+                  Remaining: {currencySymbols[expenseForm.currency]} {(budget - totalMonthlyExpenses).toFixed(2)}
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Monthly Expenses Section */}
           <div className="bg-gray-50 p-6 rounded-xl shadow-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-700">Monthly Expenses</h2>
+            <h2 className="text-xl font-bold mb-4 text-slate-700">Monthly Expenses</h2>
             <div className="overflow-x-auto custom-scrollbar">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -611,8 +1042,8 @@ const App = () => {
                   ) : (
                     expenses.map((expense) => (
                       <tr key={expense.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{expense.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{expense.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                           {currencySymbols[expense.currency]} {parseFloat(expense.amount).toFixed(2)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -622,7 +1053,7 @@ const App = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
                             onClick={() => deleteExpenseFromDb(expense.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-rose-600 hover:text-rose-900"
                           >
                             <Icon name="trash" className="w-5 h-5" />
                           </button>
@@ -633,8 +1064,8 @@ const App = () => {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td className="px-6 py-4 text-lg font-bold text-gray-900">Total</td>
-                    <td className="px-6 py-4 text-lg font-bold text-blue-600">
+                    <td className="px-6 py-4 text-lg font-bold text-slate-900">Total</td>
+                    <td className="px-6 py-4 text-lg font-bold text-teal-600">
                       {currencySymbols[expenseForm.currency]} {totalMonthlyExpenses.toFixed(2)}
                     </td>
                     <td colSpan="3"></td>
@@ -646,22 +1077,80 @@ const App = () => {
 
           {/* Visualizations Section */}
           <div className="bg-gray-50 p-6 rounded-xl shadow-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-700">Visualizations</h2>
-            <div className="flex items-end h-64 border-b-2 border-gray-300 relative justify-evenly">
-              {expenses.length === 0 ? (
-                <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                  Add some expenses to see a visualization.
-                </div>
-              ) : (
-                expenses.map((expense, index) => (
-                  <div
-                    key={expense.id}
-                    className={`${getBarColor(index)} w-10 mx-1 rounded-t-lg transition-all duration-500 ease-in-out`}
-                    style={{ height: `${getBarHeight(expense.amount)}%` }}
-                    title={`${expense.name}: ${currencySymbols[expense.currency]} ${parseFloat(expense.amount).toFixed(2)}`}
-                  ></div>
-                ))
-              )}
+            <h2 className="text-xl font-bold mb-4 text-slate-700">Visualizations</h2>
+            <div className="flex space-x-2 mb-4">
+              <button
+                onClick={() => setChartType('bar')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium shadow-md transition-colors ${chartType === 'bar' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-slate-700 hover:bg-gray-300'}`}
+              >
+                <Icon name="barChart3" className="w-5 h-5" />
+                <span>Bar Chart</span>
+              </button>
+              <button
+                onClick={() => setChartType('pie')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium shadow-md transition-colors ${chartType === 'pie' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-slate-700 hover:bg-gray-300'}`}
+              >
+                <Icon name="pieChart" className="w-5 h-5" />
+                <span>Pie Chart</span>
+              </button>
+              <button
+                onClick={() => setChartType('line')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium shadow-md transition-colors ${chartType === 'line' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-slate-700 hover:bg-gray-300'}`}
+              >
+                <Icon name="lineChart" className="w-5 h-5" />
+                <span>Line Chart</span>
+              </button>
+            </div>
+
+            {expenses.length === 0 ? (
+              <div className="flex items-center justify-center h-64 text-gray-400">
+                Add some expenses to see a visualization.
+              </div>
+            ) : (
+              <div>
+                {chartType === 'bar' && (
+                  <div className="flex items-end h-64 border-b-2 border-gray-300 relative justify-evenly">
+                    {expenses.map((expense, index) => (
+                      <div
+                        key={expense.id}
+                        className={`${getBarColor(index)} w-10 mx-1 rounded-t-lg transition-all duration-500 ease-in-out`}
+                        style={{ height: `${getBarHeight(expense.amount)}%` }}
+                        title={`${expense.name}: ${currencySymbols[expense.currency]} ${parseFloat(expense.amount).toFixed(2)}`}
+                      ></div>
+                    ))}
+                  </div>
+                )}
+                {chartType === 'pie' && (
+                  <PieChartSVG data={getCategoryData()} />
+                )}
+                {chartType === 'line' && (
+                  <LineChartSVG data={getDailySpendingData()} />
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Finance Thoughts Section */}
+          <div className="bg-gray-50 p-6 rounded-xl shadow-md">
+            <h2 className="text-xl font-bold mb-4 flex items-center space-x-2 text-slate-700">
+              <Icon name="brain" className="w-5 h-5 text-orange-500" />
+              <span>Finance Thoughts & Jokes</span>
+            </h2>
+            {financeThought && (
+              <div className={`p-4 rounded-lg border-2 ${financeThought.type === 'joke' ? 'border-rose-300 bg-rose-50' : financeThought.type === 'stoic' ? 'border-violet-300 bg-violet-50' : 'border-cyan-300 bg-cyan-50'}`}>
+                <p className="text-slate-800 italic leading-relaxed text-center">
+                  "{financeThought.content}"
+                </p>
+              </div>
+            )}
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={handleNewThought}
+                className="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:bg-orange-700 transition-colors flex items-center space-x-2"
+              >
+                <Icon name="refreshCcw" className="w-5 h-5" />
+                <span>Get a new thought</span>
+              </button>
             </div>
           </div>
         </main>
