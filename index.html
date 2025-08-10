@@ -8,10 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f0f4f8 0%, #eef1f5 100%);
+            background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
         }
         .container {
             max-width: 1100px;
@@ -19,7 +20,7 @@
         .card {
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             border-radius: 1.5rem; /* rounded-3xl */
             padding: 2.5rem; /* p-10 */
         }
@@ -40,9 +41,9 @@
             font-weight: bold;
         }
         .filter-btn.active {
-            background-color: #4f46e5;
+            background-color: #3b82f6; /* blue-500 */
             color: white;
-            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
         }
         .filter-btn:not(.active) {
             background-color: #e5e7eb;
@@ -55,148 +56,152 @@
         .animate-fade-in-down {
             animation: fade-in-down 0.3s ease-out forwards;
         }
+        .slide-in-right {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .slide-in-right.open {
+            transform: translateX(0);
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4 md:p-8">
-    <div class="container mx-auto">
-        <h1 class="text-5xl font-bold text-gray-800 text-center mb-10 tracking-tight">Financial Flow</h1>
+<body class="flex items-start justify-center min-h-screen p-4 md:p-8">
+    <div class="container mx-auto relative">
+        <header class="flex justify-between items-center mb-10">
+            <h1 class="text-5xl font-bold text-gray-800 tracking-tight">Financial Flow</h1>
+            <button id="toggle-info-panel-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 transform hover:scale-105 flex items-center">
+                <i class="fas fa-info-circle mr-2"></i>
+                Info
+            </button>
+        </header>
 
-        <!-- Account Management and Summary -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <div class="card p-6 col-span-full md:col-span-1">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM6.5 9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM13.5 9a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg>
-                    My Accounts
-                </h2>
-                <div id="user-info" class="mb-4">
-                    <p class="text-xs text-gray-500">User ID: <span id="user-id" class="font-mono bg-gray-100 px-2 py-1 rounded-md text-gray-700">Loading...</span></p>
-                </div>
-                <div class="flex flex-col gap-4">
+        <!-- Main Application View -->
+        <div id="main-app-view" class="space-y-6">
+            <!-- Summary and Accounts Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Total Balance Card -->
+                <div class="card p-6 flex flex-col justify-between">
                     <div>
-                        <label for="account-select" class="block text-sm font-medium text-gray-700 mb-1">Current Account</label>
-                        <select id="account-select" class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"></select>
-                    </div>
-                    <div class="flex gap-2">
-                        <button id="add-account-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                            Create Account
-                        </button>
-                        <button id="delete-account-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
-                            Delete Account
-                        </button>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
+                            <i class="fas fa-wallet text-green-500 mr-2"></i>
+                            Total Balance
+                        </h2>
+                        <span id="total-balance" class="text-5xl font-extrabold text-gray-900">₹0.00</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- Total Balance Card -->
-            <div class="card p-6 flex flex-col justify-between md:col-span-1">
-                <div>
-                    <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
-                        Total Balance
+                <!-- Monthly Summary Card -->
+                <div class="card p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-chart-line text-yellow-500 mr-2"></i>
+                        Monthly Summary
                     </h2>
-                    <span id="total-balance" class="text-5xl font-extrabold text-gray-900">₹0.00</span>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <span>Income:</span>
+                            <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg font-medium text-gray-700">
+                            <span>Expenses:</span>
+                            <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
+                        </div>
+                        <hr class="my-2 border-gray-200">
+                        <div class="flex justify-between items-center text-xl font-bold text-gray-800">
+                            <span>Net Balance:</span>
+                            <span id="monthly-balance" class="text-2xl font-extrabold">₹0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Frugal Fun Facts Card -->
+                <div class="card p-6 flex flex-col justify-center">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
+                        <i class="fas fa-lightbulb text-purple-500 mr-2"></i>
+                        Frugal Fun Facts
+                    </h2>
+                    <p id="fun-fact" class="text-lg text-gray-700 italic text-center transition-opacity duration-500 ease-in-out">
+                        Jokes will appear here!
+                    </p>
                 </div>
             </div>
 
-            <!-- Monthly Summary Card -->
-            <div class="card p-6 md:col-span-2 lg:col-span-1">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18H4v-3a6 6 0 0112 0v3z"/></svg>
-                    Monthly Summary
-                </h2>
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center text-lg font-medium text-gray-700">
-                        <span>Income:</span>
-                        <span id="monthly-income" class="font-bold text-green-600">₹0.00</span>
-                    </div>
-                    <div class="flex justify-between items-center text-lg font-medium text-gray-700">
-                        <span>Expenses:</span>
-                        <span id="monthly-expenses" class="font-bold text-red-600">₹0.00</span>
-                    </div>
-                    <hr class="my-2 border-gray-200">
-                    <div class="flex justify-between items-center text-xl font-bold text-gray-800">
-                        <span>Net Balance:</span>
-                        <span id="monthly-balance" class="text-2xl font-extrabold">₹0.00</span>
-                    </div>
+            <!-- Transaction Form and Accounts -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Transaction Form -->
+                <div class="card p-6 col-span-2">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-pen-to-square text-blue-500 mr-2"></i>
+                        Record Transaction
+                    </h2>
+                    <form id="transaction-form" class="space-y-4">
+                        <input type="hidden" id="transaction-id">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                                <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
+                                <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
+                                <select id="type" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="expense" selected>Expense</option>
+                                    <option value="income">Income</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                                    Add Transaction
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-            </div>
-        </div>
-
-        <!-- Transaction Form and Filters -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <!-- Transaction Form -->
-            <div class="card p-6 col-span-2">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
-                    Record Transaction
-                </h2>
-                <form id="transaction-form" class="space-y-4">
-                    <input type="hidden" id="transaction-id">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- Account Management -->
+                <div class="card p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-folder-open text-indigo-500 mr-2"></i>
+                        My Accounts
+                    </h2>
+                    <div class="flex flex-col gap-4">
                         <div>
-                            <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                            <input type="date" id="date" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <label for="account-select" class="block text-sm font-medium text-gray-700 mb-1">Current Account</label>
+                            <select id="account-select" class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"></select>
                         </div>
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                            <input type="text" id="description" placeholder="e.g., Groceries" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
-                            <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
-                            <select id="type" required class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                <option value="expense" selected>Expense</option>
-                                <option value="income">Income</option>
-                            </select>
-                        </div>
-                        <div class="flex items-end">
-                            <button type="submit" id="submit-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                                Add Transaction
+                        <div class="flex gap-2">
+                            <button id="add-account-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                                Create Account
+                            </button>
+                            <button id="delete-account-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
+                                Delete Account
                             </button>
                         </div>
                     </div>
-                </form>
-            </div>
-            
-            <!-- Settings Card -->
-            <div class="card p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-cyan-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.25 10a.75.75 0 01-.75.75H4.25a.75.75 0 010-1.5h12.25a.75.75 0 01.75.75zM15 14.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM12.5 12a.5.5 0 100 1 .5.5 0 000-1zM15 5.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM12.5 3a.5.5 0 100 1 .5.5 0 000-1z"/></svg>
-                    Settings
-                </h2>
-                <div class="space-y-4">
-                    <div>
-                        <label for="currency-select" class="block text-sm font-medium text-gray-700">Select Currency</label>
-                        <select id="currency-select" class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="INR">Indian Rupee (₹)</option>
-                            <option value="USD">US Dollar ($)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Filter Transactions</label>
-                        <div class="mt-1 flex space-x-2">
-                            <button onclick="setFilter('all')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">All</button>
-                            <button onclick="setFilter('income')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Income</button>
-                            <button onclick="setFilter('expense')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Expenses</button>
-                        </div>
-                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Transaction List and Log -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Transaction List -->
-            <div class="card p-6 col-span-2">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4h12V3a1 1 0 011-1h.25a.75.75 0 010 1.5H18v14a2 2 0 01-2 2H4a2 2 0 01-2-2V4a1 1 0 011-1h1.25a.75.75 0 010 1.5H4v12a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V4zM16 4.5V17a1 1 0 001-1V4.5h-1zm-1-1v1.5a.5.5 0 01-.5.5h-11a.5.5 0 01-.5-.5V3.5a.5.5 0 01.5-.5h11a.5.5 0 01.5.5z"/></svg>
-                    Transaction History
-                </h2>
+            
+            <!-- Transaction List & Filters -->
+            <div class="card p-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2 md:mb-0 flex items-center">
+                        <i class="fas fa-list-ul text-rose-500 mr-2"></i>
+                        Transaction History
+                    </h2>
+                    <div class="flex flex-wrap space-x-2">
+                        <button onclick="setFilter('all')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">All</button>
+                        <button onclick="setFilter('income')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Income</button>
+                        <button onclick="setFilter('expense')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Expenses</button>
+                    </div>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -214,12 +219,31 @@
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Log Card -->
-            <div class="card p-6 col-span-1">
+        <!-- Info/Log Panel (Hidden by default) -->
+        <div id="info-panel" class="fixed top-0 right-0 h-full w-full md:w-1/3 bg-white shadow-2xl z-40 p-8 pt-20 overflow-y-auto slide-in-right">
+            <button id="close-info-panel-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 transition-colors duration-200">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+            
+            <!-- User ID Card -->
+            <div class="card p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-id-badge text-indigo-500 mr-2"></i>
+                    Your Unique ID
+                </h2>
+                <div id="user-info">
+                    <p class="text-sm text-gray-500">Your data is stored securely under this unique identifier:</p>
+                    <p id="user-id" class="font-mono bg-gray-100 px-2 py-1 mt-2 rounded-md text-gray-700 break-all">Loading...</p>
+                </div>
+            </div>
+            
+            <!-- App Log Card -->
+            <div class="card p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                        <svg class="w-6 h-6 mr-2 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 11V6h2v5H9zm0 2h2v2H9v-2z"/></svg>
+                        <i class="fas fa-clipboard-list text-orange-500 mr-2"></i>
                         App Log
                     </h2>
                     <button id="clear-log-btn" class="text-sm text-red-500 hover:text-red-700 font-medium transition duration-200">Clear Log</button>
@@ -230,479 +254,88 @@
             </div>
         </div>
 
-    </div>
 
-    <!-- Modal for adding new accounts -->
-    <div id="account-modal" class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
-        <div class="relative mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white animate-fade-in-down">
-            <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Create New Account</h3>
-            <div class="mb-4">
-                <input type="text" id="new-account-name" placeholder="Enter a name for your new account" class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl shadow-inner text-gray-700 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-            </div>
-            <div class="flex gap-4">
-                <button id="modal-create-btn" class="flex-1 px-4 py-3 bg-indigo-600 text-white font-medium rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none transition-colors duration-300">Create</button>
-                <button id="modal-cancel-btn" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl shadow-lg hover:bg-gray-300 focus:outline-none transition-colors duration-300">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal for deleting an account -->
-    <div id="delete-modal" class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
-        <div class="relative mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white animate-fade-in-down">
-            <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Confirm Deletion</h3>
-            <p id="delete-modal-message" class="text-gray-600 mb-6 text-center">Are you sure you want to permanently delete this account and all its transactions? This action cannot be undone.</p>
-            <div class="flex gap-4">
-                <button id="delete-modal-confirm-btn" class="flex-1 px-4 py-3 bg-red-600 text-white font-medium rounded-xl shadow-lg hover:bg-red-700 focus:outline-none transition-colors duration-300">Delete</button>
-                <button id="delete-modal-cancel-btn" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl shadow-lg hover:bg-gray-300 focus:outline-none transition-colors duration-300">Cancel</button>
+        <!-- Modal for adding new accounts -->
+        <div id="account-modal" class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
+            <div class="relative mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white animate-fade-in-down">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Create New Account</h3>
+                <div class="mb-4">
+                    <input type="text" id="new-account-name" placeholder="Enter a name for your new account" class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl shadow-inner text-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                </div>
+                <div class="flex gap-4">
+                    <button id="modal-create-btn" class="flex-1 px-4 py-3 bg-blue-600 text-white font-medium rounded-xl shadow-lg hover:bg-blue-700 focus:outline-none transition-colors duration-300">Create</button>
+                    <button id="modal-cancel-btn" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl shadow-lg hover:bg-gray-300 focus:outline-none transition-colors duration-300">Cancel</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        <!-- Modal for deleting an account -->
+        <div id="delete-modal" class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
+            <div class="relative mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white animate-fade-in-down">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Confirm Deletion</h3>
+                <p id="delete-modal-message" class="text-gray-600 mb-6 text-center">Are you sure you want to permanently delete this account and all its transactions? This action cannot be undone.</p>
+                <div class="flex gap-4">
+                    <button id="delete-modal-confirm-btn" class="flex-1 px-4 py-3 bg-red-600 text-white font-medium rounded-xl shadow-lg hover:bg-red-700 focus:outline-none transition-colors duration-300">Delete</button>
+                    <button id="delete-modal-cancel-btn" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl shadow-lg hover:bg-gray-300 focus:outline-none transition-colors duration-300">Cancel</button>
+                </div>
+            </div>
+        </div>
 
-        // IMPORTANT: The following global variables are provided by the canvas environment.
-        // DO NOT change them.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        <script type="module">
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+            import { getAuth, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+            import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Initialize Firebase
-        let db, auth;
-        let userId = null;
-        let unsubscribeTransactions = null;
-        let accounts = [];
-        let currentAccountId = null;
+            // IMPORTANT: The following global variables are provided by the canvas environment.
+            // DO NOT change them.
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        const form = document.getElementById('transaction-form');
-        const transactionList = document.getElementById('transaction-list');
-        const totalBalanceElement = document.getElementById('total-balance');
-        const currencySelect = document.getElementById('currency-select');
-        const submitButton = document.getElementById('submit-button');
-        const monthlyIncomeElement = document.getElementById('monthly-income');
-        const monthlyExpensesElement = document.getElementById('monthly-expenses');
-        const monthlyBalanceElement = document.getElementById('monthly-balance');
-        const accountSelect = document.getElementById('account-select');
-        const addAccountBtn = document.getElementById('add-account-btn');
-        const deleteAccountBtn = document.getElementById('delete-account-btn');
-        const userIdElement = document.getElementById('user-id');
-        const accountModal = document.getElementById('account-modal');
-        const modalCreateBtn = document.getElementById('modal-create-btn');
-        const modalCancelBtn = document.getElementById('modal-cancel-btn');
-        const newAccountNameInput = document.getElementById('new-account-name');
-        const logDisplay = document.getElementById('log-display');
-        const clearLogBtn = document.getElementById('clear-log-btn');
-        const deleteModal = document.getElementById('delete-modal');
-        const deleteModalMessage = document.getElementById('delete-modal-message');
-        const deleteModalConfirmBtn = document.getElementById('delete-modal-confirm-btn');
-        const deleteModalCancelBtn = document.getElementById('delete-modal-cancel-btn');
+            // Initialize Firebase
+            let db, auth;
+            let userId = null;
+            let unsubscribeTransactions = null;
+            let accounts = [];
+            let currentAccountId = null;
 
-        let transactions = [];
-        let currentCurrency = 'INR';
-        let currentFilter = 'all';
-        let editingTransactionId = null;
+            const form = document.getElementById('transaction-form');
+            const transactionList = document.getElementById('transaction-list');
+            const totalBalanceElement = document.getElementById('total-balance');
+            const currencySelect = document.getElementById('currency-select');
+            const submitButton = document.getElementById('submit-button');
+            const monthlyIncomeElement = document.getElementById('monthly-income');
+            const monthlyExpensesElement = document.getElementById('monthly-expenses');
+            const monthlyBalanceElement = document.getElementById('monthly-balance');
+            const accountSelect = document.getElementById('account-select');
+            const addAccountBtn = document.getElementById('add-account-btn');
+            const deleteAccountBtn = document.getElementById('delete-account-btn');
+            const userIdElement = document.getElementById('user-id');
+            const accountModal = document.getElementById('account-modal');
+            const modalCreateBtn = document.getElementById('modal-create-btn');
+            const modalCancelBtn = document.getElementById('modal-cancel-btn');
+            const newAccountNameInput = document.getElementById('new-account-name');
+            const logDisplay = document.getElementById('log-display');
+            const clearLogBtn = document.getElementById('clear-log-btn');
+            const deleteModal = document.getElementById('delete-modal');
+            const deleteModalMessage = document.getElementById('delete-modal-message');
+            const deleteModalConfirmBtn = document.getElementById('delete-modal-confirm-btn');
+            const deleteModalCancelBtn = document.getElementById('delete-modal-cancel-btn');
+            const infoPanel = document.getElementById('info-panel');
+            const toggleInfoPanelBtn = document.getElementById('toggle-info-panel-btn');
+            const closeInfoPanelBtn = document.getElementById('close-info-panel-btn');
+            const funFactElement = document.getElementById('fun-fact');
 
-        // Function to handle logging to the UI
-        function logMessage(message, type = 'info') {
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-message ${type === 'error' ? 'log-error' : 'log-info'}`;
-            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logDisplay.appendChild(logEntry);
-            logDisplay.scrollTop = logDisplay.scrollHeight; // Auto-scroll to the bottom
-            // Remove the initial "Logs will appear here..." message if it exists
-            const initialMessage = logDisplay.querySelector('p');
-            if (initialMessage) {
-                initialMessage.remove();
-            }
-        }
+            let transactions = [];
+            let currentCurrency = 'INR';
+            let currentFilter = 'all';
+            let editingTransactionId = null;
 
-        clearLogBtn.addEventListener('click', () => {
-            logDisplay.innerHTML = '<p class="text-gray-500 italic">Logs will appear here...</p>';
-        });
-
-        // Function to get the currency symbol
-        function getCurrencySymbol() {
-            return currentCurrency === 'INR' ? '₹' : '$';
-        }
-
-        // Modal functions for adding an account
-        addAccountBtn.addEventListener('click', () => {
-            accountModal.classList.remove('hidden');
-        });
-
-        modalCancelBtn.addEventListener('click', () => {
-            accountModal.classList.add('hidden');
-            newAccountNameInput.value = '';
-        });
-
-        modalCreateBtn.addEventListener('click', async () => {
-            const accountName = newAccountNameInput.value.trim();
-            if (accountName) {
-                try {
-                    await addAccount(accountName);
-                    accountModal.classList.add('hidden');
-                    newAccountNameInput.value = '';
-                } catch (error) {
-                    logMessage(`Error creating account: ${error.message}`, 'error');
-                }
-            }
-        });
-        
-        // Modal functions for deleting an account
-        deleteAccountBtn.addEventListener('click', () => {
-            const accountName = accounts.find(a => a.id === currentAccountId)?.name || 'this account';
-            deleteModalMessage.textContent = `Are you sure you want to permanently delete the account "${accountName}" and all its transactions? This action cannot be undone.`;
-            deleteModal.classList.remove('hidden');
-        });
-        
-        deleteModalConfirmBtn.addEventListener('click', async () => {
-            deleteModal.classList.add('hidden');
-            await deleteAccount();
-        });
-
-        deleteModalCancelBtn.addEventListener('click', () => {
-            deleteModal.classList.add('hidden');
-            logMessage("Account deletion cancelled.");
-        });
-
-        // Function to render transactions and update balance
-        function renderTransactions() {
-            transactionList.innerHTML = ''; // Clear the current list
-            let total = 0;
-            let monthlyIncome = 0;
-            let monthlyExpenses = 0;
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-
-            // Sort transactions by date (newest first)
-            const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            // Filter transactions based on the current filter
-            const filteredTransactions = sortedTransactions.filter(t => {
-                if (currentFilter === 'all') return true;
-                return t.type === currentFilter;
-            });
-
-            if (filteredTransactions.length === 0) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 italic">No transactions recorded yet.</td>
-                `;
-                transactionList.appendChild(row);
-            } else {
-                filteredTransactions.forEach((transaction) => {
-                    const row = document.createElement('tr');
-                    const amountClass = transaction.type === 'income' ? 'text-green-600' : 'text-red-600';
-                    const sign = transaction.type === 'income' ? '+' : '-';
-                    const formattedAmount = `${getCurrencySymbol()}${Math.abs(transaction.amount).toFixed(2)}`;
-                    
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transaction.date}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${transaction.description}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm capitalize text-gray-500">${transaction.type}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${amountClass}">${sign} ${formattedAmount}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                            <button onclick="editTransaction('${transaction.id}')" class="text-blue-600 hover:text-blue-800 transition-colors duration-200">Edit</button>
-                            <button onclick="deleteTransaction('${transaction.id}')" class="text-red-600 hover:text-red-800 transition-colors duration-200">Delete</button>
-                        </td>
-                    `;
-                    transactionList.appendChild(row);
-                });
-            }
-
-            // Recalculate total balance for all transactions, regardless of filter
-            transactions.forEach(t => {
-                if (t.type === 'income') {
-                    total += parseFloat(t.amount);
-                } else {
-                    total -= parseFloat(t.amount);
-                }
-
-                // Calculate monthly summary
-                const transactionDate = new Date(t.date);
-                if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
-                    if (t.type === 'income') {
-                        monthlyIncome += parseFloat(t.amount);
-                    } else {
-                        monthlyExpenses += parseFloat(t.amount);
-                    }
-                }
-            });
-
-            // Update balance displays
-            totalBalanceElement.textContent = `${getCurrencySymbol()}${total.toFixed(2)}`;
-            if (total < 0) {
-                totalBalanceElement.classList.add('text-red-600');
-                totalBalanceElement.classList.remove('text-gray-900');
-            } else {
-                totalBalanceElement.classList.remove('text-red-600');
-                totalBalanceElement.classList.add('text-gray-900');
-            }
-
-            monthlyIncomeElement.textContent = `${getCurrencySymbol()}${monthlyIncome.toFixed(2)}`;
-            monthlyExpensesElement.textContent = `${getCurrencySymbol()}${monthlyExpenses.toFixed(2)}`;
-            const monthlyBalance = monthlyIncome - monthlyExpenses;
-            monthlyBalanceElement.textContent = `${getCurrencySymbol()}${monthlyBalance.toFixed(2)}`;
-            if (monthlyBalance < 0) {
-                monthlyBalanceElement.classList.add('text-red-600');
-                monthlyBalanceElement.classList.remove('text-gray-800');
-            } else {
-                monthlyBalanceElement.classList.remove('text-red-600');
-                monthlyBalanceElement.classList.add('text-gray-800');
-            }
-        }
-
-        // Function to set the transaction filter
-        function setFilter(filterType) {
-            currentFilter = filterType;
-            // Update button styles
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent.toLowerCase() === filterType || (btn.textContent.toLowerCase() === 'all' && filterType === 'all')) {
-                    btn.classList.add('active');
-                }
-            });
-            renderTransactions();
-        }
-
-        // Export setFilter globally for onclick
-        window.setFilter = setFilter;
-
-        // Handle form submission (Add/Edit)
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (!currentAccountId) {
-                logMessage("No account selected. Please create or select an account.", 'error');
-                return;
-            }
-
-            const date = document.getElementById('date').value;
-            const description = document.getElementById('description').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const type = document.getElementById('type').value;
-
-            const transactionData = {
-                date: date,
-                description: description,
-                amount: amount,
-                type: type,
-                timestamp: new Date().toISOString()
-            };
-
-            try {
-                if (editingTransactionId) {
-                    const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, editingTransactionId);
-                    await setDoc(transactionRef, transactionData);
-                    logMessage(`Transaction '${description}' updated successfully.`);
-                    editingTransactionId = null;
-                    submitButton.textContent = "Add Transaction";
-                } else {
-                    const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
-                    await addDoc(transactionsCollectionRef, transactionData);
-                    logMessage(`Transaction '${description}' added successfully.`);
-                }
-            } catch (error) {
-                logMessage(`Error adding/updating transaction: ${error.message}`, 'error');
-            }
-
-            form.reset();
-        });
-
-        // Function to edit a transaction
-        window.editTransaction = function(id) {
-            const transaction = transactions.find(t => t.id === id);
-            if (transaction) {
-                document.getElementById('date').value = transaction.date;
-                document.getElementById('description').value = transaction.description;
-                document.getElementById('amount').value = transaction.amount;
-                document.getElementById('type').value = transaction.type;
-                editingTransactionId = id;
-                submitButton.textContent = "Update Transaction";
-                document.getElementById('date').focus();
-                logMessage(`Editing transaction with ID: ${id}`);
-            }
-        }
-
-        // Function to delete a transaction
-        window.deleteTransaction = async function(id) {
-            if (!currentAccountId) {
-                logMessage("No account selected.", 'error');
-                return;
-            }
-            try {
-                const transactionRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`, id);
-                await deleteDoc(transactionRef);
-                logMessage(`Transaction with ID ${id} deleted successfully.`);
-            } catch (error) {
-                logMessage(`Error deleting transaction: ${error.message}`, 'error');
-            }
-        }
-
-        // Handle currency change
-        currencySelect.addEventListener('change', (e) => {
-            currentCurrency = e.target.value;
-            renderTransactions();
-            logMessage(`Currency changed to ${currentCurrency}.`);
-        });
-
-        async function fetchAccounts() {
-            if (!userId) return;
-            logMessage("Fetching accounts...");
-            const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
-            onSnapshot(accountsCollectionRef, (snapshot) => {
-                accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderAccounts();
-                logMessage("Accounts updated from Firestore.");
-            }, (error) => {
-                logMessage(`Error fetching accounts: ${error.message}`, 'error');
-            });
-        }
-
-        function renderAccounts() {
-            accountSelect.innerHTML = '';
-            if (accounts.length > 0) {
-                accounts.forEach(account => {
-                    const option = document.createElement('option');
-                    option.value = account.id;
-                    option.textContent = account.name;
-                    accountSelect.appendChild(option);
-                });
-                // Select the first account or the previously selected one
-                if (!currentAccountId || !accounts.find(acc => acc.id === currentAccountId)) {
-                    currentAccountId = accounts[0].id;
-                }
-                accountSelect.value = currentAccountId;
-                logMessage(`Account list rendered. Current account ID: ${currentAccountId}`);
-                deleteAccountBtn.disabled = false; // Enable delete button
-                deleteAccountBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            } else {
-                accountSelect.innerHTML = `<option value="">No accounts available</option>`;
-                currentAccountId = null;
-                transactions = [];
-                renderTransactions();
-                logMessage("No accounts found. Please create a new account.");
-                deleteAccountBtn.disabled = true; // Disable delete button
-                deleteAccountBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-            setupTransactionListener();
-        }
-
-        async function addAccount(name) {
-            if (!userId) {
-                logMessage("User not authenticated.", 'error');
-                return;
-            }
-            logMessage(`Attempting to add new account: ${name}`);
-            const accountsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts`);
-            try {
-                const docRef = await addDoc(accountsCollectionRef, { name: name, createdAt: new Date().toISOString() });
-                logMessage(`Account '${name}' created with ID: ${docRef.id}`);
-            } catch (error) {
-                logMessage(`Error adding account: ${error.message}`, 'error');
-            }
-        }
-
-        // Function to delete an account and its transactions
-        async function deleteAccount() {
-            if (!currentAccountId) {
-                logMessage("No account is currently selected.", 'error');
-                return;
-            }
-
-            const accountName = accounts.find(a => a.id === currentAccountId)?.name || 'this account';
-            logMessage(`Deleting account "${accountName}"...`);
-            try {
-                // First, delete all transactions in the subcollection
-                const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
-                const transactionSnapshot = await getDocs(transactionsCollectionRef);
-
-                const deletePromises = transactionSnapshot.docs.map(tDoc => deleteDoc(tDoc.ref));
-                await Promise.all(deletePromises);
-                logMessage(`Deleted ${transactionSnapshot.docs.length} transactions.`);
-
-                // Then, delete the account document itself
-                const accountDocRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts`, currentAccountId);
-                await deleteDoc(accountDocRef);
-
-                logMessage(`Account "${accountName}" deleted successfully.`);
-            } catch (error) {
-                logMessage(`Error deleting account: ${error.message}`, 'error');
-            }
-        }
-
-        function setupTransactionListener() {
-            if (unsubscribeTransactions) {
-                unsubscribeTransactions(); // Unsubscribe from the old listener
-                logMessage("Unsubscribed from previous transaction listener.");
-            }
-
-            if (currentAccountId) {
-                logMessage(`Setting up transaction listener for account ID: ${currentAccountId}`);
-                const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
-                unsubscribeTransactions = onSnapshot(transactionsCollectionRef, (snapshot) => {
-                    transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderTransactions();
-                    logMessage("Transactions updated from Firestore.");
-                }, (error) => {
-                    logMessage(`Error fetching transactions: ${error.message}`, 'error');
-                });
-            } else {
-                transactions = [];
-                renderTransactions();
-                logMessage("No account selected, transaction listener not active.");
-            }
-        }
-
-        accountSelect.addEventListener('change', (e) => {
-            currentAccountId = e.target.value;
-            logMessage(`Account changed to ID: ${currentAccountId}`);
-            setupTransactionListener();
-        });
-
-        // Initialize App
-        async function initializeFirebaseApp() {
-            if (Object.keys(firebaseConfig).length === 0) {
-                 logMessage("Firebase configuration is missing. The app cannot run.", 'error');
-                 return;
-            }
-
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // Use the provided initialAuthToken for a persistent session,
-                // or fall back to anonymous sign-in if the token isn't available.
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                    logMessage("Signed in with a persistent session token.");
-                } else {
-                    await signInAnonymously(auth);
-                    logMessage("Signed in anonymously (session may not persist).");
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdElement.textContent = userId;
-                        logMessage(`User authenticated with ID: ${userId}`);
-                        fetchAccounts();
-                        setFilter('all'); // Set default filter
-                    } else {
-                        logMessage("User signed out.");
-                        // Handle signed out state if necessary
-                    }
-                });
-            } catch (error) {
-                logMessage(`Firebase initialization or sign-in failed: ${error.message}`, 'error');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', initializeFirebaseApp);
-    </script>
-</body>
-</html>
+            // Frugal fun facts and jokes
+            const funFacts = [
+                "What's a banker's favorite type of music? A loan-ly tune!",
+                "My bank told me I had insufficient funds, I didn’t know I had to have fun to be a member!",
+                "How do you know when a stock is about to crash? It starts acting a little unhinged.",
+                "Why did the money get a bigger home? It was trying to make a little interest.",
+                "My friend wants to be a financial advisor, but I told him I'd have to see his bank account. He said, 'Don't worry, you won't see anything.'",
+                "I bought s
