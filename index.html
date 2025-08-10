@@ -12,7 +12,18 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, getDoc, setDoc, query, onSnapshot, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables provided by the canvas environment
+        // Global variables provided by the canvas environment.
+        // For local development, replace these with your actual Firebase config and auth token.
+        // const firebaseConfig = {
+        //     apiKey: "YOUR_API_KEY",
+        //     authDomain: "YOUR_AUTH_DOMAIN",
+        //     projectId: "YOUR_PROJECT_ID",
+        //     storageBucket: "YOUR_STORAGE_BUCKET",
+        //     messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        //     appId: "YOUR_APP_ID"
+        // };
+        // const initialAuthToken = "YOUR_CUSTOM_AUTH_TOKEN";
+        
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -21,15 +32,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
-        // Fun facts about finance
-        const funFacts = [
-            "The average person spends more on coffee each year than on retirement savings.",
-            "The term 'budget' comes from the Old French word 'bougette', which means small leather pouch.",
-            "It is estimated that over 90% of all physical currency in circulation is used in the U.S.",
-            "The first credit card was created in 1950 by Diners Club.",
-            "Investing early is key; a dollar invested today is worth more tomorrow due to compounding interest."
-        ];
 
         // --- State Variables ---
         let userId = null;
@@ -58,7 +60,7 @@
             // Set up Firebase Auth and Firestore listeners
             await initFirebase();
             // Display a random fun fact on load
-            funFactText.textContent = funFacts[Math.floor(Math.random() * funFacts.length)];
+            getDynamicFunFact();
         };
 
         modalCloseBtn.addEventListener('click', () => modal.classList.add('hidden'));
@@ -108,6 +110,70 @@
                 }
             }
         });
+
+        // --- LLM API Call for Dynamic Fun Facts ---
+        async function getDynamicFunFact() {
+            funFactText.textContent = 'Generating a fun fact...';
+            try {
+                const prompt = "Give me a single, interesting fun fact about finance, budgeting, or money.";
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                let response;
+                let result;
+                let success = false;
+                let retries = 0;
+                const maxRetries = 5;
+                const baseDelay = 1000; // 1 second
+
+                while (retries < maxRetries && !success) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.status === 429) { // Too Many Requests
+                            const delay = baseDelay * Math.pow(2, retries);
+                            console.warn(`API call failed with status 429. Retrying in ${delay}ms...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            retries++;
+                            continue;
+                        }
+
+                        if (!response.ok) {
+                            throw new Error(`API error: ${response.statusText}`);
+                        }
+
+                        result = await response.json();
+                        success = true;
+                    } catch (e) {
+                        const delay = baseDelay * Math.pow(2, retries);
+                        console.error(`Fetch attempt ${retries + 1} failed: ${e.message}`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        retries++;
+                        if (retries >= maxRetries) {
+                            throw e;
+                        }
+                    }
+                }
+                
+                if (result && result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const fact = result.candidates[0].content.parts[0].text;
+                    funFactText.textContent = fact;
+                } else {
+                    throw new Error("Invalid response from API");
+                }
+            } catch (error) {
+                console.error("Error fetching fun fact:", error);
+                funFactText.textContent = "Error loading fun fact. Please try again later.";
+            }
+        }
 
         // --- Firebase Data Listeners ---
         function setupInviteListener() {
@@ -313,7 +379,7 @@
             <!-- Fun Facts Section -->
             <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
                 <h2 class="text-2xl font-bold mb-4 text-indigo-300">Daily Financial Insight</h2>
-                <p id="fun-fact" class="italic text-gray-400"></p>
+                <p id="fun-fact" class="italic text-gray-400">Generating a fun fact...</p>
             </div>
 
             <!-- Transaction Input Form -->
