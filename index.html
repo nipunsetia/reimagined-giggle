@@ -3,44 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>अवाtar Finance Tracker</title>
+    <title>Finance Tracker</title>
     <!-- Tailwind CSS from CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, getDoc, setDoc, query, onSnapshot, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, getDoc, onSnapshot, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables provided by the canvas environment.
-        // For local development, replace these with your actual Firebase config and auth token.
-        // const firebaseConfig = {
-        //     apiKey: "YOUR_API_KEY",
-        //     authDomain: "YOUR_AUTH_DOMAIN",
-        //     projectId: "YOUR_PROJECT_ID",
-        //     storageBucket: "YOUR_STORAGE_BUCKET",
-        //     messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        //     appId: "YOUR_APP_ID"
-        // };
-        // const initialAuthToken = "YOUR_CUSTOM_AUTH_TOKEN";
-        
+        // IMPORTANT: These global variables are provided by the hosting environment.
+        // DO NOT modify them. For local testing, you would replace these with your own Firebase config.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // --- State Variables ---
+        // --- Core Application State & Services ---
+        let app = null;
+        let auth = null;
+        let db = null;
         let userId = null;
         let isSuperUser = false;
-        let currentInvites = [];
-        let currentTransactions = [];
-        let spendingAnalysis = {};
-
+        
         // --- DOM Elements ---
+        const appContainer = document.getElementById('app-container');
+        const loadingScreen = document.getElementById('loading-screen');
+        const errorMessage = document.getElementById('error-message');
         const adminDashboard = document.getElementById('admin-dashboard');
         const userDashboard = document.getElementById('user-dashboard');
         const userIdDisplay = document.getElementById('user-id-display');
@@ -55,61 +43,96 @@
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
 
-        // --- Event Listeners ---
+        // --- Initial Setup and Event Listeners ---
         window.onload = async function() {
-            // Set up Firebase Auth and Firestore listeners
-            await initFirebase();
-            // Display a random fun fact on load
-            getDynamicFunFact();
+            console.log("Window loaded. Starting application initialization...");
+            try {
+                initializeAppAndAuth();
+            } catch (e) {
+                console.error("Initialization failed:", e);
+                displayError("Initialization failed. Check console for details.");
+            }
         };
 
         modalCloseBtn.addEventListener('click', () => modal.classList.add('hidden'));
-
         sendInviteBtn.addEventListener('click', handleSendInvite);
-        
         transactionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             await handleAddTransaction();
         });
 
-        // --- Firebase Initialization and Authentication ---
-        async function initFirebase() {
+        // --- Initialization Functions ---
+        function initializeAppAndAuth() {
             try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
+                if (Object.keys(firebaseConfig).length === 0) {
+                    throw new Error("Firebase config is missing or empty.");
                 }
-            } catch (error) {
-                console.error("Firebase Auth Error:", error);
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                // Set up auth state listener
+                onAuthStateChanged(auth, handleAuthStateChange);
+            } catch (e) {
+                console.error("Firebase initialization error:", e);
+                displayError("Failed to initialize Firebase. Please try again.");
+                throw e;
             }
         }
 
-        // Set up auth state listener to handle view changes
-        onAuthStateChanged(auth, async (user) => {
+        async function handleAuthStateChange(user) {
+            console.log("Auth state changed. User:", user);
             if (user) {
                 userId = user.uid;
                 userIdDisplay.textContent = userId;
                 
-                // Check if the user is the super user (admin)
+                // Check for superuser status
                 const superUserDocRef = doc(db, 'artifacts', appId, 'public', 'admin', 'superuser');
                 const superUserDoc = await getDoc(superUserDocRef);
                 isSuperUser = superUserDoc.exists() && superUserDoc.data().uid === userId;
                 
-                // Show the appropriate dashboard
                 if (isSuperUser) {
+                    console.log("User is an admin. Displaying admin dashboard.");
+                    loadingScreen.classList.add('hidden');
                     adminDashboard.classList.remove('hidden');
-                    userDashboard.classList.add('hidden');
-                    // Set up invite listener for admin
                     setupInviteListener();
                 } else {
+                    console.log("User is a regular user. Displaying user dashboard.");
+                    loadingScreen.classList.add('hidden');
                     userDashboard.classList.remove('hidden');
-                    adminDashboard.classList.add('hidden');
-                    // Set up transaction listener for user
                     setupTransactionListener();
                 }
+                getDynamicFunFact();
+            } else {
+                // If no user, try to sign in
+                console.log("No user found. Attempting sign-in...");
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Signed in with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Signed in anonymously.");
+                    }
+                } catch (e) {
+                    console.error("Sign-in failed:", e);
+                    displayError("Failed to authenticate. Check console for details.");
+                }
             }
-        });
+        }
+        
+        // --- Error and UI Helpers ---
+        function displayError(message) {
+            loadingScreen.classList.add('hidden');
+            appContainer.classList.add('hidden');
+            errorMessage.classList.remove('hidden');
+            errorMessage.textContent = `Error: ${message}`;
+        }
+        
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.classList.remove('hidden');
+        }
 
         // --- LLM API Call for Dynamic Fun Facts ---
         async function getDynamicFunFact() {
@@ -126,7 +149,7 @@
                 let success = false;
                 let retries = 0;
                 const maxRetries = 5;
-                const baseDelay = 1000; // 1 second
+                const baseDelay = 1000;
 
                 while (retries < maxRetries && !success) {
                     try {
@@ -135,19 +158,16 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-
-                        if (response.status === 429) { // Too Many Requests
+                        if (response.status === 429) {
                             const delay = baseDelay * Math.pow(2, retries);
                             console.warn(`API call failed with status 429. Retrying in ${delay}ms...`);
                             await new Promise(resolve => setTimeout(resolve, delay));
                             retries++;
                             continue;
                         }
-
                         if (!response.ok) {
                             throw new Error(`API error: ${response.statusText}`);
                         }
-
                         result = await response.json();
                         success = true;
                     } catch (e) {
@@ -155,15 +175,11 @@
                         console.error(`Fetch attempt ${retries + 1} failed: ${e.message}`);
                         await new Promise(resolve => setTimeout(resolve, delay));
                         retries++;
-                        if (retries >= maxRetries) {
-                            throw e;
-                        }
+                        if (retries >= maxRetries) throw e;
                     }
                 }
                 
-                if (result && result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
+                if (result && result.candidates?.length > 0 && result.candidates[0].content?.parts?.length > 0) {
                     const fact = result.candidates[0].content.parts[0].text;
                     funFactText.textContent = fact;
                 } else {
@@ -171,7 +187,7 @@
                 }
             } catch (error) {
                 console.error("Error fetching fun fact:", error);
-                funFactText.textContent = "Error loading fun fact. Please try again later.";
+                funFactText.textContent = "Error loading fun fact.";
             }
         }
 
@@ -179,32 +195,24 @@
         function setupInviteListener() {
             const invitesCollectionRef = collection(db, 'artifacts', appId, 'public', 'invites');
             onSnapshot(invitesCollectionRef, (snapshot) => {
-                currentInvites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderInvites();
+                const currentInvites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderInvites(currentInvites);
             }, (error) => console.error("Error fetching invites:", error));
         }
 
         function setupTransactionListener() {
             const transactionsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'transactions');
             onSnapshot(transactionsCollectionRef, (snapshot) => {
-                currentTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const currentTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 analyzeSpending(currentTransactions);
-                renderTransactions();
+                renderTransactions(currentTransactions);
             }, (error) => console.error("Error fetching transactions:", error));
         }
 
         // --- UI Logic and Handlers ---
-        function showModal(message) {
-            modalMessage.textContent = message;
-            modal.classList.remove('hidden');
-        }
-
         async function handleSendInvite() {
             const email = inviteEmailInput.value;
-            if (!email) {
-                showModal("Please enter a valid email address.");
-                return;
-            }
+            if (!email) { showModal("Please enter a valid email address."); return; }
             try {
                 const invitesCollectionRef = collection(db, 'artifacts', appId, 'public', 'invites');
                 await addDoc(invitesCollectionRef, {
@@ -256,21 +264,16 @@
             }
         }
 
-        // --- Data Analysis Logic ---
         function analyzeSpending(transactions) {
-            const spendingByDay = {
-                Sunday: 0, Monday: 0, Tuesday: 0, Wednesday: 0, Thursday: 0, Friday: 0, Saturday: 0
-            };
+            const spendingByDay = { Sunday: 0, Monday: 0, Tuesday: 0, Wednesday: 0, Thursday: 0, Friday: 0, Saturday: 0 };
             const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
             transactions.forEach(t => {
                 const date = new Date(t.date);
                 const dayName = daysOfWeek[date.getDay()];
                 spendingByDay[dayName] += t.amount;
             });
-
             const totalSpending = Object.values(spendingByDay).reduce((acc, val) => acc + val, 0);
             
-            // Update the spending analysis UI
             spendingAnalysisContainer.innerHTML = '';
             for (const day in spendingByDay) {
                 const percentage = totalSpending > 0 ? ((spendingByDay[day] / totalSpending) * 100).toFixed(1) : 0;
@@ -288,7 +291,7 @@
         }
 
         // --- UI Rendering Functions ---
-        function renderInvites() {
+        function renderInvites(currentInvites) {
             invitesList.innerHTML = '';
             if (currentInvites.length > 0) {
                 currentInvites.forEach(invite => {
@@ -308,7 +311,7 @@
             }
         }
 
-        function renderTransactions() {
+        function renderTransactions(currentTransactions) {
             transactionHistoryList.innerHTML = '';
             if (currentTransactions.length > 0) {
                 const sortedTransactions = currentTransactions.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
@@ -334,86 +337,103 @@
     </script>
 </head>
 <body class="bg-gray-900 font-sans text-gray-100 antialiased">
-    <!-- Modal for alerts -->
-    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl text-gray-100 max-w-sm w-full border border-indigo-500">
-            <p id="modal-message" class="text-lg text-center mb-4"></p>
-            <button id="modal-close-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg">
-                Close
-            </button>
-        </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="min-h-screen flex flex-col items-center justify-center p-8">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500"></div>
+        <p class="mt-4 text-xl text-gray-400">Loading application...</p>
+    </div>
+    
+    <!-- Error Screen (hidden by default) -->
+    <div id="error-message" class="hidden min-h-screen flex flex-col items-center justify-center p-8 text-red-400">
+        <p class="text-xl font-bold">An error occurred.</p>
+        <p class="mt-2 text-center" id="error-text"></p>
+        <p class="mt-4 text-sm text-gray-500">Please check the developer console (F12) for more details.</p>
     </div>
 
-    <!-- Admin Dashboard -->
-    <div id="admin-dashboard" class="hidden min-h-screen text-gray-100 p-8 flex flex-col items-center">
-        <h1 class="text-4xl font-extrabold mb-8 text-indigo-400">Admin Dashboard</h1>
-        <div class="w-full max-w-2xl bg-gray-800 rounded-2xl shadow-xl p-6 mb-8">
-            <h2 class="text-2xl font-bold mb-4 text-indigo-300">Manage Invites</h2>
-            <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                <input id="invite-email-input" type="email" placeholder="Enter email to invite" class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-200">
-                <button id="send-invite-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
-                    Send Invite
+    <!-- Main App Container (hidden by default) -->
+    <div id="app-container" class="hidden min-h-screen">
+        <!-- Modal for alerts -->
+        <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl text-gray-100 max-w-sm w-full border border-indigo-500">
+                <p id="modal-message" class="text-lg text-center mb-4"></p>
+                <button id="modal-close-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg">
+                    Close
                 </button>
             </div>
-            <div class="space-y-4">
-                <h3 class="text-xl font-semibold text-indigo-200">Invite Status</h3>
-                <ul id="invites-list" class="divide-y divide-gray-700"></ul>
-            </div>
         </div>
-    </div>
 
-    <!-- User Dashboard -->
-    <div id="user-dashboard" class="hidden p-4 sm:p-8 flex flex-col lg:flex-row gap-8 font-inter min-h-screen">
-        <!-- Main Content Area -->
-        <div class="flex-grow flex flex-col gap-8">
-            <!-- Header -->
-            <header class="bg-gray-800 p-6 rounded-2xl shadow-lg flex items-center justify-between">
-                <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 font-serif">
-                    अवाtar
-                </h1>
-                <div class="text-sm font-mono text-gray-400">
-                    User ID: <span id="user-id-display" class="block break-all mt-1 text-gray-300"></span>
-                </div>
-            </header>
-
-            <!-- Fun Facts Section -->
-            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-bold mb-4 text-indigo-300">Daily Financial Insight</h2>
-                <p id="fun-fact" class="italic text-gray-400">Generating a fun fact...</p>
-            </div>
-
-            <!-- Transaction Input Form -->
-            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-bold mb-4 text-indigo-300">Add New Transaction</h2>
-                <form id="transaction-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <input type="number" name="amount" placeholder="Amount (e.g., 25.50)" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="date" name="date" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <select name="category" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="Food">Food</option>
-                        <option value="Rent">Rent</option>
-                        <option value="Shopping">Shopping</option>
-                        <option value="Utilities">Utilities</option>
-                        <option value="Transport">Transport</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <textarea name="description" placeholder="Description (optional)" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none sm:col-span-2"></textarea>
-                    <button type="submit" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 sm:col-span-2">
-                        Add Transaction
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="hidden text-gray-100 p-8 flex flex-col items-center">
+            <h1 class="text-4xl font-extrabold mb-8 text-indigo-400">Admin Dashboard</h1>
+            <div class="w-full max-w-2xl bg-gray-800 rounded-2xl shadow-xl p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-4 text-indigo-300">Manage Invites</h2>
+                <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                    <input id="invite-email-input" type="email" placeholder="Enter email to invite" class="flex-grow p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-200">
+                    <button id="send-invite-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                        Send Invite
                     </button>
-                </form>
-            </div>
-
-            <!-- Spending Analysis Section -->
-            <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-bold mb-4 text-indigo-300">Spending by Day of Week</h2>
-                <div id="spending-analysis-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4"></div>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold text-indigo-200">Invite Status</h3>
+                    <ul id="invites-list" class="divide-y divide-gray-700"></ul>
+                </div>
             </div>
         </div>
 
-        <!-- Transaction History Sidebar -->
-        <div class="w-full lg:w-1/3 flex-shrink-0 bg-gray-800 p-6 rounded-2xl shadow-lg flex flex-col">
-            <h2 class="text-2xl font-bold mb-4 text-indigo-300">Transaction History</h2>
-            <ul id="transaction-history-list" class="flex-grow overflow-y-auto space-y-3"></ul>
+        <!-- User Dashboard -->
+        <div id="user-dashboard" class="hidden p-4 sm:p-8 flex flex-col lg:flex-row gap-8 font-inter">
+            <!-- Main Content Area -->
+            <div class="flex-grow flex flex-col gap-8">
+                <!-- Header -->
+                <header class="bg-gray-800 p-6 rounded-2xl shadow-lg flex items-center justify-between">
+                    <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 font-serif">
+                        अवाtar
+                    </h1>
+                    <div class="text-sm font-mono text-gray-400">
+                        User ID: <span id="user-id-display" class="block break-all mt-1 text-gray-300"></span>
+                    </div>
+                </header>
+
+                <!-- Fun Facts Section -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4 text-indigo-300">Daily Financial Insight</h2>
+                    <p id="fun-fact" class="italic text-gray-400">Generating a fun fact...</p>
+                </div>
+
+                <!-- Transaction Input Form -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4 text-indigo-300">Add New Transaction</h2>
+                    <form id="transaction-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <input type="number" name="amount" placeholder="Amount (e.g., 25.50)" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <input type="date" name="date" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <select name="category" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Food">Food</option>
+                            <option value="Rent">Rent</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <textarea name="description" placeholder="Description (optional)" class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none sm:col-span-2"></textarea>
+                        <button type="submit" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 sm:col-span-2">
+                            Add Transaction
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Spending Analysis Section -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4 text-indigo-300">Spending by Day of Week</h2>
+                    <div id="spending-analysis-container" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4"></div>
+                </div>
+            </div>
+
+            <!-- Transaction History Sidebar -->
+            <div class="w-full lg:w-1/3 flex-shrink-0 bg-gray-800 p-6 rounded-2xl shadow-lg flex flex-col">
+                <h2 class="text-2xl font-bold mb-4 text-indigo-300">Transaction History</h2>
+                <ul id="transaction-history-list" class="flex-grow overflow-y-auto space-y-3"></ul>
+            </div>
         </div>
     </div>
 </body>
