@@ -48,6 +48,13 @@
             background-color: #e5e7eb;
             color: #4b5563;
         }
+        @keyframes fade-in-down {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-down {
+            animation: fade-in-down 0.3s ease-out forwards;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4 md:p-8">
@@ -73,7 +80,7 @@
                         <button id="add-account-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
                             Create Account
                         </button>
-                        <button id="delete-account-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                        <button id="delete-account-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
                             Delete Account
                         </button>
                     </div>
@@ -173,7 +180,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Filter Transactions</label>
                         <div class="mt-1 flex space-x-2">
-                            <button onclick="setFilter('all')" class="filter-btn active flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">All</button>
+                            <button onclick="setFilter('all')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">All</button>
                             <button onclick="setFilter('income')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Income</button>
                             <button onclick="setFilter('expense')" class="filter-btn flex-1 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors duration-200">Expenses</button>
                         </div>
@@ -239,25 +246,28 @@
         </div>
     </div>
 
+    <!-- Modal for deleting an account -->
+    <div id="delete-modal" class="fixed inset-0 z-50 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
+        <div class="relative mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white animate-fade-in-down">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Confirm Deletion</h3>
+            <p id="delete-modal-message" class="text-gray-600 mb-6 text-center">Are you sure you want to permanently delete this account and all its transactions? This action cannot be undone.</p>
+            <div class="flex gap-4">
+                <button id="delete-modal-confirm-btn" class="flex-1 px-4 py-3 bg-red-600 text-white font-medium rounded-xl shadow-lg hover:bg-red-700 focus:outline-none transition-colors duration-300">Delete</button>
+                <button id="delete-modal-cancel-btn" class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl shadow-lg hover:bg-gray-300 focus:outline-none transition-colors duration-300">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: Replace this with your actual Firebase project configuration.
-        // You can find this in your Firebase Console under Project settings -> Your apps.
-        const firebaseConfig = {
-          apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
-          authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
-          projectId: "daily-expense-tracker-4a115",
-          storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
-          messagingSenderId: "862714037551",
-          appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
-        };
-
-        // This variable is used to build Firestore paths.
-        // It must be the same as the projectId in your firebaseConfig.
-        const appId = "daily-expense-tracker-4a115";
+        // IMPORTANT: The following global variables are provided by the canvas environment.
+        // DO NOT change them.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Initialize Firebase
         let db, auth;
@@ -284,6 +294,10 @@
         const newAccountNameInput = document.getElementById('new-account-name');
         const logDisplay = document.getElementById('log-display');
         const clearLogBtn = document.getElementById('clear-log-btn');
+        const deleteModal = document.getElementById('delete-modal');
+        const deleteModalMessage = document.getElementById('delete-modal-message');
+        const deleteModalConfirmBtn = document.getElementById('delete-modal-confirm-btn');
+        const deleteModalCancelBtn = document.getElementById('delete-modal-cancel-btn');
 
         let transactions = [];
         let currentCurrency = 'INR';
@@ -313,7 +327,7 @@
             return currentCurrency === 'INR' ? '₹' : '$';
         }
 
-        // Modal functions
+        // Modal functions for adding an account
         addAccountBtn.addEventListener('click', () => {
             accountModal.classList.remove('hidden');
         });
@@ -334,6 +348,23 @@
                     logMessage(`Error creating account: ${error.message}`, 'error');
                 }
             }
+        });
+        
+        // Modal functions for deleting an account
+        deleteAccountBtn.addEventListener('click', () => {
+            const accountName = accounts.find(a => a.id === currentAccountId)?.name || 'this account';
+            deleteModalMessage.textContent = `Are you sure you want to permanently delete the account "${accountName}" and all its transactions? This action cannot be undone.`;
+            deleteModal.classList.remove('hidden');
+        });
+        
+        deleteModalConfirmBtn.addEventListener('click', async () => {
+            deleteModal.classList.add('hidden');
+            await deleteAccount();
+        });
+
+        deleteModalCancelBtn.addEventListener('click', () => {
+            deleteModal.classList.add('hidden');
+            logMessage("Account deletion cancelled.");
         });
 
         // Function to render transactions and update balance
@@ -440,7 +471,7 @@
         // Export setFilter globally for onclick
         window.setFilter = setFilter;
 
-        // Function to handle form submission (Add/Edit)
+        // Handle form submission (Add/Edit)
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -575,7 +606,7 @@
             }
         }
 
-        // New function to delete an account and its transactions
+        // Function to delete an account and its transactions
         async function deleteAccount() {
             if (!currentAccountId) {
                 logMessage("No account is currently selected.", 'error');
@@ -583,33 +614,25 @@
             }
 
             const accountName = accounts.find(a => a.id === currentAccountId)?.name || 'this account';
+            logMessage(`Deleting account "${accountName}"...`);
+            try {
+                // First, delete all transactions in the subcollection
+                const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
+                const transactionSnapshot = await getDocs(transactionsCollectionRef);
 
-            if (confirm(`Are you sure you want to permanently delete the account "${accountName}" and ALL of its transactions? This action cannot be undone.`)) {
-                logMessage(`Deleting account "${accountName}"...`);
-                try {
-                    // First, delete all transactions in the subcollection
-                    const transactionsCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/accounts/${currentAccountId}/transactions`);
-                    const transactionSnapshot = await getDocs(transactionsCollectionRef);
+                const deletePromises = transactionSnapshot.docs.map(tDoc => deleteDoc(tDoc.ref));
+                await Promise.all(deletePromises);
+                logMessage(`Deleted ${transactionSnapshot.docs.length} transactions.`);
 
-                    const deletePromises = transactionSnapshot.docs.map(tDoc => deleteDoc(tDoc.ref));
-                    await Promise.all(deletePromises);
-                    logMessage(`Deleted ${transactionSnapshot.docs.length} transactions.`);
+                // Then, delete the account document itself
+                const accountDocRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts`, currentAccountId);
+                await deleteDoc(accountDocRef);
 
-                    // Then, delete the account document itself
-                    const accountDocRef = doc(db, `/artifacts/${appId}/users/${userId}/accounts`, currentAccountId);
-                    await deleteDoc(accountDocRef);
-
-                    logMessage(`Account "${accountName}" deleted successfully.`);
-                } catch (error) {
-                    logMessage(`Error deleting account: ${error.message}`, 'error');
-                }
-            } else {
-                logMessage("Account deletion cancelled.");
+                logMessage(`Account "${accountName}" deleted successfully.`);
+            } catch (error) {
+                logMessage(`Error deleting account: ${error.message}`, 'error');
             }
         }
-
-        // Add event listener to the new delete account button
-        deleteAccountBtn.addEventListener('click', deleteAccount);
 
         function setupTransactionListener() {
             if (unsubscribeTransactions) {
@@ -652,8 +675,15 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
 
-                await signInAnonymously(auth);
-                logMessage("Signed in anonymously.");
+                // Use the provided initialAuthToken for a persistent session,
+                // or fall back to anonymous sign-in if the token isn't available.
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    logMessage("Signed in with a persistent session token.");
+                } else {
+                    await signInAnonymously(auth);
+                    logMessage("Signed in anonymously (session may not persist).");
+                }
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
@@ -661,6 +691,7 @@
                         userIdElement.textContent = userId;
                         logMessage(`User authenticated with ID: ${userId}`);
                         fetchAccounts();
+                        setFilter('all'); // Set default filter
                     } else {
                         logMessage("User signed out.");
                         // Handle signed out state if necessary
