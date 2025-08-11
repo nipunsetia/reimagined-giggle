@@ -22,16 +22,16 @@
         }
 
         .scroll-container::-webkit-scrollbar-track {
-            background: #1e293b;
+            background: #0f172a;
         }
 
         .scroll-container::-webkit-scrollbar-thumb {
-            background-color: #475569;
+            background-color: #334155;
             border-radius: 4px;
         }
 
         .scroll-container::-webkit-scrollbar-thumb:hover {
-            background-color: #64748b;
+            background-color: #475569;
         }
 
         /* Toggle switch styling */
@@ -52,13 +52,13 @@
         }
 
         .toggle-switch-checkbox:checked+.toggle-switch-label {
-            background-color: #10b981;
+            background-color: #34d399;
         }
 
         /* Tab button styling */
         .tab-btn.active {
-            background-color: #10b981;
-            color: #0f172a;
+            background-color: #34d399;
+            color: #0c4a6e;
             font-weight: 700;
         }
 
@@ -67,16 +67,17 @@
             @apply transition-colors duration-200;
         }
 
+        /* Refined button styles for a more engaging look */
         .btn-primary {
-            @apply bg-green-500 text-gray-900 font-bold py-3 px-4 rounded-lg hover:bg-green-400 shadow-lg;
+            @apply bg-emerald-400 text-slate-900 font-bold py-3 px-4 rounded-xl hover:bg-emerald-300 transition-all duration-200 drop-shadow-lg;
         }
 
         .btn-secondary {
-            @apply bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600;
+            @apply bg-slate-700 text-slate-300 rounded-lg px-4 py-2 hover:bg-slate-600 transition-colors duration-200;
         }
 
         .btn-danger {
-            @apply bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-500;
+            @apply bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-500 transition-colors duration-200;
         }
 
         /* Loading spinner animation */
@@ -91,29 +92,60 @@
         .animate-spin-slow {
             animation: spin 2s linear infinite;
         }
+        
+        /* New header styling */
+        .header-title-container {
+            position: relative;
+            text-align: center;
+        }
+        .header-logo-container {
+            display: inline-block;
+            vertical-align: middle;
+            position: relative;
+            z-index: 10;
+        }
+        .header-main-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: 900;
+            color: transparent;
+            -webkit-text-stroke: 1px #34d399;
+            z-index: 5;
+            line-height: 1;
+        }
+        .header-subtitle {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #34d399;
+            margin-top: -0.5rem;
+        }
+
     </style>
 </head>
 
-<body class="bg-gray-900 text-gray-200">
+<body class="bg-slate-900 text-slate-200">
     <div class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-4xl border border-gray-700 relative">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-4xl border border-slate-700 relative">
             <!-- Logo and Header -->
-            <header class="flex items-center justify-between mb-6 pb-4 border-b border-green-600">
+            <header class="flex items-center justify-between mb-6 pb-4 border-b-2 border-emerald-600">
                 <div class="flex items-center space-x-4">
-                    <!-- Logo as an SVG -->
-                    <svg class="h-10 w-10 text-green-500" fill="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                    </svg>
-                    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-green-500">
-                        Āvarta
-                    </h1>
+                    <div class="flex flex-col items-center">
+                        <svg class="h-10 w-10 text-emerald-400" fill="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                        </svg>
+                        <h1 class="text-3xl font-extrabold tracking-tight text-emerald-400 mt-2">Āvarta</h1>
+                        <p class="text-sm text-slate-400">Finance Flow</p>
+                    </div>
                 </div>
                 <div class="text-right">
-                    <p class="text-xs text-gray-400">Welcome,</p>
-                    <p id="username-display" class="font-bold text-green-300">Loading...</p>
+                    <p class="text-xs text-slate-400">Welcome,</p>
+                    <p id="username-display" class="font-bold text-emerald-300">Loading...</p>
                     <button id="change-user-btn"
-                        class="text-xs text-green-500 hover:text-green-400 transition-colors duration-200 mt-1">
+                        class="text-xs text-emerald-500 hover:text-emerald-400 transition-colors duration-200 mt-1">
                         Change User
                     </button>
                     <button id="delete-account-btn"
@@ -127,11 +159,11 @@
             <main>
                 <!-- Tab Navigation -->
                 <div class="flex justify-center mb-6 space-x-4">
-                    <button class="tab-btn px-4 py-2 rounded-full transition-all duration-200"
+                    <button class="tab-btn px-4 py-2 rounded-full transition-all duration-200 bg-slate-700 text-slate-300 hover:bg-slate-600"
                         data-tab-id="dashboard-tab">
                         Dashboard
                     </button>
-                    <button class="tab-btn px-4 py-2 rounded-full transition-all duration-200"
+                    <button class="tab-btn px-4 py-2 rounded-full transition-all duration-200 bg-slate-700 text-slate-300 hover:bg-slate-600"
                         data-tab-id="analytics-tab">
                         Analytics
                     </button>
@@ -143,21 +175,21 @@
                         <!-- Left Column: Expenses, Budget, Quotes -->
                         <div>
                             <!-- Expenses & Budget -->
-                            <div class="bg-gray-900 p-6 rounded-xl shadow-inner border border-gray-700 mb-6">
-                                <h2 class="text-2xl font-bold text-green-300 mb-4">Financial Overview</h2>
+                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700 mb-6">
+                                <h2 class="text-2xl font-bold text-emerald-300 mb-4">Financial Overview</h2>
                                 <!-- Expense Form -->
                                 <form id="expense-form" class="space-y-4">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <input type="text" id="expense-name"
-                                            class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-3 placeholder-gray-400 focus:outline-none focus:border-green-500"
+                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                                             placeholder="Expense Name" required>
                                         <input type="number" id="expense-amount"
-                                            class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-3 placeholder-gray-400 focus:outline-none focus:border-green-500"
+                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                                             placeholder="Amount" step="0.01" required>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <select id="expense-category"
-                                            class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-green-500">
+                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 focus:outline-none focus:border-emerald-500">
                                             <option value="Food">Food</option>
                                             <option value="Shopping">Shopping</option>
                                             <option value="Bills">Bills</option>
@@ -166,7 +198,7 @@
                                             <option value="Other">Other</option>
                                         </select>
                                         <input type="date" id="expense-date"
-                                            class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-green-500">
+                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 focus:outline-none focus:border-emerald-500">
                                     </div>
                                     <!-- Recurring Toggle and Options -->
                                     <div class="flex items-center space-x-3 mt-4">
@@ -174,30 +206,64 @@
                                             <input type="checkbox" id="recurring-checkbox" value=""
                                                 class="sr-only peer toggle-switch-checkbox">
                                             <div id="recurring-toggle-label"
-                                                class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:bg-green-500 transition-colors duration-200 toggle-switch-label">
+                                                class="w-11 h-6 bg-slate-600 rounded-full peer peer-checked:bg-emerald-500 transition-colors duration-200 toggle-switch-label">
                                             </div>
-                                            <span class="ml-3 text-sm font-medium text-gray-300">
+                                            <span class="ml-3 text-sm font-medium text-slate-300">
                                                 Recurring Expense
                                             </span>
                                         </label>
                                     </div>
                                     <div id="recurring-options-container"
-                                        class="hidden mt-4 bg-gray-700 p-4 rounded-lg">
-                                        <p class="text-sm font-medium text-gray-300 mb-2">Recurrence Frequency</p>
-                                        <div class="flex space-x-4">
+                                        class="hidden mt-4 bg-slate-700 p-4 rounded-lg">
+                                        <p class="text-sm font-medium text-slate-300 mb-2">Recurrence Frequency</p>
+                                        <div class="flex space-x-4 mb-4">
                                             <div class="flex items-center">
                                                 <input id="weekly-radio" type="radio" name="recurrence-freq"
-                                                    value="weekly" class="text-green-500">
-                                                <label for="weekly-radio" class="ml-2 text-sm text-gray-300">
+                                                    value="weekly" class="text-emerald-500">
+                                                <label for="weekly-radio" class="ml-2 text-sm text-slate-300">
                                                     Weekly
                                                 </label>
                                             </div>
                                             <div class="flex items-center">
                                                 <input id="monthly-radio" type="radio" name="recurrence-freq"
-                                                    value="monthly" checked class="text-green-500">
-                                                <label for="monthly-radio" class="ml-2 text-sm text-gray-300">
+                                                    value="monthly" checked class="text-emerald-500">
+                                                <label for="monthly-radio" class="ml-2 text-sm text-slate-300">
                                                     Monthly
                                                 </label>
+                                            </div>
+                                        </div>
+                                        <!-- Weekly days selector -->
+                                        <div id="weekly-days-container" class="hidden">
+                                            <p class="text-sm font-medium text-slate-300 mb-2">Select Days of the Week</p>
+                                            <div class="grid grid-cols-7 gap-1">
+                                                <div class="flex flex-col items-center">
+                                                    <input type="checkbox" id="day-mon" class="day-checkbox hidden" value="Mon">
+                                                    <label for="day-mon" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">M</label>
+                                                </div>
+                                                <div class="flex flex-col items-center">
+                                                    <input type="checkbox" id="day-tue" class="day-checkbox hidden" value="Tue">
+                                                    <label for="day-tue" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">T</label>
+                                                </div>
+                                                <div class="flex flex-col items-center">
+                                                    <input type="checkbox" id="day-wed" class="day-checkbox hidden" value="Wed">
+                                                    <label for="day-wed" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">W</label>
+                                                </div>
+                                                <div class="flex flex-col items-center">
+                                                    <input type="checkbox" id="day-thu" class="day-checkbox hidden" value="Thu">
+                                                    <label for="day-thu" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">T</label>
+                                                </div>
+                                                <div class="flex flex-col items-center">
+                                                    <input type="checkbox" id="day-fri" class="day-checkbox hidden" value="Fri">
+                                                    <label for="day-fri" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">F</label>
+                                                </div>
+                                                <div class="flex flex-col items-center">
+                                                    <input type="checkbox" id="day-sat" class="day-checkbox hidden" value="Sat">
+                                                    <label for="day-sat" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">S</label>
+                                                </div>
+                                                <div class="flex flex-col items-center">
+                                                    <input type="checkbox" id="day-sun" class="day-checkbox hidden" value="Sun">
+                                                    <label for="day-sun" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">S</label>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -208,26 +274,26 @@
 
                                 <!-- Budgeting Section -->
                                 <div class="mt-8">
-                                    <h3 class="text-xl font-bold text-green-400 mb-2">Monthly Budget</h3>
-                                    <div class="bg-gray-700 p-4 rounded-lg shadow-inner flex items-center justify-between mb-4">
+                                    <h3 class="text-xl font-bold text-emerald-400 mb-2">Monthly Budget</h3>
+                                    <div class="bg-slate-700 p-4 rounded-lg drop-shadow-lg flex items-center justify-between mb-4">
                                         <div>
-                                            <p class="text-sm text-gray-400">Total Expenses</p>
+                                            <p class="text-sm text-slate-400">Total Expenses</p>
                                             <p id="total-expenses" class="text-2xl font-extrabold text-white">0</p>
                                         </div>
                                         <div class="text-right">
-                                            <p class="text-sm text-gray-400">Remaining Budget</p>
+                                            <p class="text-sm text-slate-400">Remaining Budget</p>
                                             <p id="remaining-budget" class="text-2xl font-extrabold text-white">0</p>
                                         </div>
                                     </div>
-                                    <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                    <div class="w-full bg-slate-700 rounded-full h-2.5">
                                         <div id="budget-progress"
-                                            class="bg-green-500 h-2.5 rounded-full transition-all duration-300"
+                                            class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300"
                                             style="width: 0%;"></div>
                                     </div>
 
                                     <form id="budget-form" class="mt-4 flex space-x-2">
                                         <input type="number" id="budget-input"
-                                            class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-3 placeholder-gray-400 focus:outline-none focus:border-green-500"
+                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                                             placeholder="Set Monthly Budget" step="0.01">
                                         <button type="submit" class="btn-primary">
                                             Set
@@ -247,12 +313,12 @@
                             </div>
 
                             <!-- Dynamic Quote Section -->
-                            <div class="bg-gray-900 p-6 rounded-xl shadow-inner border border-gray-700">
-                                <h3 class="text-xl font-bold text-green-400 mb-2">Quote of the Day</h3>
+                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700">
+                                <h3 class="text-xl font-bold text-emerald-400 mb-2">Quote of the Day</h3>
                                 <div class="flex items-center">
-                                    <p id="dynamic-quote" class="italic text-gray-400 leading-relaxed">
+                                    <p id="dynamic-quote" class="italic text-slate-400 leading-relaxed">
                                         <span class="inline-flex items-center">
-                                            <svg class="animate-spin-slow h-5 w-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <svg class="animate-spin-slow h-5 w-5 text-slate-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
@@ -260,7 +326,7 @@
                                         </span>
                                     </p>
                                     <button id="quote-refresh-btn"
-                                        class="ml-4 p-2 bg-gray-700 text-green-500 rounded-full hover:bg-gray-600 transition-colors duration-200">
+                                        class="ml-4 p-2 bg-slate-700 text-emerald-500 rounded-full hover:bg-slate-600 transition-colors duration-200">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                             fill="currentColor">
                                             <path fill-rule="evenodd"
@@ -274,21 +340,21 @@
 
                         <!-- Right Column: Expense List -->
                         <div>
-                            <div class="bg-gray-900 p-6 rounded-xl shadow-inner border border-gray-700">
+                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700">
                                 <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-2xl font-bold text-green-300">Expenses</h3>
+                                    <h3 class="text-2xl font-bold text-emerald-300">Expenses</h3>
                                     <div class="flex space-x-2">
                                         <div class="flex items-center space-x-2">
                                             <select id="month-filter"
-                                                class="bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-green-500">
+                                                class="bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-2 text-sm focus:outline-none focus:border-emerald-500">
                                                 <option value="all">All Months</option>
                                             </select>
                                             <select id="year-filter"
-                                                class="bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-green-500">
+                                                class="bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-2 text-sm focus:outline-none focus:border-emerald-500">
                                                 <option value="all">All Years</option>
                                             </select>
                                             <select id="currency-select"
-                                                class="bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-green-500">
+                                                class="bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-2 text-sm focus:outline-none focus:border-emerald-500">
                                                 <option value="INR">INR (₹)</option>
                                                 <option value="USD">USD ($)</option>
                                                 <option value="EUR">EUR (€)</option>
@@ -300,7 +366,7 @@
                                 </div>
                                 <div class="flex justify-end mb-4">
                                     <div class="flex items-center">
-                                        <span class="text-sm text-gray-400 mr-2">Export Monthly Expenses:</span>
+                                        <span class="text-sm text-slate-400 mr-2">Export Monthly Expenses:</span>
                                         <button id="export-list-json-btn" class="btn-secondary">
                                             JSON
                                         </button>
@@ -312,8 +378,8 @@
                                 <div class="h-96 overflow-y-auto scroll-container">
                                     <ul id="expenses-list" class="space-y-4">
                                         <!-- Expenses will be dynamically added here -->
-                                        <div id="loading-expenses" class="text-center text-gray-500 mt-8 hidden">
-                                            <svg class="animate-spin-slow h-8 w-8 text-gray-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <div id="loading-expenses" class="text-center text-slate-500 mt-8 hidden">
+                                            <svg class="animate-spin-slow h-8 w-8 text-slate-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
@@ -330,23 +396,23 @@
                     <div class="grid md:grid-cols-2 gap-8">
                         <!-- Charts Section -->
                         <div>
-                            <div class="bg-gray-900 p-6 rounded-xl shadow-inner border border-gray-700 mb-6">
-                                <h3 class="text-2xl font-bold text-green-300 mb-4">Analytics</h3>
+                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700 mb-6">
+                                <h3 class="text-2xl font-bold text-emerald-300 mb-4">Analytics</h3>
                                 <div class="flex justify-center mb-4 space-x-2">
                                     <button
-                                        class="chart-btn btn-secondary active bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600"
+                                        class="chart-btn btn-secondary active bg-slate-700 text-slate-300 rounded-lg px-4 py-2 hover:bg-slate-600"
                                         data-chart-type="category">Category</button>
                                     <button
-                                        class="chart-btn btn-secondary bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600"
+                                        class="chart-btn btn-secondary bg-slate-700 text-slate-300 rounded-lg px-4 py-2 hover:bg-slate-600"
                                         data-chart-type="monthly">Monthly</button>
                                     <button
-                                        class="chart-btn btn-secondary bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600"
+                                        class="chart-btn btn-secondary bg-slate-700 text-slate-300 rounded-lg px-4 py-2 hover:bg-slate-600"
                                         data-chart-type="daily">Daily</button>
                                 </div>
                                 <div class="relative h-96">
                                     <canvas id="main-chart-canvas"></canvas>
                                     <p id="chart-title"
-                                        class="absolute top-4 left-1/2 -translate-x-1/2 text-lg font-semibold text-green-400">
+                                        class="absolute top-4 left-1/2 -translate-x-1/2 text-lg font-semibold text-emerald-400">
                                         Category Breakdown</p>
                                 </div>
                             </div>
@@ -354,10 +420,10 @@
 
                         <!-- Logs Section -->
                         <div>
-                            <div class="bg-gray-900 p-6 rounded-xl shadow-inner border border-gray-700">
-                                <h3 class="text-2xl font-bold text-green-300 mb-4">User Logs</h3>
-                                <p class="text-xs text-gray-500 mb-4">User ID: <span id="user-id-display"
-                                        class="font-mono text-green-300">Loading...</span></p>
+                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700">
+                                <h3 class="text-2xl font-bold text-emerald-300 mb-4">User Logs</h3>
+                                <p class="text-xs text-slate-500 mb-4">User ID: <span id="user-id-display"
+                                        class="font-mono text-emerald-300">Loading...</span></p>
                                 <div class="h-96 overflow-y-auto scroll-container">
                                     <ul id="logs-list" class="space-y-2">
                                         <!-- Logs will be dynamically added here -->
@@ -373,14 +439,14 @@
 
             <!-- Username Login Modal -->
             <div id="username-login-modal"
-                class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md hidden z-50">
-                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-96 border border-gray-700">
-                    <h2 class="text-3xl font-bold text-green-500 mb-4">Welcome</h2>
-                    <p class="text-gray-300 mb-6">Enter a username to get started. Your data will be saved securely.
+                class="absolute inset-0 flex items-center justify-center bg-slate-900 bg-opacity-75 backdrop-blur-md hidden z-50">
+                <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-96 border border-slate-700">
+                    <h2 class="text-3xl font-bold text-emerald-500 mb-4">Welcome</h2>
+                    <p class="text-slate-300 mb-6">Enter a username to get started. Your data will be saved securely.
                     </p>
                     <form id="username-login-form">
                         <input type="text" id="username-login-input"
-                            class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-3 placeholder-gray-400 focus:outline-none focus:border-green-500 mb-4"
+                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500 mb-4"
                             placeholder="Your Name or Nickname" required>
                         <button type="submit" class="btn-primary w-full">
                             Start Tracking
@@ -391,10 +457,10 @@
 
             <!-- Message Box -->
             <div id="message-box"
-                class="fixed bottom-4 right-4 bg-gray-800 text-gray-200 p-4 rounded-lg shadow-xl border border-gray-700 z-50 transition-transform transform translate-x-full hidden">
+                class="fixed bottom-4 right-4 bg-slate-800 text-slate-200 p-4 rounded-lg shadow-xl border border-slate-700 z-50 transition-transform transform translate-x-full hidden">
                 <div class="flex justify-between items-center mb-2">
                     <h4 id="message-title" class="font-bold">Title</h4>
-                    <button id="close-message-btn" class="text-gray-400 hover:text-white transition-colors">
+                    <button id="close-message-btn" class="text-slate-400 hover:text-white transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                             fill="currentColor">
                             <path fill-rule="evenodd"
@@ -408,10 +474,10 @@
 
             <!-- Delete Confirmation Modal -->
             <div id="delete-confirm-modal"
-                class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md hidden z-50">
-                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-96 border border-gray-700">
+                class="absolute inset-0 flex items-center justify-center bg-slate-900 bg-opacity-75 backdrop-blur-md hidden z-50">
+                <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-96 border border-slate-700">
                     <h2 class="text-2xl font-bold text-red-500 mb-4">Confirm Deletion</h2>
-                    <p class="text-gray-300 mb-6">Are you sure you want to delete your account? This action is permanent
+                    <p class="text-slate-300 mb-6">Are you sure you want to delete your account? This action is permanent
                         and cannot be undone.</p>
                     <div class="flex justify-end space-x-4">
                         <button id="cancel-delete-btn" class="btn-secondary">
@@ -426,19 +492,19 @@
 
             <!-- AI Budget Modal -->
             <div id="ai-budget-modal"
-                class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md hidden z-50">
-                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-lg border border-gray-700">
-                    <h2 class="text-2xl font-bold text-green-500 mb-4">AI Budget Suggestion</h2>
+                class="absolute inset-0 flex items-center justify-center bg-slate-900 bg-opacity-75 backdrop-blur-md hidden z-50">
+                <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-lg border border-slate-700">
+                    <h2 class="text-2xl font-bold text-emerald-500 mb-4">AI Budget Suggestion</h2>
                     <div id="ai-budget-content">
-                        <p class="text-gray-300">The AI will analyze your spending habits and suggest a budget.</p>
-                        <p id="ai-budget-loading" class="mt-4 text-center text-gray-500">
-                            <svg class="animate-spin-slow h-8 w-8 text-gray-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <p class="text-slate-300">The AI will analyze your spending habits and suggest a budget.</p>
+                        <p id="ai-budget-loading" class="mt-4 text-center text-slate-500">
+                            <svg class="animate-spin-slow h-8 w-8 text-slate-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                             <span class="mt-2 block">Analyzing your expenses...</span>
                         </p>
-                        <p id="ai-budget-result" class="mt-4 text-gray-300 hidden"></p>
+                        <p id="ai-budget-result" class="mt-4 text-slate-300 hidden"></p>
                     </div>
                     <div class="flex justify-end mt-6">
                         <button id="close-ai-budget-btn" class="btn-secondary">Close</button>
@@ -455,7 +521,6 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import {
             getAuth,
-            signInWithCustomToken,
             signInAnonymously,
             onAuthStateChanged,
             signOut
@@ -472,23 +537,20 @@
             updateDoc,
             getDocs,
             query,
-            where,
             writeBatch
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables for the canvas environment.
-        // These are provided at runtime and used for authentication and app identification.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            // Placeholder config for local testing
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+        // Firebase configuration provided by the user.
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
+            authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
+            projectId: "daily-expense-tracker-4a115",
+            storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
+            messagingSenderId: "862714037551",
+            appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
         };
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // The project ID is used to structure the Firestore data path.
+        const projectId = "daily-expense-tracker-4a115";
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -541,6 +603,9 @@
 
         const recurringCheckbox = document.getElementById('recurring-checkbox');
         const recurringOptionsContainer = document.getElementById('recurring-options-container');
+        const weeklyRadio = document.getElementById('weekly-radio');
+        const monthlyRadio = document.getElementById('monthly-radio');
+        const weeklyDaysContainer = document.getElementById('weekly-days-container');
 
         const messageBox = document.getElementById('message-box');
         const messageTitleEl = document.getElementById('message-title');
@@ -569,9 +634,9 @@
                 userIdDisplay.textContent = userId;
 
                 // Reference to the user's settings and expenses in Firestore
-                const userSettingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'user_data', 'settings');
+                const userSettingsDocRef = doc(db, 'artifacts', projectId, 'users', userId, 'user_data', 'settings');
                 userSettingsRef = userSettingsDocRef;
-                userExpensesRef = collection(db, 'artifacts', appId, 'users', userId, 'expenses');
+                userExpensesRef = collection(db, 'artifacts', projectId, 'users', userId, 'expenses');
 
                 try {
                     const docSnap = await getDoc(userSettingsDocRef);
@@ -630,14 +695,11 @@
             }
         });
 
-        // Initial sign-in attempt
+        // The custom token login method is not available on GitHub Pages,
+        // so we can always default to anonymous sign-in.
         const startApp = async () => {
             try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (error) {
                 console.error("Authentication failed:", error);
                 showMessage("Authentication Error", "Could not sign in. Please refresh the page.", true);
@@ -654,7 +716,7 @@
 
             try {
                 // Save the username and other settings for the newly created anonymous user
-                await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_data', 'settings'), {
+                await setDoc(doc(db, 'artifacts', projectId, 'users', userId, 'user_data', 'settings'), {
                     username: newUsername,
                     budget: 0,
                     currency: 'INR'
@@ -707,10 +769,10 @@
 
                 const batch = writeBatch(db);
                 // Delete user settings
-                batch.delete(doc(db, 'artifacts', appId, 'users', userId, 'user_data', 'settings'));
+                batch.delete(doc(db, 'artifacts', projectId, 'users', userId, 'user_data', 'settings'));
 
                 // Delete all expenses for the user
-                const q = query(collection(db, 'artifacts', appId, 'users', userId, 'expenses'));
+                const q = collection(db, 'artifacts', projectId, 'users', userId, 'expenses');
                 const querySnapshot = await getDocs(q);
                 querySnapshot.forEach((document) => {
                     batch.delete(document.ref);
@@ -733,8 +795,11 @@
 
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
+                tabButtons.forEach(btn => btn.classList.remove('active', 'bg-emerald-400', 'text-slate-900'));
+                tabButtons.forEach(btn => btn.classList.add('bg-slate-700', 'text-slate-300'));
+                button.classList.add('active', 'bg-emerald-400', 'text-slate-900');
+                button.classList.remove('bg-slate-700', 'text-slate-300');
+
 
                 tabContents.forEach(content => content.classList.add('hidden'));
                 const targetTab = document.getElementById(button.getAttribute('data-tab-id'));
@@ -759,6 +824,9 @@
             const date = expenseDateInput.value || new Date().toISOString().slice(0, 10);
             const isRecurring = recurringCheckbox.checked;
             const recurrenceFrequency = isRecurring ? document.querySelector('input[name="recurrence-freq"]:checked').value : null;
+            const daysOfWeek = isRecurring && recurrenceFrequency === 'weekly' ?
+                Array.from(document.querySelectorAll('.day-checkbox:checked')).map(cb => cb.value) :
+                null;
 
             if (name && !isNaN(amount) && amount > 0) {
                 const newExpense = {
@@ -768,7 +836,8 @@
                     date,
                     timestamp: new Date(),
                     isRecurring,
-                    recurrenceFrequency
+                    recurrenceFrequency,
+                    daysOfWeek
                 };
 
                 try {
@@ -777,6 +846,11 @@
                     expenseForm.reset();
                     recurringCheckbox.checked = false;
                     recurringOptionsContainer.classList.add('hidden');
+                    document.querySelectorAll('.day-checkbox').forEach(cb => {
+                        cb.checked = false;
+                        document.querySelector(`label[for="${cb.id}"]`).classList.remove('bg-emerald-500', 'text-slate-900');
+                        document.querySelector(`label[for="${cb.id}"]`).classList.add('bg-slate-600', 'text-slate-200');
+                    });
                 } catch (error) {
                     console.error("Error adding expense:", error);
                     showMessage("Error", "Failed to add expense. Please try again.", true);
@@ -796,7 +870,7 @@
 
             if (!isNaN(newBudget) && newBudget >= 0) {
                 try {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_data', 'settings'), {
+                    await setDoc(doc(db, 'artifacts', projectId, 'users', userId, 'user_data', 'settings'), {
                         budget: newBudget
                     }, {
                         merge: true
@@ -907,11 +981,11 @@
                 const progress = Math.min(100, (total / userBudget) * 100);
                 budgetProgressEl.style.width = `${progress}%`;
                 if (progress > 80) {
-                    budgetProgressEl.classList.remove('bg-green-500');
+                    budgetProgressEl.classList.remove('bg-emerald-500');
                     budgetProgressEl.classList.add('bg-red-500');
                 } else {
                     budgetProgressEl.classList.remove('bg-red-500');
-                    budgetProgressEl.classList.add('bg-green-500');
+                    budgetProgressEl.classList.add('bg-emerald-500');
                 }
             } else {
                 budgetProgressEl.style.width = '0%';
@@ -921,7 +995,7 @@
         const renderExpenses = (expenses) => {
             expensesList.innerHTML = '';
             if (expenses.length === 0) {
-                expensesList.innerHTML = `<li class="text-center text-gray-500 py-4">No expenses found. Add your first expense!</li>`;
+                expensesList.innerHTML = `<li class="text-center text-slate-500 py-4">No expenses found. Add your first expense!</li>`;
                 return;
             }
 
@@ -938,21 +1012,32 @@
             // Render expenses by date
             for (const date in groupedExpenses) {
                 const dateHeader = document.createElement('h4');
-                dateHeader.className = "text-md font-bold text-gray-400 mt-4 mb-2";
+                dateHeader.className = "text-md font-bold text-slate-400 mt-4 mb-2";
                 dateHeader.textContent = date;
                 expensesList.appendChild(dateHeader);
 
                 groupedExpenses[date].forEach(expense => {
                     const li = document.createElement('li');
-                    li.className = 'bg-gray-700 p-4 rounded-xl flex items-center justify-between shadow-md';
+                    li.className = 'bg-slate-700 p-4 rounded-xl flex items-center justify-between drop-shadow-md';
+                    
+                    let recurringInfo = '';
+                    if (expense.isRecurring) {
+                        recurringInfo += '<span class="text-xs text-emerald-300">Recurring</span>';
+                        if (expense.recurrenceFrequency === 'weekly' && expense.daysOfWeek && expense.daysOfWeek.length > 0) {
+                            recurringInfo += `<span class="text-xs text-slate-400 ml-2">(${expense.daysOfWeek.join(', ')})</span>`;
+                        } else if (expense.recurrenceFrequency === 'monthly') {
+                             recurringInfo += `<span class="text-xs text-slate-400 ml-2">(Monthly)</span>`;
+                        }
+                    }
+
                     li.innerHTML = `
                         <div>
-                            <p class="font-semibold text-gray-100">${expense.name}</p>
-                            <p class="text-xs text-gray-400">Category: ${expense.category}</p>
-                            ${expense.isRecurring ? '<span class="text-xs text-green-300">Recurring</span>' : ''}
+                            <p class="font-semibold text-slate-100">${expense.name}</p>
+                            <p class="text-xs text-slate-400">Category: ${expense.category}</p>
+                            ${recurringInfo}
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="text-xl font-bold text-green-300">${currencySymbol}${expense.amount.toFixed(2)}</span>
+                            <span class="text-xl font-bold text-emerald-300">${currencySymbol}${expense.amount.toFixed(2)}</span>
                             <button class="delete-btn text-red-500 hover:text-red-400" data-id="${expense.id}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1z" clip-rule="evenodd" />
@@ -968,7 +1053,7 @@
                 button.addEventListener('click', async (e) => {
                     const expenseId = e.currentTarget.getAttribute('data-id');
                     try {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'expenses', expenseId));
+                        await deleteDoc(doc(db, 'artifacts', projectId, 'users', userId, 'expenses', expenseId));
                         addLog('Expense deleted.');
                     } catch (error) {
                         console.error("Error deleting document:", error);
@@ -1052,7 +1137,7 @@
                 borderColor: []
             };
 
-            const colors = ['#10b981', '#ef4444', '#3b82f6', '#f97316', '#a855f7', '#fde047'];
+            const colors = ['#34d399', '#f87171', '#60a5fa', '#fb923c', '#a78bfa', '#fde047'];
 
             switch (chartType) {
                 case 'category':
@@ -1080,7 +1165,7 @@
                     chartConfig.type = 'bar';
                     chartConfig.labels = Object.keys(monthlyData);
                     chartConfig.data = Object.values(monthlyData);
-                    chartConfig.backgroundColor = 'rgba(16, 185, 129, 0.5)';
+                    chartConfig.backgroundColor = '#34d399';
                     chartConfig.borderColor = '#10b981';
                     break;
                 case 'daily':
@@ -1096,8 +1181,8 @@
                     chartConfig.type = 'line';
                     chartConfig.labels = Object.keys(dailyData);
                     chartConfig.data = Object.values(dailyData);
-                    chartConfig.backgroundColor = 'rgba(16, 185, 129, 0.2)';
-                    chartConfig.borderColor = '#10b981';
+                    chartConfig.backgroundColor = 'rgba(52, 211, 153, 0.2)';
+                    chartConfig.borderColor = '#34d399';
                     chartConfig.fill = true;
                     chartConfig.tension = 0.4;
                     break;
@@ -1118,7 +1203,7 @@
         const fetchQuote = async () => {
             dynamicQuoteEl.innerHTML = `
                 <span class="inline-flex items-center">
-                    <svg class="animate-spin-slow h-5 w-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg class="animate-spin-slow h-5 w-5 text-slate-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
@@ -1190,7 +1275,7 @@
 
         const addLog = (message) => {
             const li = document.createElement('li');
-            li.className = 'text-xs text-gray-400 border-b border-gray-700 pb-1';
+            li.className = 'text-xs text-slate-400 border-b border-slate-700 pb-1';
             li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
             logsList.prepend(li);
         };
@@ -1203,11 +1288,11 @@
             messageBox.classList.remove('hidden');
 
             if (isError) {
-                messageBox.classList.remove('bg-gray-800');
+                messageBox.classList.remove('bg-slate-800');
                 messageBox.classList.add('bg-red-800');
             } else {
                 messageBox.classList.remove('bg-red-800');
-                messageBox.classList.add('bg-gray-800');
+                messageBox.classList.add('bg-slate-800');
             }
 
             setTimeout(() => {
@@ -1225,9 +1310,41 @@
         recurringCheckbox.addEventListener('change', (e) => {
             if (e.target.checked) {
                 recurringOptionsContainer.classList.remove('hidden');
+                // Check if weekly is selected by default
+                if(weeklyRadio.checked) {
+                    weeklyDaysContainer.classList.remove('hidden');
+                } else {
+                    weeklyDaysContainer.classList.add('hidden');
+                }
             } else {
                 recurringOptionsContainer.classList.add('hidden');
+                weeklyDaysContainer.classList.add('hidden');
             }
+        });
+
+        // Event listener for weekly/monthly radio buttons
+        document.querySelectorAll('input[name="recurrence-freq"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'weekly') {
+                    weeklyDaysContainer.classList.remove('hidden');
+                } else {
+                    weeklyDaysContainer.classList.add('hidden');
+                }
+            });
+        });
+
+        // Event listener for day checkboxes
+        document.querySelectorAll('.day-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const label = document.querySelector(`label[for="${e.target.id}"]`);
+                if (e.target.checked) {
+                    label.classList.remove('bg-slate-600', 'text-slate-200');
+                    label.classList.add('bg-emerald-500', 'text-slate-900');
+                } else {
+                    label.classList.remove('bg-emerald-500', 'text-slate-900');
+                    label.classList.add('bg-slate-600', 'text-slate-200');
+                }
+            });
         });
 
         // Event listeners for export buttons
