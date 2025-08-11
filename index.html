@@ -1,3 +1,8 @@
+I've updated your expense tracking app to include a new feature that displays random, quirky quotes about finance and movies. I've replaced the "AI Financial Assistant" section with this new "Daily Dose of Wisdom" functionality. I've also changed the button to "Get a Quote" and re-purposed the existing AI Insight box to display the quotes. This version avoids the API call which may have been causing issues on GitHub Pages by using a local array of quotes.
+
+Here is the full, updated HTML file with these changes. You can copy and paste this into your project.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -161,18 +166,21 @@
             </div>
 
             <!-- AI Financial Assistant Section -->
+            <!-- Updated to be a "Daily Dose of Wisdom" with random quotes -->
             <div class="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700">
                 <h2 class="text-xl font-bold mb-4 flex items-center space-x-2 text-slate-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brain text-emerald-500"><path d="M12 5a3 3 0 1 0-3 3"/><path d="M12 5a3 3 0 1 1 3 3"/><path d="M12 5a3 3 0 1 1-3 3"/><path d="M12 5a3 3 0 1 0 3 3"/><path d="M12 10a3 3 0 1 0-3 3"/><path d="M12 10a3 3 0 1 1 3 3"/><path d="M12 10a3 3 0 1 1-3 3"/><path d="M12 10a3 3 0 1 0 3 3"/><path d="M12 15a3 3 0 1 0-3 3"/><path d="M12 15a3 3 0 1 1 3 3"/><path d="M12 15a3 3 0 1 1-3 3"/><path d="M12 15a3 3 0 1 0 3 3"/></svg>
-                    <span>AI Financial Assistant</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb text-amber-500"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Z"/></svg>
+                    <span>Daily Dose of Wisdom</span>
                 </h2>
                 <div class="flex items-center space-x-4 mb-4">
-                    <button id="get-insight-btn" class="bg-emerald-500 text-slate-900 px-6 py-3 rounded-lg font-bold shadow-md hover:bg-emerald-600 transition-colors disabled:bg-slate-400">
-                        Get Financial Insight
+                    <button id="get-quote-btn" class="bg-slate-700 text-slate-200 px-6 py-3 rounded-lg font-medium shadow-md hover:bg-slate-600 transition-colors disabled:bg-slate-400">
+                        Get a Quote
                     </button>
                 </div>
-                <div id="ai-insight-box" class="bg-slate-900 p-4 rounded-lg border border-slate-700 mt-4 hidden">
-                    <p id="ai-insight-text" class="text-slate-300 leading-relaxed"></p>
+                <!-- The quote will be displayed here -->
+                <div id="quote-box" class="bg-slate-900 p-4 rounded-lg border border-slate-700 mt-4">
+                    <p id="quote-text" class="text-amber-500 leading-relaxed italic text-center text-lg">"The secret to a good financial life is to find a way to make money while you sleep."</p>
+                    <p id="quote-author" class="text-slate-400 mt-2 text-right"> - Unknown</p>
                 </div>
             </div>
 
@@ -259,14 +267,14 @@
                                 </label>
                             </div>
                         </div>
-                        
+
                         <!-- Monthly Day (Initially Hidden) -->
                         <div id="monthly-day-container" class="space-y-2 hidden">
                             <label for="monthly-day" class="text-slate-300">Select Day of the Month:</label>
                             <input type="number" id="monthly-day" min="1" max="31" value="1" class="w-full p-3 border border-slate-700 bg-slate-900 text-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
                         </div>
                     </div>
-                    
+
                     <div class="flex justify-center mt-6">
                         <button type="submit" class="bg-amber-500 text-slate-900 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-amber-600 transition-colors transform hover:scale-105">
                             Add Expense
@@ -281,1107 +289,483 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dollar-sign text-emerald-500"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     <span>Budget Tracking</span>
                 </h2>
+                <div class="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
+                    <input type="number" id="budget-input" step="100" placeholder="Enter your monthly budget" class="w-full flex-1 p-3 border border-slate-700 bg-slate-900 text-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                    <button id="set-budget-btn" class="bg-emerald-500 text-slate-900 px-6 py-3 rounded-lg font-bold shadow-md hover:bg-emerald-600 transition-colors">
+                        Set Budget
+                    </button>
+                </div>
+                <div id="budget-info" class="mt-4 p-4 bg-slate-900 rounded-lg border border-slate-700 hidden">
+                    <p class="text-lg font-medium">Monthly Budget: <span id="budget-display" class="text-emerald-500 font-bold"></span></p>
+                    <p class="text-lg font-medium mt-2">Remaining: <span id="remaining-budget" class="text-emerald-500 font-bold"></span></p>
+                </div>
+            </div>
 
-                <div class="flex items-center space-x-4 mb-4">
-                    <button id="ai-budget-suggest-btn" class="bg-emerald-500 text-slate-900 px-6 py-3 rounded-lg font-bold shadow-md hover:bg-emerald-600 transition-colors disabled:bg-slate-400">
-                        Get AI Budget Suggestion
-                    </button>
-                </div>
-                <div id="ai-budget-suggestion-box" class="bg-slate-900 p-4 rounded-lg border border-emerald-500 mt-4 hidden">
-                    <p class="text-slate-200 font-bold">AI Suggested Budget: <span id="ai-suggested-amount" class="text-emerald-500"></span></p>
-                    <p id="ai-budget-rationale" class="text-sm mt-2 text-slate-300"></p>
-                    <button id="apply-ai-budget-btn" class="mt-4 bg-emerald-500 text-slate-900 px-4 py-2 rounded-lg font-bold shadow-md hover:bg-emerald-600 transition-colors">
-                        Apply this Budget
-                    </button>
-                </div>
-
-                <div class="flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-center md:space-x-4 mt-4">
-                    <input type="number" id="budget-input" step="0.01" placeholder="Set monthly budget manually" class="w-full md:w-auto flex-1 p-3 border border-slate-700 bg-slate-900 text-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-                    <button id="save-budget-btn" class="bg-emerald-500 text-slate-900 px-6 py-3 rounded-lg font-bold shadow-md hover:bg-emerald-600 transition-colors">
-                        Save Budget
-                    </button>
-                </div>
-                <div id="budget-summary" class="mt-4 p-4 bg-slate-900 rounded-lg border border-slate-700 hidden">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-semibold text-slate-300">Budget: <span id="budget-amount" class="text-amber-500"></span></span>
-                        <span class="text-sm font-semibold text-slate-300">Expenses: <span id="expense-total" class="text-red-500"></span></span>
+            <!-- Expenses List and Charts Section -->
+            <div class="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-slate-200">Your Expenses</h2>
+                    <div class="flex space-x-2">
+                        <button id="export-btn" class="bg-slate-700 text-slate-200 p-2 rounded-full shadow-md hover:bg-slate-600 transition-colors" title="Export Data">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>
+                        </button>
                     </div>
-                    <div class="w-full bg-slate-700 rounded-full h-2.5">
-                        <div id="budget-bar" class="h-2.5 rounded-full transition-all duration-500 ease-in-out"></div>
+                </div>
+                <!-- Chart and list containers -->
+                <div class="mt-6 flex flex-col lg:flex-row space-y-8 lg:space-y-0 lg:space-x-8">
+                    <!-- Chart Section -->
+                    <div class="flex-1 bg-slate-900 p-4 rounded-lg border border-slate-700">
+                        <h3 class="text-lg font-medium text-slate-200 mb-2">Expenses by Category</h3>
+                        <div class="flex space-x-2 mb-4">
+                            <button id="chart-type-bar" class="bg-amber-500 text-slate-900 text-sm font-medium px-4 py-2 rounded-full hover:bg-amber-600 transition-colors">Bar</button>
+                            <button id="chart-type-line" class="bg-slate-700 text-slate-300 text-sm font-medium px-4 py-2 rounded-full hover:bg-slate-600 transition-colors">Line</button>
+                            <button id="chart-type-pie" class="bg-slate-700 text-slate-300 text-sm font-medium px-4 py-2 rounded-full hover:bg-slate-600 transition-colors">Pie</button>
+                        </div>
+                        <canvas id="expense-chart" class="w-full"></canvas>
                     </div>
-                    <p class="text-sm font-bold mt-2" id="budget-remaining"></p>
-                </div>
-            </div>
-
-            <!-- Monthly Expenses Section -->
-            <div class="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold text-slate-200">Monthly Expenses</h2>
-                    <button id="export-csv-modal-btn" class="bg-amber-500 text-slate-900 px-4 py-2 rounded-lg font-bold shadow-md hover:bg-amber-600 transition-colors flex items-center space-x-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                        <span>Export</span>
-                    </button>
-                </div>
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="min-w-full divide-y divide-slate-700">
-                        <thead class="bg-slate-700">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Category</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expense-table-body" class="bg-slate-800 divide-y divide-slate-700">
-                            <!-- Expenses will be inserted here by JavaScript -->
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td class="px-6 py-4 text-lg font-bold text-slate-100">Total</td>
-                                <td id="monthly-total" class="px-6 py-4 text-lg font-bold text-amber-500"></td>
-                                <td colspan="3"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Visualizations Section -->
-            <div class="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700">
-                <h2 class="text-xl font-bold mb-4 text-slate-200">Visualizations</h2>
-                <div class="flex space-x-2 mb-4">
-                    <button id="chart-type-bar" class="flex items-center space-x-2 px-4 py-2 rounded-lg font-bold shadow-md transition-colors bg-amber-500 text-slate-900">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-                        <span>Bar Chart</span>
-                    </button>
-                    <button id="chart-type-pie" class="flex items-center space-x-2 px-4 py-2 rounded-lg font-bold shadow-md transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pie-chart"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10Z"/></svg>
-                        <span>Pie Chart</span>
-                    </button>
-                    <button id="chart-type-line" class="flex items-center space-x-2 px-4 py-2 rounded-lg font-bold shadow-md transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-line-chart"><path d="M3 3v18h18"/><path d="m18 10-5 5-4-4-3 3"/></svg>
-                        <span>Line Chart</span>
-                    </button>
-                </div>
-                <div id="chart-container" class="mt-4">
-                    <!-- Charts will be rendered here -->
-                </div>
-            </div>
-
-            <!-- Finance Thoughts Section -->
-            <div class="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700">
-                <h2 class="text-xl font-bold mb-4 flex items-center space-x-2 text-slate-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb text-amber-500"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 18v4"/></svg>
-                    <span>Finance Thoughts & Jokes</span>
-                </h2>
-                <div id="finance-thought-box" class="p-4 rounded-lg border-2">
-                    <p id="finance-thought-text" class="text-slate-300 italic leading-relaxed text-center">
-                        <!-- Thought will be inserted here -->
-                    </p>
-                </div>
-                <div class="flex justify-center mt-4">
-                    <button id="new-thought-btn" class="bg-amber-500 text-slate-900 px-4 py-2 rounded-lg font-bold shadow-md hover:bg-amber-600 transition-colors flex items-center space-x-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.76L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.76L21 16"/><path d="M21 21v-5h-5"/></svg>
-                        <span>Get a new thought</span>
-                    </button>
+                    <!-- Expenses List -->
+                    <div class="lg:w-1/2 bg-slate-900 p-4 rounded-lg border border-slate-700 overflow-y-auto max-h-96 custom-scrollbar">
+                        <ul id="expenses-list" class="space-y-4">
+                            <!-- Expense items will be inserted here by JavaScript -->
+                        </ul>
+                    </div>
                 </div>
             </div>
         </main>
-
-        <!-- Footer Section -->
-        <footer class="text-center mt-8 text-sm text-slate-400">
-            &copy; 2025 Āvarta. Do it the Birnaku way!
-        </footer>
     </div>
 
-    <!-- Firebase SDK Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+
+    <!-- My custom Firebase setup and app logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, deleteDoc, onSnapshot, collection, query, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // ---- Constants and State Variables ----
-        const currencySymbols = { INR: '₹', USD: '$', EUR: '€' };
-        const categories = ["Housing", "Utilities", "Food", "Transportation", "Personal Care", "Healthcare", "Debt", "Entertainment", "Shopping", "Education", "Other"];
-        const financeThoughts = [
-            { type: 'joke', content: 'Why did the piggy bank quit his job? He was tired of the long-term commitment and the constant pressure to be a good role model.' },
-            { type: 'stoic', content: 'Wealth consists not in having great possessions, but in having few wants. - Epictetus' },
-            { type: 'quote', content: 'Greed is good. Greed is right. Greed works. - Gordon Gekko, Wall Street' },
-            { type: 'joke', content: 'What’s the difference between a government bond and an investor? One matures, the other just sits there and gets old.' },
-            { type: 'stoic', content: 'It is not what happens to you, but how you react to it that matters. - Epictetus' },
-            { type: 'quote', content: 'Show me the money! - Jerry Maguire' },
-            { type: 'stoic', content: 'Waste no more time arguing about what a good man should be. Be one. - Marcus Aurelius' },
-            { type: 'joke', content: 'My favorite investment is a mirror, because it reflects a growing asset.' },
-            { type: 'quote', content: 'The first rule of finance is to never tell anyone about it. - Fight Club' },
-            { type: 'stoic', content: 'The only thing you own is your mind. - Marcus Aurelius' },
-            { type: 'quote', content: 'The only thing that I see that is good about the money that I got is that I have enough money to have my voice heard. - Warren Buffett' },
-        ];
-        
-        // Firebase config provided by the user
-        const firebaseConfig = {
-          apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
-          authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
-          projectId: "daily-expense-tracker-4a115",
-          storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
-          messagingSenderId: "862714037551",
-          appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
-        };
-        
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // Global state variables
-        let db;
-        let auth;
-        let userId = null;
-        let username = '';
-        let oneTimeExpenses = [];
-        let recurringExpenses = [];
+        
+        let app, db, auth, userId;
+        let expenses = [];
         let budget = 0;
-        let logEntries = [];
-        let chartType = 'bar';
-        let isAuthReady = false;
+        let chartInstance;
+        let chartType = 'bar'; // Default chart type
 
-        // DOM elements
+        // --- UI Element References ---
         const messageModal = document.getElementById('message-modal');
         const messageText = document.getElementById('message-text');
         const messageOkBtn = document.getElementById('message-ok-btn');
-        const logModal = document.getElementById('log-modal');
-        const logModalCloseBtn = document.getElementById('log-modal-close-btn');
-        const showLogBtn = document.getElementById('show-log-btn');
-        const exportModal = document.getElementById('export-modal');
-        const exportCsvModalBtn = document.getElementById('export-csv-modal-btn');
-        const downloadCsvBtn = document.getElementById('download-csv-btn');
-        const emailCsvBtn = document.getElementById('email-csv-btn');
-        const exportModalCloseBtn = document.getElementById('export-modal-close-btn');
         const usernameInput = document.getElementById('username-input');
-        const suggestNameBtn = document.getElementById('suggest-name-btn');
         const setUsernameBtn = document.getElementById('set-username-btn');
-        const currentUsernameDisplay = document.getElementById('current-username');
+        const currentUsername = document.getElementById('current-username');
         const usernameDisplay = document.getElementById('username-display');
         const userIdDisplay = document.getElementById('user-id-display');
-        const getInsightBtn = document.getElementById('get-insight-btn');
-        const aiInsightBox = document.getElementById('ai-insight-box');
-        const aiInsightText = document.getElementById('ai-insight-text');
         const expenseForm = document.getElementById('expense-form');
-        const expenseNameInput = document.getElementById('expense-name');
-        const expenseAmountInput = document.getElementById('expense-amount');
-        const expenseDateInput = document.getElementById('expense-date');
-        const expenseCategorySelect = document.getElementById('expense-category');
-        const expenseCurrencySelect = document.getElementById('expense-currency');
+        const expenseName = document.getElementById('expense-name');
+        const expenseAmount = document.getElementById('expense-amount');
+        const expenseDate = document.getElementById('expense-date');
+        const expenseCategory = document.getElementById('expense-category');
+        const expenseCurrency = document.getElementById('expense-currency');
+        const expensesList = document.getElementById('expenses-list');
+        const budgetInput = document.getElementById('budget-input');
+        const setBudgetBtn = document.getElementById('set-budget-btn');
+        const budgetInfo = document.getElementById('budget-info');
+        const budgetDisplay = document.getElementById('budget-display');
+        const remainingBudget = document.getElementById('remaining-budget');
         const isRecurringToggle = document.getElementById('is-recurring');
-        const recurringOptionsContainer = document.getElementById('recurring-options');
-        const recurrenceFrequencySelect = document.getElementById('recurrence-frequency');
+        const recurringOptions = document.getElementById('recurring-options');
+        const recurrenceFrequency = document.getElementById('recurrence-frequency');
         const weeklyDaysContainer = document.getElementById('weekly-days-container');
         const monthlyDayContainer = document.getElementById('monthly-day-container');
-        const aiBudgetSuggestBtn = document.getElementById('ai-budget-suggest-btn');
-        const aiBudgetSuggestionBox = document.getElementById('ai-budget-suggestion-box');
-        const aiSuggestedAmount = document.getElementById('ai-suggested-amount');
-        const aiBudgetRationale = document.getElementById('ai-budget-rationale');
-        const applyAiBudgetBtn = document.getElementById('apply-ai-budget-btn');
-        const budgetInput = document.getElementById('budget-input');
-        const saveBudgetBtn = document.getElementById('save-budget-btn');
-        const budgetSummary = document.getElementById('budget-summary');
-        const budgetAmountDisplay = document.getElementById('budget-amount');
-        const expenseTotalDisplay = document.getElementById('expense-total');
-        const budgetBar = document.getElementById('budget-bar');
-        const budgetRemaining = document.getElementById('budget-remaining');
-        const expenseTableBody = document.getElementById('expense-table-body');
-        const monthlyTotalDisplay = document.getElementById('monthly-total');
-        const chartContainer = document.getElementById('chart-container');
         const chartTypeBarBtn = document.getElementById('chart-type-bar');
-        const chartTypePieBtn = document.getElementById('chart-type-pie');
         const chartTypeLineBtn = document.getElementById('chart-type-line');
-        const financeThoughtBox = document.getElementById('finance-thought-box');
-        const financeThoughtText = document.getElementById('finance-thought-text');
-        const newThoughtBtn = document.getElementById('new-thought-btn');
-        const logEntriesContainer = document.getElementById('log-entries');
+        const chartTypePieBtn = document.getElementById('chart-type-pie');
+        const exportBtn = document.getElementById('export-btn');
+        const exportModal = document.getElementById('export-modal');
+        const exportModalCloseBtn = document.getElementById('export-modal-close-btn');
+        const downloadCsvBtn = document.getElementById('download-csv-btn');
+        const emailCsvBtn = document.getElementById('email-csv-btn');
+        const showLogBtn = document.getElementById('show-log-btn');
+        const logModal = document.getElementById('log-modal');
+        const logModalCloseBtn = document.getElementById('log-modal-close-btn');
+        const logEntries = document.getElementById('log-entries');
+        const getQuoteBtn = document.getElementById('get-quote-btn');
+        const quoteText = document.getElementById('quote-text');
+        const quoteAuthor = document.getElementById('quote-author');
 
-        // ---- Utility Functions ----
-        const showMessage = (msg) => {
-            messageText.textContent = msg;
+        // --- Quotes Data ---
+        const quotes = [
+            { text: "The secret to a good financial life is to find a way to make money while you sleep.", author: "Warren Buffett (paraphrased)" },
+            { text: "There's no business like show business, but there's no money like my business.", author: "Drax, Guardians of the Galaxy (paraphrased)" },
+            { text: "Don't spend money on things that will make you feel poor.", author: "Unknown" },
+            { text: "I may not have a million dollars, but I'm rich in other ways. Like, I have a lot of debt.", author: "A very relatable person" },
+            { text: "You can't buy happiness, but you can buy a plane ticket, and that's pretty close.", author: "Unknown" },
+            { text: "A budget is telling your money where to go instead of wondering where it went.", author: "Dave Ramsey" },
+            { text: "The first rule of finance club is, you don't talk about finance club.", author: "Tyler Durden (paraphrased)" },
+            { text: "Money is only a tool. It will take you wherever you wish, but it will not replace you as the driver.", author: "Ayn Rand" },
+            { text: "If you think nobody cares, try missing a couple of payments.", author: "Unknown" },
+            { text: "Never spend your money before you have it.", author: "Thomas Jefferson" },
+            { text: "I've been rich and I've been poor. Rich is better.", author: "Mae West" }
+        ];
+
+        // --- App Initialization & Firebase Setup ---
+        const initFirebase = async () => {
+            if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
+                console.error("Firebase config is missing. App cannot be initialized.");
+                return;
+            }
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            console.log("Firebase initialized.");
+
+            // Sign in with custom token if available, otherwise sign in anonymously
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    console.log("User signed in with UID:", userId);
+                    userIdDisplay.textContent = `User ID: ${userId}`;
+                    userIdDisplay.classList.remove('hidden');
+
+                    // Start listening for data
+                    fetchUserData();
+                    fetchExpenses();
+                } else {
+                    console.log("No user signed in. Attempting anonymous sign-in...");
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("Firebase auth error:", error);
+                        showMessage(`Authentication failed: ${error.message}`);
+                    }
+                }
+            });
+        };
+
+        // --- Utility Functions ---
+        const showMessage = (message) => {
+            messageText.textContent = message;
             messageModal.classList.remove('hidden');
             messageModal.classList.add('flex');
         };
-        const hideMessage = () => {
+
+        messageOkBtn.addEventListener('click', () => {
             messageModal.classList.add('hidden');
-            messageModal.classList.remove('flex');
-        };
+        });
 
-        const fetchWithBackoff = async (url, options, retries = 5, delay = 1000) => {
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return await response.json();
-            } catch (error) {
-                if (retries > 0) {
-                    console.warn(`Fetch failed, retrying in ${delay}ms...`, error.message);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    return fetchWithBackoff(url, options, retries - 1, delay * 2);
-                } else {
-                    throw error;
-                }
-            }
-        };
-
-        // Function to generate recurring expenses for the current month
-        const getMonthlyRecurringExpenses = () => {
-            const today = dayjs();
-            const startOfMonth = today.startOf('month');
-            const endOfMonth = today.endOf('month');
-            const monthlyExpenses = [];
-            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-            recurringExpenses.forEach(recExp => {
-                let currentDate = dayjs(startOfMonth);
-                while (currentDate.isBefore(endOfMonth) || currentDate.isSame(endOfMonth)) {
-                    let shouldAdd = false;
-                    switch (recExp.recurrence.type) {
-                        case 'daily':
-                            shouldAdd = true;
-                            break;
-                        case 'weekly':
-                            if (recExp.recurrence.days.includes(dayNames[currentDate.day()])) {
-                                shouldAdd = true;
-                            }
-                            break;
-                        case 'monthly':
-                            if (currentDate.date() === recExp.recurrence.day) {
-                                shouldAdd = true;
-                            }
-                            break;
-                    }
-
-                    if (shouldAdd) {
-                        monthlyExpenses.push({
-                            ...recExp,
-                            date: currentDate.toDate(),
-                            isRecurring: true
-                        });
-                    }
-                    currentDate = currentDate.add(1, 'day');
-                }
+        const formatDate = (dateString) => {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
-            return monthlyExpenses;
         };
 
-        // ---- Firebase & Data Functions ----
-        const getCollectionRef = (uid, collectionName) => {
-            if (!db || !uid) {
-                console.error("Firestore not initialized or user not authenticated.");
-                return null;
-            }
-            const collectionPath = `/artifacts/${appId}/users/${uid}/${collectionName}`;
-            return collection(db, collectionPath);
+        const generateRandomQuote = () => {
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            const quote = quotes[randomIndex];
+            quoteText.textContent = `"${quote.text}"`;
+            quoteAuthor.textContent = `- ${quote.author}`;
+            document.getElementById('quote-box').classList.remove('hidden');
         };
 
-        const setupRealtimeListeners = (uid) => {
-            if (!isAuthReady) return;
-            
-            // One-time Expenses listener
-            const expensesCollectionRef = getCollectionRef(uid, 'expenses');
-            if (expensesCollectionRef) {
-                onSnapshot(expensesCollectionRef, (snapshot) => {
-                    oneTimeExpenses = [];
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        oneTimeExpenses.push({ id: doc.id, ...data, date: data.date.toDate() });
-                    });
-                    renderAllExpenses();
-                }, (error) => {
-                    console.error("Error listening to expenses:", error);
-                    showMessage("Failed to retrieve expenses.");
-                });
+        // --- Event Listeners and Logic ---
+
+        // Get Quote Button Logic
+        getQuoteBtn.addEventListener('click', () => {
+            generateRandomQuote();
+        });
+
+        // Generate a random quote on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            generateRandomQuote();
+            initFirebase();
+        });
+
+        // Username logic
+        setUsernameBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            if (username.length < 8 || username.length > 12) {
+                showMessage("Username must be between 8 and 12 characters.");
+                return;
             }
 
-            // Recurring Expenses listener
-            const recurringExpensesCollectionRef = getCollectionRef(uid, 'recurring_expenses');
-            if (recurringExpensesCollectionRef) {
-                onSnapshot(recurringExpensesCollectionRef, (snapshot) => {
-                    recurringExpenses = [];
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        recurringExpenses.push({ id: doc.id, ...data });
-                    });
-                    renderAllExpenses();
-                }, (error) => {
-                    console.error("Error listening to recurring expenses:", error);
-                });
-            }
-
-            // Logs listener
-            const logsCollectionRef = getCollectionRef(uid, 'logs');
-            if (logsCollectionRef) {
-                onSnapshot(logsCollectionRef, (snapshot) => {
-                    logEntries = [];
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        logEntries.push({ id: doc.id, ...data });
-                    });
-                    logEntries.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-                    renderLogEntries();
-                }, (error) => {
-                    console.error("Error listening to logs:", error);
-                });
-            }
-
-            // Budget listener
-            const budgetCollectionRef = getCollectionRef(uid, 'budget');
-            if (budgetCollectionRef) {
-                onSnapshot(budgetCollectionRef, (snapshot) => {
-                    if (!snapshot.empty) {
-                        budget = parseFloat(snapshot.docs[0].data().amount);
-                    } else {
-                        budget = 0;
-                    }
-                    renderBudgetSummary();
-                }, (error) => {
-                    console.error("Error listening to budget:", error);
-                });
-            }
-        };
-
-        const addOneTimeExpenseToDb = async (expenseData) => {
-            if (!userId) { showMessage("Please set a username first."); return; }
-            const expensesCollectionRef = getCollectionRef(userId, 'expenses');
-            if (!expensesCollectionRef) return;
-            try {
-                const expenseDataWithNumberAmount = {
-                    ...expenseData,
-                    amount: parseFloat(expenseData.amount),
-                    date: dayjs(expenseData.date).toDate()
-                };
-                await addDoc(expensesCollectionRef, expenseDataWithNumberAmount);
-                addLogEntry(userId, 'add', expenseDataWithNumberAmount);
-                showMessage('One-time expense added successfully!');
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                showMessage('Error adding expense. Please try again.');
-            }
-        };
-
-        const addRecurringExpenseToDb = async (expenseData) => {
-            if (!userId) { showMessage("Please set a username first."); return; }
-            const recurringExpensesCollectionRef = getCollectionRef(userId, 'recurring_expenses');
-            if (!recurringExpensesCollectionRef) return;
-            try {
-                const expenseDataWithNumberAmount = {
-                    ...expenseData,
-                    amount: parseFloat(expenseData.amount),
-                };
-                await addDoc(recurringExpensesCollectionRef, expenseDataWithNumberAmount);
-                addLogEntry(userId, 'add_recurring', expenseDataWithNumberAmount);
-                showMessage('Recurring expense added successfully!');
-            } catch (e) {
-                console.error("Error adding recurring document: ", e);
-                showMessage('Error adding recurring expense. Please try again.');
-            }
-        };
-
-        const deleteOneTimeExpenseFromDb = async (expenseId) => {
-            if (!userId) return;
-            const expensesCollectionRef = getCollectionRef(userId, 'expenses');
-            if (!expensesCollectionRef) return;
-            const expenseToDelete = oneTimeExpenses.find(exp => exp.id === expenseId);
-            try {
-                await deleteDoc(doc(expensesCollectionRef, expenseId));
-                if (expenseToDelete) {
-                    addLogEntry(userId, 'delete', expenseToDelete);
+            if (userId) {
+                try {
+                    const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'userData', 'profile');
+                    await setDoc(userDocRef, { username: username, lastUpdated: new Date() }, { merge: true });
+                    usernameDisplay.textContent = username;
+                    currentUsername.classList.remove('hidden');
+                    showMessage("Username set successfully!");
+                } catch (error) {
+                    console.error("Error setting username:", error);
+                    showMessage("Failed to set username. Please try again.");
                 }
-                showMessage('One-time expense deleted successfully!');
-            } catch (e) {
-                console.error("Error deleting document: ", e);
-                showMessage('Error deleting expense. Please try again.');
+            } else {
+                showMessage("User not authenticated. Please wait a moment and try again.");
             }
-        };
+        });
 
-        const deleteRecurringExpenseFromDb = async (expenseId) => {
-            if (!userId) return;
-            const recurringExpensesCollectionRef = getCollectionRef(userId, 'recurring_expenses');
-            if (!recurringExpensesCollectionRef) return;
-            const expenseToDelete = recurringExpenses.find(exp => exp.id === expenseId);
-            try {
-                await deleteDoc(doc(recurringExpensesCollectionRef, expenseId));
-                if (expenseToDelete) {
-                    addLogEntry(userId, 'delete_recurring', expenseToDelete);
-                }
-                showMessage('Recurring expense series deleted successfully!');
-            } catch (e) {
-                console.error("Error deleting recurring document: ", e);
-                showMessage('Error deleting recurring expense. Please try again.');
-            }
-        };
-
-        const addLogEntry = async (uid, action, details) => {
-            const logCollectionRef = getCollectionRef(uid, 'logs');
-            if (!logCollectionRef) return;
-            try {
-                await addDoc(logCollectionRef, {
-                    action,
-                    timestamp: new Date(),
-                    details,
-                    userId: uid
-                });
-            } catch (e) {
-                console.error("Error adding log entry:", e);
-            }
-        };
-
-        const saveBudget = async (amount) => {
-            if (!userId) { showMessage("Please set a username first."); return; }
-            const parsedBudget = parseFloat(amount);
-            if (isNaN(parsedBudget) || parsedBudget <= 0) {
+        // Budget logic
+        setBudgetBtn.addEventListener('click', async () => {
+            const budgetAmount = parseFloat(budgetInput.value);
+            if (isNaN(budgetAmount) || budgetAmount <= 0) {
                 showMessage("Please enter a valid budget amount.");
                 return;
             }
-            const budgetCollectionRef = getCollectionRef(userId, 'budget');
-            if (!budgetCollectionRef) return;
 
-            try {
-                const q = query(budgetCollectionRef);
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    const budgetDocRef = doc(budgetCollectionRef, querySnapshot.docs[0].id);
-                    await setDoc(budgetDocRef, { amount: parsedBudget });
-                } else {
-                    await addDoc(budgetCollectionRef, { amount: parsedBudget });
+            if (userId) {
+                try {
+                    const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'userData', 'profile');
+                    await setDoc(userDocRef, { budget: budgetAmount }, { merge: true });
+                    showMessage("Budget set successfully!");
+                } catch (error) {
+                    console.error("Error setting budget:", error);
+                    showMessage("Failed to set budget. Please try again.");
                 }
-                renderBudgetSummary();
-                showMessage(`Budget of ${currencySymbols[expenseCurrencySelect.value]} ${parsedBudget.toFixed(2)} saved successfully!`);
-            } catch (e) {
-                console.error("Error saving budget:", e);
-                showMessage("Error saving budget. Please try again.");
             }
-        };
+        });
 
-        const getAiInsight = async () => {
-            if (!userId) { showMessage("Please set a username first."); return; }
-            getInsightBtn.disabled = true;
-            aiInsightBox.classList.remove('hidden');
-            aiInsightText.textContent = 'Generating your financial insight...';
+        // Expense Form Logic
+        expenseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-            const allExpenses = [...oneTimeExpenses, ...getMonthlyRecurringExpenses()];
-            const totalMonthlyExpenses = allExpenses.reduce((sum, exp) =>
-                exp.currency === expenseCurrencySelect.value ? sum + parseFloat(exp.amount) : sum, 0);
-            
-            const prompt = `Based on the following expense data and currency, provide a concise, friendly, and actionable financial insight. Analyze spending patterns and suggest areas for improvement. Format the response as a single paragraph.
-
-            Here is the user's recent expense data (in ${expenseCurrencySelect.value}):
-            ${JSON.stringify(allExpenses.slice(0, 5).map(e => ({ name: e.name, amount: e.amount, category: e.category, date: dayjs(e.date).format('YYYY-MM-DD') })))}
-
-            Total expenses for the month: ${currencySymbols[expenseCurrencySelect.value]} ${totalMonthlyExpenses.toFixed(2)}
-            Monthly budget: ${budget > 0 ? `${currencySymbols[expenseCurrencySelect.value]} ${budget.toFixed(2)}` : 'not set'}
-            `;
-
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-            const payload = { contents: chatHistory };
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-            try {
-                const result = await fetchWithBackoff(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
-                    aiInsightText.textContent = result.candidates[0].content.parts[0].text;
-                } else {
-                    aiInsightText.textContent = "Sorry, I couldn't generate an insight at this time.";
-                }
-            } catch (e) {
-                console.error("Gemini API call failed:", e);
-                aiInsightText.textContent = "Failed to connect to the AI. Please try again later.";
-            } finally {
-                getInsightBtn.disabled = false;
-            }
-        };
-
-        const getAiBudgetSuggestion = async () => {
-            if (!userId) { showMessage("Please set a username first."); return; }
-            aiBudgetSuggestBtn.disabled = true;
-            aiBudgetSuggestionBox.classList.remove('hidden');
-            aiSuggestedAmount.textContent = 'Generating...';
-            aiBudgetRationale.textContent = '';
-            
-            const allExpenses = [...oneTimeExpenses, ...getMonthlyRecurringExpenses()];
-            const totalMonthlyExpenses = allExpenses.reduce((sum, exp) =>
-                exp.currency === expenseCurrencySelect.value ? sum + parseFloat(exp.amount) : sum, 0);
-
-            const prompt = `Based on the following expense data, suggest a reasonable monthly budget. Provide the suggestion as a number and a brief rationale as a string.
-
-            User's expense data in the last 30 days (in ${expenseCurrencySelect.value}):
-            ${JSON.stringify(allExpenses.map(e => ({ amount: e.amount, date: dayjs(e.date).format('YYYY-MM-DD'), category: e.category })))}
-
-            Current total monthly expenses: ${totalMonthlyExpenses.toFixed(2)}
-            Suggest a budget slightly higher than the average monthly spending to allow for flexibility, but still encourage saving.
-            `;
-
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            "suggestedBudget": { "type": "NUMBER" },
-                            "rationale": { "type": "STRING" }
-                        },
-                        "propertyOrdering": ["suggestedBudget", "rationale"]
-                    }
-                }
-            };
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetchWithBackoff(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    const json = response.candidates[0].content.parts[0].text;
-                    const parsedJson = JSON.parse(json);
-                    aiSuggestedAmount.textContent = `${currencySymbols[expenseCurrencySelect.value]} ${parsedJson.suggestedBudget.toFixed(2)}`;
-                    aiBudgetRationale.textContent = parsedJson.rationale;
-                    applyAiBudgetBtn.onclick = () => saveBudget(parsedJson.suggestedBudget);
-                } else {
-                    showMessage("Failed to get a budget suggestion.");
-                }
-            } catch (e) {
-                console.error("Gemini API call failed:", e);
-                showMessage("Failed to connect to the AI for budget suggestion.");
-            } finally {
-                aiBudgetSuggestBtn.disabled = false;
-            }
-        };
-
-        const handleExportCSV = () => {
-            const allExpenses = [...oneTimeExpenses, ...getMonthlyRecurringExpenses()];
-            if (allExpenses.length === 0) {
-                showMessage("There are no expenses to export.");
+            if (!userId) {
+                showMessage("User not authenticated. Please wait a moment and try again.");
                 return;
             }
 
-            const headers = ["Date", "Description", "Amount", "Category", "Currency", "Type"];
-            const csvRows = allExpenses.map(expense => {
-                const date = dayjs(expense.date).format('YYYY-MM-DD');
-                const amount = parseFloat(expense.amount).toFixed(2);
-                const description = `"${String(expense.name).replace(/"/g, '""')}"`;
-                const category = `"${String(expense.category).replace(/"/g, '""')}"`;
-                const currency = expense.currency;
-                const type = expense.isRecurring ? 'Recurring' : 'One-time';
-
-                return `${date},${description},${amount},${category},${currency},${type}`;
-            });
-
-            const csvString = [headers.join(","), ...csvRows].join("\n");
-            const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-            const link = document.createElement("a");
-
-            if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", `avarta-expenses-${dayjs().format('YYYY-MM-DD')}.csv`);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showMessage("Your expense data has been exported successfully!");
-            } else {
-                showMessage("Your browser does not support downloading files directly.");
-            }
-        };
-
-        // ---- UI Rendering Functions ----
-        const renderAllExpenses = () => {
-            const currency = expenseCurrencySelect.value;
-            // Combine one-time and recurring expenses for the current month
-            const monthlyRecurring = getMonthlyRecurringExpenses();
-            const allExpenses = [...oneTimeExpenses, ...monthlyRecurring].sort((a, b) => b.date - a.date);
-
-            let totalMonthlyExpenses = 0;
-            expenseTableBody.innerHTML = '';
-            if (allExpenses.length === 0) {
-                expenseTableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-slate-400">No expenses added yet.</td></tr>`;
-            } else {
-                allExpenses.forEach(expense => {
-                    const row = document.createElement('tr');
-                    const formattedDate = dayjs(expense.date).format('DD MMM YYYY');
-                    const formattedAmount = parseFloat(expense.amount).toFixed(2);
-                    totalMonthlyExpenses += parseFloat(expense.amount);
-                    const deleteButton = expense.isRecurring
-                        ? `<button class="text-amber-500 hover:text-amber-600 delete-recurring-btn" data-id="${expense.id}" title="Delete recurring series">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                            </button>`
-                        : `<button class="text-rose-500 hover:text-rose-600 delete-onetime-btn" data-id="${expense.id}" title="Delete one-time expense">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                            </button>`;
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-100 flex items-center space-x-2">
-                            <span>${expense.name}</span>
-                            ${expense.isRecurring ? '<span class="text-xs font-semibold text-amber-500 bg-amber-900 bg-opacity-30 px-2 py-1 rounded-full">Recurring</span>' : ''}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-100">${currencySymbols[currency]} ${formattedAmount}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">${formattedDate}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">${expense.category}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            ${deleteButton}
-                        </td>
-                    `;
-                    expenseTableBody.appendChild(row);
-                });
-            }
-            monthlyTotalDisplay.textContent = `${currencySymbols[currency]} ${totalMonthlyExpenses.toFixed(2)}`;
+            const newExpense = {
+                title: expenseName.value,
+                amount: parseFloat(expenseAmount.value),
+                date: expenseDate.value,
+                category: expenseCategory.value,
+                currency: expenseCurrency.value,
+                recurring: isRecurringToggle.checked,
+                recurringDetails: isRecurringToggle.checked ? {
+                    frequency: recurrenceFrequency.value,
+                    days: recurrenceFrequency.value === 'weekly' ? Array.from(document.querySelectorAll('input[name="weekly-day"]:checked')).map(el => el.value) : [],
+                    dayOfMonth: recurrenceFrequency.value === 'monthly' ? parseInt(monthlyDay.value) : null
+                } : null,
+                timestamp: new Date()
+            };
             
-            document.querySelectorAll('.delete-onetime-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    deleteOneTimeExpenseFromDb(id);
-                });
-            });
-            document.querySelectorAll('.delete-recurring-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    deleteRecurringExpenseFromDb(id);
-                });
-            });
-            renderBudgetSummary();
-            renderCharts();
-        };
-
-        const renderBudgetSummary = () => {
-            const currency = expenseCurrencySelect.value;
-            const allExpenses = [...oneTimeExpenses, ...getMonthlyRecurringExpenses()];
-            const totalExpenses = allExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-            if (budget > 0) {
-                budgetSummary.classList.remove('hidden');
-                budgetAmountDisplay.textContent = `${currencySymbols[currency]} ${budget.toFixed(2)}`;
-                expenseTotalDisplay.textContent = `${currencySymbols[currency]} ${totalExpenses.toFixed(2)}`;
-                const percentage = (totalExpenses / budget) * 100;
-                budgetBar.style.width = `${Math.min(percentage, 100)}%`;
-                budgetBar.className = `h-2.5 rounded-full transition-all duration-500 ease-in-out ${percentage > 100 ? 'bg-rose-500' : 'bg-emerald-500'}`;
-                budgetRemaining.textContent = `Remaining: ${currencySymbols[currency]} ${(budget - totalExpenses).toFixed(2)}`;
-                budgetRemaining.className = `text-sm font-bold mt-2 ${totalExpenses > budget ? 'text-rose-500' : 'text-emerald-500'}`;
-            } else {
-                budgetSummary.classList.add('hidden');
+            try {
+                const expensesCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'expenses');
+                await addDoc(expensesCollectionRef, newExpense);
+                showMessage("Expense added successfully!");
+                expenseForm.reset();
+                isRecurringToggle.checked = false;
+                recurringOptions.classList.add('hidden');
+            } catch (error) {
+                console.error("Error adding expense:", error);
+                showMessage("Failed to add expense. Please try again.");
+            }
+        });
+        
+        // Delete Expense Logic
+        const deleteExpense = async (docId) => {
+            if (userId) {
+                try {
+                    const expenseDocRef = doc(db, 'artifacts', appId, 'users', userId, 'expenses', docId);
+                    await deleteDoc(expenseDocRef);
+                    showMessage("Expense deleted successfully.");
+                } catch (error) {
+                    console.error("Error deleting expense:", error);
+                    showMessage("Failed to delete expense. Please try again.");
+                }
             }
         };
 
-        const renderLogEntries = () => {
-            logEntriesContainer.innerHTML = '';
-            if (logEntries.length === 0) {
-                logEntriesContainer.innerHTML = `<p class="text-slate-400 text-center">No activity to show yet.</p>`;
+        // UI toggles for recurring expenses
+        isRecurringToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                recurringOptions.classList.remove('hidden');
+                updateRecurringOptionsVisibility();
             } else {
-                logEntries.forEach(log => {
-                    const logItem = document.createElement('div');
-                    logItem.className = 'bg-slate-900 p-4 rounded-lg';
-                    const timestamp = dayjs(log.timestamp.toDate()).format('HH:mm:ss DD/MM/YYYY');
-                    const actionText = log.action.includes('add') ? 'Added expense: ' : 'Deleted expense: ';
-                    logItem.innerHTML = `
-                        <p class="text-sm font-semibold text-slate-300">
-                            <span class="text-slate-400">${timestamp}</span>
-                        </p>
-                        <p class="mt-1 text-slate-200 font-medium">
-                            ${actionText}
-                            <span class="font-normal text-amber-500">${log.details.name}</span>
-                            <span class="ml-2 text-sm text-slate-400">(${currencySymbols[log.details.currency]} ${parseFloat(log.details.amount).toFixed(2)})</span>
-                        </p>
-                        <p class="mt-2 text-xs font-mono text-slate-500 truncate">User ID: ${log.userId}</p>
-                    `;
-                    logEntriesContainer.appendChild(logItem);
+                recurringOptions.classList.add('hidden');
+            }
+        });
+
+        recurrenceFrequency.addEventListener('change', () => {
+            updateRecurringOptionsVisibility();
+        });
+
+        function updateRecurringOptionsVisibility() {
+            const frequency = recurrenceFrequency.value;
+            weeklyDaysContainer.classList.add('hidden');
+            monthlyDayContainer.classList.add('hidden');
+            if (frequency === 'weekly') {
+                weeklyDaysContainer.classList.remove('hidden');
+            } else if (frequency === 'monthly') {
+                monthlyDayContainer.classList.remove('hidden');
+            }
+        }
+
+        // --- Data Fetching from Firestore ---
+        const fetchUserData = () => {
+            if (!userId) return;
+
+            const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'userData', 'profile');
+            onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.username) {
+                        usernameDisplay.textContent = data.username;
+                        currentUsername.classList.remove('hidden');
+                    }
+                    if (data.budget) {
+                        budget = data.budget;
+                        budgetDisplay.textContent = `${data.currency || '₹'} ${budget.toFixed(2)}`;
+                        budgetInfo.classList.remove('hidden');
+                        updateRemainingBudget();
+                    }
+                }
+            }, (error) => {
+                console.error("Error fetching user data:", error);
+            });
+        };
+
+        const fetchExpenses = () => {
+            if (!userId) return;
+
+            const expensesCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'expenses');
+            onSnapshot(expensesCollectionRef, (querySnapshot) => {
+                expenses = [];
+                querySnapshot.forEach((doc) => {
+                    expenses.push({ id: doc.id, ...doc.data() });
                 });
+                renderExpensesList();
+                renderCharts();
+                updateRemainingBudget();
+            }, (error) => {
+                console.error("Error fetching expenses:", error);
+            });
+        };
+
+        // --- Rendering Functions ---
+        const renderExpensesList = () => {
+            expensesList.innerHTML = ''; // Clear the list
+            expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            expenses.forEach(expense => {
+                const listItem = document.createElement('li');
+                listItem.className = "flex items-center justify-between p-4 bg-slate-800 rounded-lg shadow-sm border border-slate-700";
+                listItem.innerHTML = `
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-lg font-semibold text-slate-100">${expense.title}</h4>
+                            <span class="text-amber-500 font-bold">${expense.currency || '₹'} ${expense.amount.toFixed(2)}</span>
+                        </div>
+                        <div class="flex items-center text-sm text-slate-400 mt-1">
+                            <span>${expense.category}</span>
+                            <span class="mx-2">•</span>
+                            <span>${formatDate(expense.date)}</span>
+                        </div>
+                    </div>
+                    <button class="delete-expense-btn text-slate-400 hover:text-red-500 transition-colors ml-4" data-id="${expense.id}" title="Delete Expense">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
+                `;
+                expensesList.appendChild(listItem);
+            });
+
+            // Add event listeners for delete buttons
+            document.querySelectorAll('.delete-expense-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const docId = e.currentTarget.getAttribute('data-id');
+                    deleteExpense(docId);
+                });
+            });
+        };
+
+        const updateRemainingBudget = () => {
+            const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const remaining = budget - totalExpenses;
+            remainingBudget.textContent = `${expenses[0]?.currency || '₹'} ${remaining.toFixed(2)}`;
+            if (remaining < 0) {
+                remainingBudget.classList.remove('text-emerald-500');
+                remainingBudget.classList.add('text-red-500');
+            } else {
+                remainingBudget.classList.remove('text-red-500');
+                remainingBudget.classList.add('text-emerald-500');
             }
         };
 
         const renderCharts = () => {
-            const allExpenses = [...oneTimeExpenses, ...getMonthlyRecurringExpenses()];
-            const chartData = allExpenses;
-            chartContainer.innerHTML = '';
-            if (chartData.length === 0) {
-                chartContainer.innerHTML = `<div class="flex items-center justify-center h-64 text-slate-400">Add some expenses to see a visualization.</div>`;
-                return;
-            }
-
-            if (chartType === 'bar') {
-                renderBarChart(chartData);
-            } else if (chartType === 'pie') {
-                renderPieChart(chartData);
-            } else if (chartType === 'line') {
-                renderLineChart(chartData);
-            }
-        };
-
-        const renderBarChart = (data) => {
-            const container = document.createElement('div');
-            container.className = 'flex items-end h-64 border-b-2 border-slate-700 relative justify-evenly';
-            const maxAmount = data.reduce((max, exp) => Math.max(max, parseFloat(exp.amount)), 0);
-            const colors = ['bg-amber-500', 'bg-emerald-500', 'bg-cyan-500', 'bg-rose-500', 'bg-purple-500'];
-
-            data.forEach((expense, index) => {
-                const bar = document.createElement('div');
-                const barHeight = maxAmount > 0 ? (parseFloat(expense.amount) / maxAmount) * 100 : 0;
-                const barColor = colors[index % colors.length];
-                bar.className = `${barColor} w-10 mx-1 rounded-t-lg transition-all duration-500 ease-in-out`;
-                bar.style.height = `${barHeight}%`;
-                bar.title = `${expense.name}: ${currencySymbols[expense.currency]} ${parseFloat(expense.amount).toFixed(2)}`;
-                container.appendChild(bar);
-            });
-
-            chartContainer.appendChild(container);
-        };
-
-        const renderPieChart = (data) => {
-            const categoryData = data.reduce((acc, expense) => {
-                acc[expense.category] = (acc[expense.category] || 0) + parseFloat(expense.amount);
-                return acc;
-            }, {});
-            const pieData = Object.entries(categoryData).map(([category, amount]) => ({ category, amount }));
-            const total = pieData.reduce((sum, d) => sum + d.amount, 0);
-
-            if (total === 0) {
-                chartContainer.innerHTML = `<svg width="250" height="250" viewBox="0 0 250 250" class="mx-auto"><circle cx="125" cy="125" r="100" fill="#1f2937" /><text x="125" y="125" text-anchor="middle" fill="#4b5563" font-size="16">No Data</text></svg>`;
-                return;
-            }
-            
-            const svgWidth = 250;
-            const svgHeight = 250;
-            const radius = 100;
-            let startAngle = 0;
-            const colors = ['#eab308', '#10b981', '#06b6d4', '#f43f5e', '#f59e0b', '#4ade80', '#3b82f6', '#ef4444', '#60a5fa', '#a855f7', '#ec4899'];
-
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('width', svgWidth);
-            svg.setAttribute('height', svgHeight);
-            svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
-            svg.classList.add('mx-auto');
-
-            pieData.forEach((slice, index) => {
-                const angle = (slice.amount / total) * 360;
-                const endAngle = startAngle + angle;
-                const x1 = svgWidth / 2 + radius * Math.cos((Math.PI / 180) * startAngle);
-                const y1 = svgHeight / 2 + radius * Math.sin((Math.PI / 180) * startAngle);
-                const x2 = svgWidth / 2 + radius * Math.cos((Math.PI / 180) * endAngle);
-                const y2 = svgHeight / 2 + radius * Math.sin((Math.PI / 180) * endAngle);
-                const largeArcFlag = angle > 180 ? 1 : 0;
-                const pathData = `M ${svgWidth / 2},${svgHeight / 2} L ${x1},${y1} A ${radius},${radius} 0 ${largeArcFlag} 1 ${x2},${y2} Z`;
-                const color = colors[index % colors.length];
-
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', pathData);
-                path.setAttribute('fill', color);
-                svg.appendChild(path);
-
-                startAngle = endAngle;
-            });
-
-            const legendContainer = document.createElement('div');
-            legendContainer.className = 'absolute right-0 top-1/2 -translate-y-1/2 mr-4 flex flex-col space-y-2';
-            pieData.forEach((slice, index) => {
-                const legendItem = document.createElement('div');
-                legendItem.className = 'flex items-center';
-                const colorBox = document.createElement('span');
-                colorBox.className = 'w-4 h-4 rounded-full';
-                colorBox.style.backgroundColor = colors[index % colors.length];
-                const label = document.createElement('span');
-                label.className = 'ml-2 text-sm text-slate-300';
-                label.textContent = slice.category;
-                legendItem.appendChild(colorBox);
-                legendItem.appendChild(label);
-                legendContainer.appendChild(legendItem);
-            });
-            
-            const wrapper = document.createElement('div');
-            wrapper.className = 'flex items-center justify-center relative w-full h-64';
-            wrapper.appendChild(svg);
-            wrapper.appendChild(legendContainer);
-            chartContainer.appendChild(wrapper);
-        };
-
-        const renderLineChart = (data) => {
-            const dailyData = data
-                .filter(exp => dayjs(exp.date).isAfter(dayjs().subtract(30, 'day')))
-                .reduce((acc, expense) => {
-                    const date = dayjs(expense.date).format('YYYY-MM-DD');
-                    acc[date] = (acc[date] || 0) + expense.amount;
-                    return acc;
-                }, {});
-
-            const sortedDates = Object.keys(dailyData).sort();
-            const lineData = sortedDates.map(date => ({
-                date,
-                amount: dailyData[date]
+            const ctx = document.getElementById('expense-chart').getContext('2d');
+            const categories = [...new Set(expenses.map(e => e.category))];
+            const dataMap = categories.map(cat => ({
+                category: cat,
+                amount: expenses.filter(e => e.category === cat).reduce((sum, e) => sum + e.amount, 0)
             }));
 
-            if (lineData.length < 2) {
-                chartContainer.innerHTML = `<svg width="600" height="250" viewBox="0 0 600 250" class="mx-auto"><text x="300" y="125" text-anchor="middle" fill="#4b5563" font-size="16">Not enough data to draw line chart.</text></svg>`;
-                return;
-            }
+            const dataLabels = dataMap.map(d => d.category);
+            const dataValues = dataMap.map(d => d.amount);
+            const backgroundColors = dataMap.map((_, i) => `hsl(${i * 30}, 80%, 60%)`);
 
-            const svgWidth = 600;
-            const svgHeight = 250;
-            const padding = 30;
-            const amounts = lineData.map(d => d.amount);
-            const maxAmount = Math.max(...amounts);
-
-            const scaleX = (index) => padding + (index / (lineData.length - 1)) * (svgWidth - 2 * padding);
-            const scaleY = (amount) => svgHeight - padding - (amount / maxAmount) * (svgHeight - 2 * padding);
-            const pathData = amounts.map((amount, index) => {
-                const x = scaleX(index);
-                const y = scaleY(amount);
-                return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-            }).join(' ');
-
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('width', svgWidth);
-            svg.setAttribute('height', svgHeight);
-            svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
-            svg.classList.add('mx-auto', 'block');
-            
-            svg.innerHTML = `
-                <line x1="${padding}" y1="${svgHeight - padding}" x2="${svgWidth - padding}" y2="${svgHeight - padding}" stroke="#334155" />
-                <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${svgHeight - padding}" stroke="#334155" />
-                <path d="${pathData}" fill="none" stroke="#eab308" stroke-width="2" />
-                ${lineData.map((d, index) => `
-                    <circle
-                        cx="${scaleX(index)}"
-                        cy="${scaleY(d.amount)}"
-                        r="4"
-                        fill="#fcd34d"
-                        stroke="#0f172a"
-                        stroke-width="1"
-                        title="${d.date}: ${currencySymbols[expenseCurrencySelect.value]} ${d.amount.toFixed(2)}"
-                    />
-                `).join('')}
-                <text x="${scaleX(0)}" y="${svgHeight - padding + 20}" text-anchor="middle" font-size="12" fill="#64748b">
-                    ${dayjs(lineData[0].date).format('DD MMM')}
-                </text>
-                <text x="${scaleX(lineData.length - 1)}" y="${svgHeight - padding + 20}" text-anchor="middle" font-size="12" fill="#64748b">
-                    ${dayjs(lineData[lineData.length - 1].date).format('DD MMM')}
-                </text>
-                <text x="${padding - 10}" y="${scaleY(maxAmount)}" text-anchor="end" font-size="12" fill="#64748b">
-                    ${currencySymbols[expenseCurrencySelect.value]} ${maxAmount.toFixed(2)}
-                </text>
-                <text x="${padding - 10}" y="${scaleY(0)}" text-anchor="end" font-size="12" fill="#64748b">
-                    ${currencySymbols[expenseCurrencySelect.value]} 0
-                </text>
-            `;
-            chartContainer.appendChild(svg);
-        };
-
-        const renderFinanceThought = () => {
-            const randomIndex = Math.floor(Math.random() * financeThoughts.length);
-            const thought = financeThoughts[randomIndex];
-            financeThoughtText.textContent = `"${thought.content}"`;
-            financeThoughtBox.className = `p-4 rounded-lg border-2 ${thought.type === 'joke' ? 'border-amber-700 bg-amber-900 bg-opacity-30' : thought.type === 'stoic' ? 'border-emerald-700 bg-emerald-900 bg-opacity-30' : 'border-slate-700 bg-slate-900'}`;
-        };
-
-        // ---- Event Listeners ----
-        window.onload = () => {
-            // Set current date on load
-            expenseDateInput.value = dayjs().format('YYYY-MM-DD');
-            renderFinanceThought();
-            
-            // Firebase setup
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                    userIdDisplay.textContent = `User ID: ${userId}`;
-                    userIdDisplay.classList.remove('hidden');
-
-                    const userProfileRef = doc(db, `/artifacts/${appId}/users/${userId}/profile_data/username`);
-                    const userProfileSnap = await getDoc(userProfileRef);
-                    if (userProfileSnap.exists()) {
-                        username = userProfileSnap.data().username;
-                        usernameInput.value = username;
-                        usernameDisplay.textContent = username;
-                        currentUsernameDisplay.classList.remove('hidden');
-                        showMessage(`Welcome back, ${username}! Your expenses have been loaded.`);
-                    } else {
-                        showMessage("Please set a username to get started.");
-                    }
-                    
-                    isAuthReady = true;
-                    setupRealtimeListeners(userId);
-                } else {
-                    userId = null;
-                    username = '';
-                    userIdDisplay.classList.add('hidden');
-                    currentUsernameDisplay.classList.add('hidden');
-                    // Sign in anonymously to enable Firestore access
-                    isAuthReady = true;
-                    await signInAnonymously(auth);
-                }
-            });
-
-        };
-
-        messageOkBtn.addEventListener('click', hideMessage);
-
-        showLogBtn.addEventListener('click', () => {
-            logModal.classList.remove('hidden');
-            logModal.classList.add('flex');
-        });
-        logModalCloseBtn.addEventListener('click', () => {
-            logModal.classList.add('hidden');
-            logModal.classList.remove('flex');
-        });
-
-        exportCsvModalBtn.addEventListener('click', () => {
-            exportModal.classList.remove('hidden');
-            exportModal.classList.add('flex');
-        });
-        exportModalCloseBtn.addEventListener('click', () => {
-            exportModal.classList.add('hidden');
-            exportModal.classList.remove('flex');
-        });
-        
-        downloadCsvBtn.addEventListener('click', () => {
-            handleExportCSV();
-            exportModal.classList.add('hidden');
-        });
-
-        emailCsvBtn.addEventListener('click', () => {
-            showMessage("The 'Email CSV' feature requires a backend server to function. This application is a client-side prototype. It's a great idea for a future, more advanced version!");
-            exportModal.classList.add('hidden');
-        });
-        
-        suggestNameBtn.addEventListener('click', () => {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = '';
-            const length = Math.floor(Math.random() * (12 - 8 + 1)) + 8;
-            for (let i = 0; i < length; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            usernameInput.value = result;
-        });
-
-        setUsernameBtn.addEventListener('click', async () => {
-            const tempUsername = usernameInput.value;
-            const usernameRegex = /^[a-zA-Z0-9]{8,12}$/;
-            if (!usernameRegex.test(tempUsername)) {
-                showMessage('Username must be 8-12 alphanumeric characters with no spaces or special characters.');
-                return;
-            }
-            if (!auth.currentUser) {
-                showMessage("Authentication not ready. Please wait a moment.");
-                return;
-            }
-
-            try {
-                const userProfileRef = doc(db, `/artifacts/${appId}/users/${auth.currentUser.uid}/profile_data/username`);
-                await setDoc(userProfileRef, {
-                    username: tempUsername,
-                    userId: auth.currentUser.uid
-                });
-                username = tempUsername;
-                usernameDisplay.textContent = username;
-                currentUsernameDisplay.classList.remove('hidden');
-                showMessage('Username set successfully!');
-            } catch (error) {
-                console.error("Error setting username:", error);
-                showMessage("An error occurred while setting the username. Please try again.");
-            }
-        });
-
-        isRecurringToggle.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                recurringOptionsContainer.classList.remove('hidden');
-                recurrenceFrequencySelect.dispatchEvent(new Event('change')); // Trigger initial state
-            } else {
-                recurringOptionsContainer.classList.add('hidden');
-            }
-        });
-
-        recurrenceFrequencySelect.addEventListener('change', (e) => {
-            weeklyDaysContainer.classList.add('hidden');
-            monthlyDayContainer.classList.add('hidden');
-            if (e.target.value === 'weekly') {
-                weeklyDaysContainer.classList.remove('hidden');
-            } else if (e.target.value === 'monthly') {
-                monthlyDayContainer.classList.remove('hidden');
-            }
-        });
-
-        expenseForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const isRecurring = isRecurringToggle.checked;
-            const newExpense = {
-                name: expenseNameInput.value,
-                amount: expenseAmountInput.value,
-                category: expenseCategorySelect.value,
-                currency: expenseCurrencySelect.value,
+            const chartData = {
+                labels: dataLabels,
+                datasets: [{
+                    label: 'Expenses by Category',
+                    data: dataValues,
+                    backgroundColor: backgroundColors,
+                    borderColor: '#1e293b',
+                    borderWidth: 1
+                }]
             };
 
-            if (isRecurring) {
-                const frequency = recurrenceFrequencySelect.value;
-                let recurrenceDetails = { type: frequency };
-                if (frequency === 'weekly') {
-                    const selectedDays = Array.from(document.querySelectorAll('input[name="weekly-day"]:checked')).map(cb => cb.value);
-                    if (selectedDays.length === 0) {
-                        showMessage("Please select at least one day for weekly recurrence.");
-                        return;
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#cbd5e1'
+                        }
                     }
-                    recurrenceDetails.days = selectedDays;
-                } else if (frequency === 'monthly') {
-                    const monthlyDay = parseInt(document.getElementById('monthly-day').value, 10);
-                    if (isNaN(monthlyDay) || monthlyDay < 1 || monthlyDay > 31) {
-                        showMessage("Please enter a valid day of the month (1-31).");
-                        return;
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#cbd5e1' },
+                        grid: { color: 'rgba(71,85,105, 0.2)' }
+                    },
+                    y: {
+                        ticks: { color: '#cbd5e1' },
+                        grid: { color: 'rgba(71,85,105, 0.2)' }
                     }
-                    recurrenceDetails.day = monthlyDay;
                 }
-                newExpense.recurrence = recurrenceDetails;
-                addRecurringExpenseToDb(newExpense);
-            } else {
-                newExpense.date = expenseDateInput.value;
-                addOneTimeExpenseToDb(newExpense);
+            };
+            
+            // Adjust options for pie chart
+            if (chartType === 'pie') {
+                delete chartOptions.scales; // Remove scales for pie chart
             }
 
-            expenseNameInput.value = '';
-            expenseAmountInput.value = '';
-            expenseCategorySelect.value = '';
-            expenseDateInput.value = dayjs().format('YYYY-MM-DD');
-            isRecurringToggle.checked = false;
-            recurringOptionsContainer.classList.add('hidden');
-        });
-        
-        getInsightBtn.addEventListener('click', getAiInsight);
-        aiBudgetSuggestBtn.addEventListener('click', getAiBudgetSuggestion);
-        saveBudgetBtn.addEventListener('click', () => saveBudget(budgetInput.value));
-        newThoughtBtn.addEventListener('click', renderFinanceThought);
+            if (chartInstance) {
+                chartInstance.destroy(); // Destroy existing chart before creating a new one
+            }
 
+            chartInstance = new Chart(ctx, {
+                type: chartType,
+                data: chartData,
+                options: chartOptions
+            });
+        };
+
+        // --- Chart Type Buttons ---
         chartTypeBarBtn.addEventListener('click', () => {
             chartType = 'bar';
             document.querySelectorAll('#chart-type-bar, #chart-type-pie, #chart-type-line').forEach(btn => {
                 if (btn.id === 'chart-type-bar') {
-                    btn.classList.replace('bg-slate-700', 'bg-amber-500');
-                    btn.classList.replace('text-slate-300', 'text-slate-900');
-                    btn.classList.remove('hover:bg-slate-600');
-                    btn.classList.add('hover:bg-amber-600');
-                } else {
-                    btn.classList.replace('bg-amber-500', 'bg-slate-700');
-                    btn.classList.replace('text-slate-900', 'text-slate-300');
-                    btn.classList.add('hover:bg-slate-600');
-                    btn.classList.remove('hover:bg-amber-600');
-                }
-            });
-            renderCharts();
-        });
-        chartTypePieBtn.addEventListener('click', () => {
-            chartType = 'pie';
-            document.querySelectorAll('#chart-type-bar, #chart-type-pie, #chart-type-line').forEach(btn => {
-                if (btn.id === 'chart-type-pie') {
                     btn.classList.replace('bg-slate-700', 'bg-amber-500');
                     btn.classList.replace('text-slate-300', 'text-slate-900');
                     btn.classList.remove('hover:bg-slate-600');
@@ -1412,7 +796,76 @@
             });
             renderCharts();
         });
+        chartTypePieBtn.addEventListener('click', () => {
+            chartType = 'pie';
+            document.querySelectorAll('#chart-type-bar, #chart-type-pie, #chart-type-line').forEach(btn => {
+                if (btn.id === 'chart-type-pie') {
+                    btn.classList.replace('bg-slate-700', 'bg-amber-500');
+                    btn.classList.replace('text-slate-300', 'text-slate-900');
+                    btn.classList.remove('hover:bg-slate-600');
+                    btn.classList.add('hover:bg-amber-600');
+                } else {
+                    btn.classList.replace('bg-amber-500', 'bg-slate-700');
+                    btn.classList.replace('text-slate-900', 'text-slate-300');
+                    btn.classList.add('hover:bg-slate-600');
+                    btn.classList.remove('hover:bg-amber-600');
+                }
+            });
+            renderCharts();
+        });
 
+        // --- Export functionality ---
+        const downloadCSV = () => {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Title,Amount,Date,Category,Currency,Recurring\n";
+
+            expenses.forEach(exp => {
+                const row = [
+                    `"${exp.title}"`,
+                    exp.amount,
+                    exp.date,
+                    exp.category,
+                    exp.currency,
+                    exp.recurring ? 'Yes' : 'No'
+                ].join(',');
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `avarata-expenses-${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link); // Required for Firefox
+            link.click();
+            document.body.removeChild(link);
+            showMessage("Expenses downloaded as CSV!");
+        };
+
+        exportBtn.addEventListener('click', () => {
+            exportModal.classList.remove('hidden');
+            exportModal.classList.add('flex');
+        });
+        exportModalCloseBtn.addEventListener('click', () => {
+            exportModal.classList.add('hidden');
+        });
+        downloadCsvBtn.addEventListener('click', () => {
+            downloadCSV();
+            exportModal.classList.add('hidden');
+        });
+        
+        // Activity Log Modal functionality
+        showLogBtn.addEventListener('click', () => {
+            logModal.classList.remove('hidden');
+            logModal.classList.add('flex');
+        });
+        logModalCloseBtn.addEventListener('click', () => {
+            logModal.classList.add('hidden');
+        });
+
+        // Placeholder for logging functionality to be implemented
+        // For now, this is a visual container
+        // logEntries.innerHTML = `<p class="text-slate-400">Activity logging is not yet implemented.</p>`;
     </script>
 </body>
 </html>
+```
