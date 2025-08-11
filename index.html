@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         /* Custom styles for a dark theme and scrollbars */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
@@ -62,14 +62,27 @@
             font-weight: 700;
         }
 
-        /* Button hover effects */
+        /* General button styling */
         .btn {
             @apply transition-colors duration-200;
         }
 
         /* Refined button styles for a more engaging look */
         .btn-primary {
-            @apply bg-emerald-400 text-slate-900 font-bold py-3 px-4 rounded-xl hover:bg-emerald-300 transition-all duration-200 drop-shadow-lg;
+            @apply bg-emerald-400 text-slate-900 font-bold py-3 px-4 rounded-xl transition-all duration-200 drop-shadow-lg;
+            transform: translateY(0);
+        }
+
+        .btn-primary:hover {
+            @apply bg-emerald-300;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(52, 211, 153, 0.4);
+        }
+
+        .btn-primary:active {
+            @apply bg-emerald-500;
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(52, 211, 153, 0.2);
         }
 
         .btn-secondary {
@@ -92,37 +105,6 @@
         .animate-spin-slow {
             animation: spin 2s linear infinite;
         }
-        
-        /* New header styling */
-        .header-title-container {
-            position: relative;
-            text-align: center;
-        }
-        .header-logo-container {
-            display: inline-block;
-            vertical-align: middle;
-            position: relative;
-            z-index: 10;
-        }
-        .header-main-title {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 3rem;
-            font-weight: 900;
-            color: transparent;
-            -webkit-text-stroke: 1px #34d399;
-            z-index: 5;
-            line-height: 1;
-        }
-        .header-subtitle {
-            font-size: 1rem;
-            font-weight: 400;
-            color: #34d399;
-            margin-top: -0.5rem;
-        }
-
     </style>
 </head>
 
@@ -146,7 +128,7 @@
                     <p id="username-display" class="font-bold text-emerald-300">Loading...</p>
                     <button id="change-user-btn"
                         class="text-xs text-emerald-500 hover:text-emerald-400 transition-colors duration-200 mt-1">
-                        Change User
+                        Start New Session
                     </button>
                     <button id="delete-account-btn"
                         class="text-xs text-red-500 hover:text-red-400 transition-colors duration-200 ml-2 mt-1">
@@ -1262,12 +1244,15 @@
                     result.candidates[0].content.parts.length > 0) {
                     const quote = result.candidates[0].content.parts[0].text;
                     dynamicQuoteEl.textContent = quote;
+                    addLog('Quote fetched successfully.');
                 } else {
                     dynamicQuoteEl.textContent = `"The best investment you can make is in yourself." - Warren Buffett`;
+                    addLog('Failed to fetch quote, using fallback.');
                 }
             } catch (error) {
                 console.error("Error fetching quote:", error);
                 dynamicQuoteEl.textContent = `"The best investment you can make is in yourself." - Warren Buffett`;
+                showMessage("Quote Error", "Failed to fetch a new quote. Please try again later.", true);
             }
         };
 
