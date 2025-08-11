@@ -11,450 +11,351 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, deleteDoc, updateDoc, getDocs, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        // Initialize Firebase
-        let app;
-        let db;
-        let auth;
-        let userId = null;
-        let chartInstance;
-
-        // Message box utility to replace alert()
-        const showMessageBox = (title, message) => {
-            document.getElementById('message-title').textContent = title;
-            document.getElementById('message-text').textContent = message;
-            document.getElementById('message-box').classList.remove('hidden');
+        // IMPORTANT: Hardcoded Firebase config to resolve environment error
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
+            authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
+            projectId: "daily-expense-tracker-4a115",
+            storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
+            messagingSenderId: "862714037551",
+            appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
         };
+        const appId = firebaseConfig.projectId;
 
-        document.getElementById('close-message-btn').addEventListener('click', () => {
-            document.getElementById('message-box').classList.add('hidden');
-        });
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        let userId = null;
+        let expensesCollectionRef = null;
+        let allExpenses = [];
+        let username = null;
+        let budget = 0;
+        let aiChatHistory = [{ role: "user", parts: [{ text: "You are a helpful and friendly financial assistant. Keep your responses concise and positive." }] }];
 
-        // AI Assistant utilities
+        // Get DOM elements
+        const quoteText = document.getElementById('dynamic-quote');
+        const usernameDisplay = document.getElementById('username-display');
+        const usernameModal = document.getElementById('username-modal');
+        const usernameForm = document.getElementById('username-form');
+        const usernameInput = document.getElementById('username-input');
+        const suggestUsernameBtn = document.getElementById('suggest-username-btn');
+        const changeUserBtn = document.getElementById('change-user-btn');
         const aiAssistantModal = document.getElementById('ai-assistant-modal');
+        const openAiAssistantBtn = document.getElementById('open-ai-assistant-btn');
+        const closeAiAssistantBtn = document.getElementById('close-ai-assistant-btn');
         const aiInput = document.getElementById('ai-input');
         const aiSendBtn = document.getElementById('ai-send-btn');
         const aiResponseArea = document.getElementById('ai-response-area');
-        const aiChatContainer = document.createElement('div');
-        aiChatContainer.className = 'flex flex-col space-y-4';
-        aiResponseArea.innerHTML = '';
-        aiResponseArea.appendChild(aiChatContainer);
-
-        const addMessageToChat = (text, sender) => {
-            const messageElement = document.createElement('div');
-            messageElement.className = `p-3 rounded-lg ${sender === 'user' ? 'bg-amber-600 text-slate-900 self-end' : 'bg-slate-700 text-slate-200 self-start'}`;
-            messageElement.textContent = text;
-            aiChatContainer.appendChild(messageElement);
-            aiResponseArea.scrollTop = aiResponseArea.scrollHeight;
-        };
-
-        let chatHistory = [{ role: "model", parts: [{ text: "Hello! I am your personal financial assistant. I can help you with your finances by analyzing your data. How can I help you today?" }] }];
-        addMessageToChat(chatHistory[0].parts[0].text, 'assistant');
-
-        const getAiResponse = async (prompt) => {
-            addMessageToChat(prompt, 'user');
-            aiInput.value = '';
-            aiInput.disabled = true;
-            aiSendBtn.disabled = true;
-            addMessageToChat('Thinking...', 'assistant');
-
-            try {
-                let currentRetries = 0;
-                const maxRetries = 5;
-                const initialDelay = 1000;
-
-                const makeApiCall = async () => {
-                    const payload = {
-                        contents: chatHistory,
-                    };
-
-                    const apiKey = "";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`API call failed with status: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
-                        const text = result.candidates[0].content.parts[0].text;
-                        chatHistory.push({ role: "model", parts: [{ text: text }] });
-                        // Replace 'Thinking...' with the actual response
-                        const lastMessage = aiChatContainer.lastChild;
-                        lastMessage.textContent = text;
-                        aiResponseArea.scrollTop = aiResponseArea.scrollHeight;
-                    } else {
-                        throw new Error('Unexpected API response structure.');
-                    }
-                };
-
-                const retryApiCall = async () => {
-                    try {
-                        await makeApiCall();
-                    } catch (error) {
-                        console.error('API call failed:', error);
-                        if (currentRetries < maxRetries) {
-                            const delay = initialDelay * Math.pow(2, currentRetries);
-                            currentRetries++;
-                            setTimeout(retryApiCall, delay);
-                        } else {
-                            const lastMessage = aiChatContainer.lastChild;
-                            lastMessage.textContent = "Sorry, I couldn't get a response. Please try again later.";
-                            aiResponseArea.scrollTop = aiResponseArea.scrollHeight;
-                        }
-                    }
-                };
-
-                await retryApiCall();
-
-            } catch (error) {
-                console.error('Error fetching AI response:', error);
-                const lastMessage = aiChatContainer.lastChild;
-                lastMessage.textContent = "Sorry, I couldn't get a response. Please try again later.";
-                aiResponseArea.scrollTop = aiResponseArea.scrollHeight;
-            } finally {
-                aiInput.disabled = false;
-                aiSendBtn.disabled = false;
-                aiInput.focus();
-            }
-        };
-
-        aiSendBtn.addEventListener('click', () => {
-            const prompt = aiInput.value.trim();
-            if (prompt) {
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                getAiResponse(prompt);
-            }
-        });
-        aiInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                aiSendBtn.click();
-            }
-        });
-
-        // Main app logic
-        window.addEventListener('load', async () => {
-            if (Object.keys(firebaseConfig).length > 0) {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        document.getElementById('username-modal').classList.add('hidden');
-                        
-                        // Check if a username is set
-                        const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/data`);
-                        const userDocSnap = await getDoc(userDocRef);
-                        
-                        if (userDocSnap.exists()) {
-                            const userData = userDocSnap.data();
-                            document.getElementById('username-display').textContent = userData.username;
-                            setupRealtimeListeners();
-                        } else {
-                            document.getElementById('username-modal').classList.remove('hidden');
-                        }
-                    } else {
-                        // Sign in anonymously if no user and no custom token
-                        if (initialAuthToken) {
-                            try {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } catch (error) {
-                                console.error("Error signing in with custom token:", error);
-                                await signInAnonymously(auth);
-                            }
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    }
-                });
-            } else {
-                console.warn("Firebase configuration is missing. The application will run without database functionality.");
-                showMessageBox("Firebase Error", "Firebase configuration is missing. Data persistence will not work. Please check your environment setup.");
-                // Disable recurring expense toggle and form submit
-                document.getElementById('recurring-checkbox').disabled = true;
-                document.getElementById('recurring-toggle-label').classList.add('disabled');
-                document.getElementById('expense-form').querySelector('button').disabled = true;
-                document.getElementById('budget-form').querySelector('button').disabled = true;
-            }
-        });
-
-        const setupRealtimeListeners = () => {
-            // Expenses listener
-            const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
-            onSnapshot(expensesCollectionRef, (snapshot) => {
-                const expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                updateExpenseTable(expenses);
-                updateChart(expenses);
-            });
-
-            // Budget listener
-            const budgetDocRef = doc(db, `artifacts/${appId}/users/${userId}/budget/data`);
-            onSnapshot(budgetDocRef, (doc) => {
-                if (doc.exists()) {
-                    const budget = doc.data().monthlyBudget;
-                    document.getElementById('current-budget').textContent = `${budget.toLocaleString()} ${document.getElementById('expense-currency').value}`;
-                } else {
-                    document.getElementById('current-budget').textContent = 'Not Set';
-                }
-            });
-        };
-
-        // Utility functions
-        const showModal = (id) => document.getElementById(id).classList.remove('hidden');
-        const hideModal = (id) => document.getElementById(id).classList.add('hidden');
-
-        // Form handling
         const expenseForm = document.getElementById('expense-form');
-        expenseForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!userId) {
-                showMessageBox("Error", "User not authenticated. Please log in or wait for the anonymous sign-in process to complete.");
-                return;
-            }
-            const name = document.getElementById('expense-name').value;
-            const amount = parseFloat(document.getElementById('expense-amount').value);
-            const currency = document.getElementById('expense-currency').value;
-            const category = document.getElementById('expense-category').value;
-            const date = document.getElementById('expense-date').value;
-            const isRecurring = document.getElementById('recurring-checkbox').checked;
-
-            if (isNaN(amount) || amount <= 0) {
-                showMessageBox("Invalid Input", "Please enter a valid amount.");
-                return;
-            }
-
-            const expenseData = {
-                name,
-                amount,
-                currency,
-                category,
-                date,
-                isRecurring,
-                timestamp: new Date().toISOString()
-            };
-
-            const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
-            try {
-                await addDoc(expensesCollectionRef, expenseData);
-                expenseForm.reset();
-                updateRecurringOptions(); // Reset recurring options display
-                document.getElementById('recurring-options-container').classList.add('hidden');
-                showMessageBox("Success", "Expense added successfully!");
-            } catch (error) {
-                console.error("Error adding expense:", error);
-                showMessageBox("Error", "Could not add expense. Please try again.");
-            }
-        });
-
+        const expenseNameInput = document.getElementById('expense-name');
+        const expenseAmountInput = document.getElementById('expense-amount');
+        const expenseCategorySelect = document.getElementById('expense-category');
+        const expenseDateInput = document.getElementById('expense-date');
+        const recurringCheckbox = document.getElementById('recurring-checkbox');
+        const recurringToggleLabel = document.getElementById('recurring-toggle-label');
+        const recurringOptionsContainer = document.getElementById('recurring-options-container');
+        const weeklyOptions = document.getElementById('weekly-options');
+        const monthlyOptions = document.getElementById('monthly-options');
+        const expensesList = document.getElementById('expenses-list');
+        const totalExpensesText = document.getElementById('total-expenses');
+        const remainingBudgetText = document.getElementById('remaining-budget');
+        const budgetProgress = document.getElementById('budget-progress');
         const budgetForm = document.getElementById('budget-form');
-        budgetForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!userId) {
-                showMessageBox("Error", "User not authenticated.");
-                return;
-            }
-            const budgetAmount = parseFloat(document.getElementById('budget-amount').value);
-            if (isNaN(budgetAmount) || budgetAmount <= 0) {
-                showMessageBox("Invalid Input", "Please enter a valid budget amount.");
-                return;
-            }
-
-            const budgetDocRef = doc(db, `artifacts/${appId}/users/${userId}/budget/data`);
-            try {
-                await setDoc(budgetDocRef, { monthlyBudget: budgetAmount }, { merge: true });
-                showMessageBox("Success", "Budget set successfully!");
-            } catch (error) {
-                console.error("Error setting budget:", error);
-                showMessageBox("Error", "Could not set budget. Please try again.");
-            }
-        });
+        const budgetInput = document.getElementById('budget-input');
+        const recurrenceFreqRadios = document.querySelectorAll('input[name="recurrence-freq"]');
+        const monthFilterSelect = document.getElementById('month-filter');
+        const yearFilterSelect = document.getElementById('year-filter');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        const closeMessageBtn = document.getElementById('close-message-btn');
         
-        const deleteExpense = async (expenseId) => {
-            if (!userId) {
-                showMessageBox("Error", "User not authenticated.");
-                return;
-            }
-            try {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/expenses`, expenseId);
-                await deleteDoc(docRef);
-                showMessageBox("Success", "Expense deleted successfully.");
-            } catch (error) {
-                console.error("Error deleting document:", error);
-                showMessageBox("Error", "Could not delete expense. Please try again.");
+        const chartCanvas = document.getElementById('main-chart-canvas');
+        const chartTitle = document.getElementById('chart-title');
+        const chartBtns = document.querySelectorAll('.chart-btn');
+
+        let currentChartInstance = null;
+        let aiAssistantLoading = false;
+
+        // Utility Functions
+        const showMessage = (title, message, isError = false) => {
+            messageBox.classList.remove('hidden');
+            document.getElementById('message-title').textContent = title;
+            messageText.textContent = message;
+            if (isError) {
+                messageBox.classList.remove('bg-slate-800');
+                messageBox.classList.add('bg-red-800');
+            } else {
+                messageBox.classList.remove('bg-red-800');
+                messageBox.classList.add('bg-slate-800');
             }
         };
 
-        const updateExpenseTable = (expenses) => {
-            const tableBody = document.getElementById('expense-table-body');
-            tableBody.innerHTML = '';
-            expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            expenses.forEach(expense => {
-                const row = document.createElement('tr');
-                row.className = 'border-b border-slate-700 hover:bg-slate-700 transition-colors duration-200';
-                row.innerHTML = `
-                    <td class="p-3 text-sm text-slate-300 rounded-l-lg">${expense.name}</td>
-                    <td class="p-3 text-sm text-slate-300">${expense.amount.toLocaleString()} ${expense.currency}</td>
-                    <td class="p-3 text-sm text-slate-300">${expense.category}</td>
-                    <td class="p-3 text-sm text-slate-300">${expense.date}</td>
-                    <td class="p-3 text-sm text-slate-300">${expense.isRecurring ? 'Yes' : 'No'}</td>
-                    <td class="p-3 text-sm text-right rounded-r-lg">
-                        <button class="text-red-500 hover:text-red-400 font-semibold" data-id="${expense.id}">Delete</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-            
-            tableBody.querySelectorAll('button').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const expenseId = e.target.dataset.id;
-                    deleteExpense(expenseId);
-                });
-            });
+        const hideMessage = () => {
+            messageBox.classList.add('hidden');
         };
 
-        const updateChart = (expenses) => {
-            const ctx = document.getElementById('expense-chart').getContext('2d');
-            
-            // Destroy previous chart instance if it exists
-            if (chartInstance) {
-                chartInstance.destroy();
+        const showModal = (modalElement) => {
+            modalElement.classList.remove('hidden');
+        };
+
+        const hideModal = (modalElement) => {
+            modalElement.classList.add('hidden');
+        };
+
+        const createOrUpdateChart = (type, labels, data, options, title) => {
+            if (currentChartInstance) {
+                currentChartInstance.destroy();
             }
-
-            const expensesByCategory = expenses.reduce((acc, expense) => {
-                acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-                return acc;
-            }, {});
-
-            const labels = Object.keys(expensesByCategory);
-            const data = Object.values(expensesByCategory);
-            const backgroundColors = [
-                '#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#6366f1', '#f97316', '#a855f7'
-            ];
-
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: backgroundColors,
-                        hoverOffset: 4,
-                    }]
-                },
-                options: {
+            if (chartCanvas) {
+                 const ctx = chartCanvas.getContext('2d');
+                 currentChartInstance = new Chart(ctx, { type, data: { labels, datasets: [{ data }] }, options });
+                 chartTitle.textContent = title;
+            }
+        };
+        
+        const renderChart = (chartType, expenses) => {
+            const filteredExpenses = expenses.filter(expense => {
+                const date = new Date(expense.timestamp);
+                const expenseMonth = date.getMonth().toString();
+                const expenseYear = date.getFullYear().toString();
+                const selectedMonth = monthFilterSelect.value;
+                const selectedYear = yearFilterSelect.value;
+                return (selectedMonth === 'all' || expenseMonth === selectedMonth) &&
+                       (selectedYear === 'all' || expenseYear === selectedYear);
+            });
+            
+            if (chartType === 'category') {
+                const categoryMap = filteredExpenses.reduce((acc, expense) => {
+                    const { category, amount } = expense;
+                    acc[category] = (acc[category] || 0) + amount;
+                    return acc;
+                }, {});
+                const categories = Object.keys(categoryMap);
+                const amounts = Object.values(categoryMap);
+                createOrUpdateChart('pie', categories, amounts, {
                     responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#e2e8f0',
-                                font: {
-                                    family: 'Inter'
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Expenses by Category',
-                            color: '#e2e8f0',
-                            font: {
-                                size: 18,
-                                family: 'Inter'
-                            }
-                        }
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { color: '#e2e8f0' } }, title: { display: false } }
+                }, 'Category Breakdown');
+            } else if (chartType === 'monthly') {
+                const monthlyMap = filteredExpenses.reduce((acc, expense) => {
+                    const date = new Date(expense.timestamp);
+                    const month = date.toLocaleString('default', { month: 'short' }) + ' ' + date.getFullYear();
+                    acc[month] = (acc[month] || 0) + expense.amount;
+                    return acc;
+                }, {});
+                const months = Object.keys(monthlyMap);
+                const monthlyAmounts = Object.values(monthlyMap);
+                createOrUpdateChart('bar', months, monthlyAmounts, {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#e2e8f0' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#e2e8f0' } }
                     },
-                    cutout: '70%'
-                }
-            });
-        };
-
-        // UI event listeners
-        const showLogBtn = document.getElementById('show-log-btn');
-        const closeLogBtn = document.getElementById('close-log-btn');
-        const showAiBtn = document.getElementById('show-ai-btn');
-        const closeAiBtn = document.getElementById('close-ai-assistant-btn');
-        const exportBtn = document.getElementById('export-btn');
-        const closeExportBtn = document.getElementById('close-export-btn');
-        const usernameForm = document.getElementById('username-form');
-        const usernameInput = document.getElementById('username-input');
-
-        showLogBtn.addEventListener('click', () => showModal('activity-log-modal'));
-        closeLogBtn.addEventListener('click', () => hideModal('activity-log-modal'));
-        if (showAiBtn) {
-            showAiBtn.addEventListener('click', () => showModal('ai-assistant-modal'));
-        }
-        if (closeAiBtn) {
-            closeAiBtn.addEventListener('click', () => hideModal('ai-assistant-modal'));
-        }
-        exportBtn.addEventListener('click', () => showModal('export-modal'));
-        closeExportBtn.addEventListener('click', () => hideModal('export-modal'));
-
-        usernameForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = usernameInput.value.trim();
-            if (username) {
-                const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/data`);
-                try {
-                    await setDoc(userDocRef, { username: username });
-                    document.getElementById('username-display').textContent = username;
-                    hideModal('username-modal');
-                    setupRealtimeListeners();
-                } catch (error) {
-                    console.error("Error setting username:", error);
-                    showMessageBox("Error", "Could not set username. Please try again.");
-                }
+                    plugins: { legend: { display: false }, title: { display: false } }
+                }, 'Monthly Trends');
+            } else if (chartType === 'daily') {
+                const dailyMap = filteredExpenses.reduce((acc, expense) => {
+                    const date = new Date(expense.timestamp).toLocaleDateString();
+                    acc[date] = (acc[date] || 0) + expense.amount;
+                    return acc;
+                }, {});
+                const dates = Object.keys(dailyMap).sort((a, b) => new Date(a) - new Date(b));
+                const dailyAmounts = dates.map(date => dailyMap[date]);
+                createOrUpdateChart('line', dates, dailyAmounts, {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#e2e8f0' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#e2e8f0' } }
+                    },
+                    plugins: { legend: { display: false }, title: { display: false } }
+                }, 'Daily Flow');
             }
-        });
-        
-        // Dynamic quote and AI suggestions section
-        const dynamicQuoteElement = document.getElementById('dynamic-quote');
-        const aiSuggestionArea = document.getElementById('ai-suggestion-area');
-
-        const getDynamicQuote = async () => {
-            // We can add a function here to fetch a quote from a public API
-            // For now, let's use a static quote.
-            dynamicQuoteElement.textContent = "“Do not save what is left after spending, but spend what is left after saving.” – Warren Buffett";
         };
 
-        const getAiSuggestions = async () => {
-             // Function to get suggestions from the AI
-             if (!userId) return;
-             aiSuggestionArea.innerHTML = 'Loading suggestions...';
+        // Firebase-related Functions
+        const checkUsername = async () => {
+            if (!userId) return;
+            const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/user_data`);
+            try {
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    username = userDoc.data().username;
+                    usernameDisplay.textContent = username;
+                    hideModal(usernameModal);
+                } else {
+                    showModal(usernameModal);
+                }
+            } catch (error) {
+                console.error("Error fetching user profile: ", error);
+                showModal(usernameModal);
+            }
+        };
 
+        const saveUsername = async (newUsername) => {
+            if (!userId || !newUsername) return;
+            const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/user_data`);
+            try {
+                await setDoc(userDocRef, { username: newUsername, lastUpdated: Date.now() });
+                username = newUsername;
+                usernameDisplay.textContent = username;
+                hideModal(usernameModal);
+                showMessage("Success", `Username "${newUsername}" saved successfully!`);
+            } catch (error) {
+                console.error("Error saving username: ", error);
+                showMessage("Error", "Failed to save username. Please try again.", true);
+            }
+        };
+        
+        const saveBudget = async (e) => {
+            e.preventDefault();
+            const newBudget = parseFloat(budgetInput.value);
+            if (!userId || newBudget <= 0) {
+                showMessage("Validation Error", "Please enter a valid budget amount.", true);
+                return;
+            }
+            const budgetDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/budget`);
+            try {
+                await setDoc(budgetDocRef, { amount: newBudget, lastUpdated: Date.now() });
+                showMessage("Success", `Budget set to ₹${newBudget.toFixed(2)}.`);
+            } catch (error) {
+                console.error("Error saving budget: ", error);
+                showMessage("Error", "Failed to save budget. Please try again.", true);
+            }
+        };
+        
+        const renderBudgetUI = (totalExpenses) => {
+            const remaining = budget - totalExpenses;
+            totalExpensesText.textContent = `₹${totalExpenses.toFixed(2)}`;
+            remainingBudgetText.textContent = `₹${remaining.toFixed(2)}`;
+            
+            remainingBudgetText.classList.remove('text-green-500', 'text-red-500');
+            remainingBudgetText.classList.add(remaining >= 0 ? 'text-green-500' : 'text-red-500');
+
+            if (budget > 0) {
+                const percentage = Math.min((totalExpenses / budget) * 100, 100);
+                budgetProgress.style.width = `${percentage}%`;
+                
+                budgetProgress.classList.remove('bg-amber-500', 'bg-red-500');
+                if (percentage >= 100) {
+                    budgetProgress.classList.add('bg-red-500');
+                } else {
+                    budgetProgress.classList.add('bg-amber-500');
+                }
+            } else {
+                budgetProgress.style.width = '0%';
+            }
+        };
+
+        const changeUser = async () => {
              try {
-                // Fetch the latest expenses for the prompt
-                const q = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
-                const querySnapshot = await getDocs(q);
-                const expenses = querySnapshot.docs.map(doc => doc.data());
-                const expensesText = JSON.stringify(expenses, null, 2);
+                // Delete user data.
+                const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/user_data`);
+                await deleteDoc(userDocRef);
+                const budgetDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/budget`);
+                await deleteDoc(budgetDocRef);
+                
+                // Clear expenses collection.
+                const expensesQuery = query(collection(db, `artifacts/${appId}/users/${userId}/expenses`));
+                const querySnapshot = await getDocs(expensesQuery);
+                const batch = writeBatch(db);
+                querySnapshot.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
 
-                const prompt = `Based on the following user expenses, provide 3 to 4 short financial tips and suggestions. Keep each tip concise (one sentence) and format them as a bulleted list.
+                // Sign out and let onAuthStateChanged handle the new anonymous user
+                await signOut(auth);
+                showMessage("Success", "User profile cleared. Please create a new username.");
+             } catch(error) {
+                console.error("Error changing user:", error);
+                showMessage("Error", "Could not change user. Please try again.", true);
+             }
+        };
 
-                User Expenses:
-                ${expensesText}
-                `;
+        // API Call for Quotes
+        const getDynamicQuote = async () => {
+            try {
+                const prompt = "Give a short, motivational financial quote from a movie, a famous person, a song, or a Stoic philosopher like Aristotle.";
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                let response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                let result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    quoteText.textContent = text.replace(/["“”„‟‘’‚‛‹›«»「」『』【】《》〈〉《》「」『』】]/g, '');
+                } else {
+                    quoteText.textContent = "The journey of a thousand miles begins with a single step.";
+                }
+            } catch (error) {
+                console.error("Error fetching quote:", error);
+                quoteText.textContent = "The journey of a thousand miles begins with a single step.";
+            }
+        };
 
-                const payload = {
-                    contents: [{ role: "user", parts: [{ text: prompt }] }]
-                };
+        // API Call for Username Suggestion
+        const suggestUsername = async () => {
+            try {
+                const prompt = "Suggest a memorable and sensible username that is 8-12 alphanumeric characters long. Do not include spaces or special characters. Make it financial-themed. Only provide the username, no other text.";
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                let response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                let result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts) {
+                    const suggestedName = result.candidates[0].content.parts[0].text.trim();
+                    usernameInput.value = suggestedName;
+                } else {
+                    usernameInput.value = `User_${Math.floor(Math.random() * 9999)}`;
+                }
+            } catch (error) {
+                console.error("Error suggesting username:", error);
+                usernameInput.value = `User_${Math.floor(Math.random() * 9999)}`;
+            }
+        };
 
+        // API Call for AI Chat
+        const handleAiChat = async () => {
+            const userMessage = aiInput.value.trim();
+            if (!userMessage || aiAssistantLoading) return;
+
+            aiAssistantLoading = true;
+            aiInput.value = '';
+
+            // Add user message to chat history and UI
+            aiChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'text-right my-2';
+            userMessageDiv.innerHTML = `<span class="inline-block bg-amber-500 text-slate-900 rounded-lg p-3 max-w-sm">${userMessage}</span>`;
+            aiResponseArea.appendChild(userMessageDiv);
+            aiResponseArea.scrollTop = aiResponseArea.scrollHeight;
+
+            try {
+                const payload = { contents: aiChatHistory };
                 const apiKey = "";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
@@ -463,109 +364,170 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
-                if (!response.ok) {
-                    throw new Error(`API call failed with status: ${response.status}`);
-                }
 
                 const result = await response.json();
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "No suggestions available at the moment.";
-                
-                // Format the text from the model as a bulleted list for the UI
-                const formattedText = text.split('\n').map(item => `<li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>${item.replace(/^- /, '')}</span></li>`).join('');
-                aiSuggestionArea.innerHTML = `<ul class="space-y-2">${formattedText}</ul>`;
 
-             } catch (error) {
-                console.error("Error fetching AI suggestions:", error);
-                aiSuggestionArea.innerHTML = `<p class="text-red-400">Failed to load suggestions. Please check your network connection.</p>`;
-             }
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts) {
+                    const aiResponseText = result.candidates[0].content.parts[0].text;
+                    aiChatHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+                    const aiMessageDiv = document.createElement('div');
+                    aiMessageDiv.className = 'text-left my-2';
+                    aiMessageDiv.innerHTML = `<span class="inline-block bg-slate-700 text-slate-200 rounded-lg p-3 max-w-sm">${aiResponseText}</span>`;
+                    aiResponseArea.appendChild(aiMessageDiv);
+                } else {
+                    const errorMessage = "Sorry, I couldn't process that. Please try again.";
+                    const aiMessageDiv = document.createElement('div');
+                    aiMessageDiv.className = 'text-left my-2';
+                    aiMessageDiv.innerHTML = `<span class="inline-block bg-red-700 text-white rounded-lg p-3 max-w-sm">${errorMessage}</span>`;
+                    aiResponseArea.appendChild(aiMessageDiv);
+                }
+
+                aiResponseArea.scrollTop = aiResponseArea.scrollHeight;
+            } catch (error) {
+                console.error("Error with AI assistant:", error);
+                const errorMessage = "There was an issue connecting to the AI. Please try again later.";
+                const aiMessageDiv = document.createElement('div');
+                aiMessageDiv.className = 'text-left my-2';
+                aiMessageDiv.innerHTML = `<span class="inline-block bg-red-700 text-white rounded-lg p-3 max-w-sm">${errorMessage}</span>`;
+                aiResponseArea.appendChild(aiMessageDiv);
+                aiResponseArea.scrollTop = aiResponseArea.scrollHeight;
+            } finally {
+                aiAssistantLoading = false;
+            }
         };
 
-        document.getElementById('fetch-suggestions-btn').addEventListener('click', getAiSuggestions);
+        const addExpense = async (e) => {
+            e.preventDefault();
+            const name = expenseNameInput.value.trim();
+            const amount = parseFloat(expenseAmountInput.value);
+            const category = expenseCategorySelect.value;
+            const date = expenseDateInput.value;
+            const isRecurring = recurringCheckbox.checked;
 
-        // Export data functionality
-        document.getElementById('export-csv-btn').addEventListener('click', async () => {
-            if (!userId) {
-                showMessageBox("Error", "User not authenticated.");
+            if (!name || amount <= 0 || !date) {
+                showMessage("Validation Error", "Please enter a valid expense name, amount, and date.", true);
                 return;
             }
-            try {
-                const q = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
-                const querySnapshot = await getDocs(q);
-                const expenses = querySnapshot.docs.map(doc => doc.data());
 
-                if (expenses.length === 0) {
-                    showMessageBox("Export Failed", "No expense data to export.");
+            const expenseData = {
+                name,
+                amount,
+                category,
+                timestamp: new Date(date).getTime(),
+                isRecurring
+            };
+
+            if (isRecurring) {
+                const frequency = document.querySelector('input[name="recurrence-freq"]:checked')?.value;
+                if (!frequency) {
+                    showMessage("Validation Error", "Please select a recurrence frequency.", true);
                     return;
                 }
+                expenseData.recurrenceFrequency = frequency;
 
-                const headers = Object.keys(expenses[0]).join(',');
-                const csvRows = expenses.map(e => Object.values(e).map(val => `"${val}"`).join(','));
-                const csvString = [headers, ...csvRows].join('\n');
-                
-                const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = `finance_flow_expenses_${new Date().toISOString()}.csv`;
-                link.click();
-                URL.revokeObjectURL(link.href);
-
-                hideModal('export-modal');
-                showMessageBox("Success", "Data exported successfully to CSV!");
-            } catch (error) {
-                console.error("Error exporting to CSV:", error);
-                showMessageBox("Error", "Could not export data. Please try again.");
-            }
-        });
-
-        document.getElementById('export-json-btn').addEventListener('click', async () => {
-            if (!userId) {
-                showMessageBox("Error", "User not authenticated.");
-                return;
-            }
-            try {
-                const q = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
-                const querySnapshot = await getDocs(q);
-                const expenses = querySnapshot.docs.map(doc => doc.data());
-
-                if (expenses.length === 0) {
-                    showMessageBox("Export Failed", "No expense data to export.");
-                    return;
+                if (frequency === 'weekly') {
+                    const selectedDays = Array.from(document.querySelectorAll('input[name="weekly-day"]:checked')).map(cb => cb.value);
+                    if (selectedDays.length === 0) {
+                        showMessage("Validation Error", "Please select at least one day for weekly recurrence.", true);
+                        return;
+                    }
+                    expenseData.recurrenceDetails = { days: selectedDays };
+                } else if (frequency === 'monthly') {
+                    const selectedDate = document.getElementById('monthly-date').value;
+                    if (!selectedDate || selectedDate < 1 || selectedDate > 31) {
+                         showMessage("Validation Error", "Please select a valid day of the month for monthly recurrence.", true);
+                        return;
+                    }
+                    expenseData.recurrenceDetails = { date: selectedDate };
                 }
-
-                const jsonString = JSON.stringify(expenses, null, 2);
-                
-                const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = `finance_flow_expenses_${new Date().toISOString()}.json`;
-                link.click();
-                URL.revokeObjectURL(link.href);
-
-                hideModal('export-modal');
-                showMessageBox("Success", "Data exported successfully to JSON!");
-            } catch (error) {
-                console.error("Error exporting to JSON:", error);
-                showMessageBox("Error", "Could not export data. Please try again.");
             }
-        });
 
+            try {
+                if (expensesCollectionRef) {
+                    await addDoc(expensesCollectionRef, expenseData);
+                    showMessage("Success", "Expense added successfully!");
+                    expenseForm.reset();
+                    checkFormValidity();
+                }
+            } catch (error) {
+                console.error("Error adding expense: ", error);
+                showMessage("Error", "Failed to add expense. Please try again.", true);
+            }
+        };
 
-        // Other UI logic from the original file
-        const expenseNameInput = document.getElementById('expense-name');
-        const expenseAmountInput = document.getElementById('expense-amount');
-        const recurringCheckbox = document.getElementById('recurring-checkbox');
-        const recurringToggleLabel = document.getElementById('recurring-toggle-label');
-        const recurringOptionsContainer = document.getElementById('recurring-options-container');
-        const recurrenceFreqRadios = document.querySelectorAll('input[name="recurrence-freq"]');
-        const weeklyOptions = document.getElementById('weekly-options');
-        const monthlyOptions = document.getElementById('monthly-options');
+        const deleteExpense = async (docId) => {
+            try {
+                if (userId) {
+                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/expenses`, docId);
+                    await deleteDoc(docRef);
+                    showMessage("Success", "Expense deleted successfully!");
+                }
+            } catch (error) {
+                console.error("Error deleting expense: ", error);
+                showMessage("Error", "Failed to delete expense.", true);
+            }
+        };
+        window.deleteExpense = deleteExpense; // Expose to global scope for onclick
+
+        const renderExpensesList = (expenses, total) => {
+            expensesList.innerHTML = '';
+            const selectedMonth = monthFilterSelect.value;
+            const selectedYear = yearFilterSelect.value;
+
+            const filteredExpenses = expenses.filter(expense => {
+                const date = new Date(expense.timestamp);
+                const expenseMonth = date.getMonth().toString();
+                const expenseYear = date.getFullYear().toString();
+                return (selectedMonth === 'all' || expenseMonth === selectedMonth) &&
+                       (selectedYear === 'all' || expenseYear === selectedYear);
+            });
+
+            if (filteredExpenses.length === 0) {
+                expensesList.innerHTML = `<li class="text-center text-slate-400">No expenses found.</li>`;
+            } else {
+                filteredExpenses.forEach(expense => {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center bg-slate-700 p-4 rounded-lg shadow-md mb-2 transition-colors duration-200 hover:bg-slate-600';
+                    li.innerHTML = `
+                        <div>
+                            <p class="font-medium">${expense.name} <span class="text-xs text-slate-400">(${expense.category})</span></p>
+                            <p class="text-sm text-slate-400">₹${expense.amount.toFixed(2)}</p>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-xs text-slate-400 mr-4">
+                                ${new Date(expense.timestamp).toLocaleDateString()}
+                            </span>
+                            <button class="text-red-400 hover:text-red-500 transition-colors duration-200" onclick="deleteExpense('${expense.id}')">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    expensesList.appendChild(li);
+                });
+            }
+            renderBudgetUI(total);
+        };
+        
+        const populateFilters = (expenses) => {
+            const years = [...new Set(expenses.map(exp => new Date(exp.timestamp).getFullYear()))].sort((a, b) => b - a);
+            
+            yearFilterSelect.innerHTML = '<option value="all">All Years</option>';
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearFilterSelect.appendChild(option);
+            });
+
+            const today = new Date();
+            yearFilterSelect.value = today.getFullYear();
+            monthFilterSelect.value = today.getMonth();
+        };
 
         const checkFormValidity = () => {
-            const nameFilled = expenseNameInput.value.trim() !== '';
-            const amountFilled = expenseAmountInput.value.trim() !== '';
-            
-            if (nameFilled && amountFilled) {
+            const nameIsValid = expenseNameInput.value.trim() !== '';
+            const amountIsValid = parseFloat(expenseAmountInput.value) > 0;
+            if (nameIsValid && amountIsValid) {
                 recurringCheckbox.disabled = false;
                 recurringToggleLabel.classList.remove('disabled');
             } else {
@@ -588,34 +550,117 @@
             }
         };
 
-        expenseNameInput.addEventListener('input', checkFormValidity);
-        expenseAmountInput.addEventListener('input', checkFormValidity);
+        // Main Auth Listener
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                await checkUsername();
+                
+                const budgetDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/budget`);
+                onSnapshot(budgetDocRef, (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        budget = docSnapshot.data().amount;
+                        budgetInput.value = budget;
+                    } else {
+                        budget = 0;
+                        budgetInput.value = '';
+                    }
+                    const total = allExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+                    renderBudgetUI(total);
+                });
 
-        recurringCheckbox.addEventListener('change', () => {
-            if (recurringCheckbox.checked) {
-                recurringOptionsContainer.classList.remove('hidden');
-                updateRecurringOptions();
+                expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
+                onSnapshot(expensesCollectionRef, (querySnapshot) => {
+                    const expenses = [];
+                    let total = 0;
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        expenses.push({ id: doc.id, ...data });
+                        total += data.amount;
+                    });
+                    allExpenses = expenses.sort((a, b) => b.timestamp - a.timestamp);
+
+                    populateFilters(allExpenses);
+                    renderExpensesList(allExpenses, total);
+                    renderChart('category', allExpenses);
+                });
             } else {
-                recurringOptionsContainer.classList.add('hidden');
+                await signInAnonymously(auth);
             }
         });
+        
+        // Event Listeners
+        window.onload = function () {
+            getDynamicQuote();
+            
+            // Set today's date as the default
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            expenseDateInput.value = `${yyyy}-${mm}-${dd}`;
 
-        recurrenceFreqRadios.forEach(radio => {
-            radio.addEventListener('change', updateRecurringOptions);
-        });
+            // Form and recurring options listeners
+            expenseForm.addEventListener('submit', addExpense);
+            budgetForm.addEventListener('submit', saveBudget);
+            expenseNameInput.addEventListener('input', checkFormValidity);
+            expenseAmountInput.addEventListener('input', checkFormValidity);
+            
+            recurringCheckbox.addEventListener('change', () => {
+                if (recurringCheckbox.checked) {
+                    recurringOptionsContainer.classList.remove('hidden');
+                    updateRecurringOptions();
+                } else {
+                    recurringOptionsContainer.classList.add('hidden');
+                }
+            });
+            recurrenceFreqRadios.forEach(radio => {
+                radio.addEventListener('change', updateRecurringOptions);
+            });
 
-        // Add days 1-31 to monthly dropdown
-        const monthlyDaySelect = document.getElementById('monthly-day-select');
-        for (let i = 1; i <= 31; i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = i;
-            monthlyDaySelect.appendChild(option);
-        }
+            // Modal listeners
+            closeMessageBtn.addEventListener('click', hideMessage);
+            usernameForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveUsername(usernameInput.value);
+            });
+            suggestUsernameBtn.addEventListener('click', suggestUsername);
+            changeUserBtn.addEventListener('click', changeUser);
+            openAiAssistantBtn.addEventListener('click', () => showModal(aiAssistantModal));
+            closeAiAssistantBtn.addEventListener('click', () => hideModal(aiAssistantModal));
+            aiSendBtn.addEventListener('click', handleAiChat);
+            aiInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    handleAiChat();
+                }
+            });
+            
+            // Chart buttons
+            chartBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const chartType = btn.dataset.chartType;
+                    // Reset all buttons and activate the clicked one
+                    chartBtns.forEach(b => b.classList.remove('bg-amber-500', 'text-slate-900'));
+                    btn.classList.add('bg-amber-500', 'text-slate-900');
+                    renderChart(chartType, allExpenses);
+                });
+            });
 
-        // Initial call to get the quote
-        getDynamicQuote();
-
+            // Filter listeners
+            monthFilterSelect.addEventListener('change', () => {
+                const total = allExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+                renderExpensesList(allExpenses, total);
+                // Re-render the chart with the current selected type
+                const selectedChartBtn = document.querySelector('.chart-btn.bg-amber-500');
+                renderChart(selectedChartBtn.dataset.chartType, allExpenses);
+            });
+            yearFilterSelect.addEventListener('change', () => {
+                const total = allExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+                renderExpensesList(allExpenses, total);
+                const selectedChartBtn = document.querySelector('.chart-btn.bg-amber-500');
+                renderChart(selectedChartBtn.dataset.chartType, allExpenses);
+            });
+        };
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
@@ -691,7 +736,6 @@
         <!-- Header Section -->
         <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-center mb-6">
             <div class="flex items-center mb-4 md:mb-0">
-                <!-- Updated, more relaxed logo SVG -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
                     <circle cx="12" cy="12" r="10"></circle>
                     <path d="M12 2a10 10 0 0 1 10 10"></path>
@@ -705,13 +749,12 @@
                     <span class="text-sm">User:</span>
                     <span id="username-display" class="font-semibold text-amber-500">Guest</span>
                 </div>
-                <button id="show-log-btn" class="bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200">Activity Log</button>
-                <button id="export-btn" class="bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200">Export Data</button>
-                <button id="show-ai-btn" class="bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200">AI Assistant</button>
+                <button id="change-user-btn" class="bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200">Change User</button>
+                <button id="open-ai-assistant-btn" class="bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200">AI Assistant</button>
             </div>
         </header>
 
-        <!-- Message/Alert Box (Custom, not alert()) -->
+        <!-- Message/Alert Box (Custom) -->
         <div id="message-box" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-slate-800 text-slate-200 p-6 rounded-lg shadow-2xl z-50 border border-slate-700 transition-opacity duration-300">
             <h3 id="message-title" class="font-bold text-lg mb-2 text-amber-500"></h3>
             <p id="message-text" class="text-slate-300 mb-4"></p>
@@ -723,11 +766,14 @@
         <!-- Username Modal -->
         <div id="username-modal" class="fixed inset-0 bg-slate-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
             <div class="bg-slate-800 p-8 rounded-lg shadow-xl max-w-md w-full border border-slate-700">
-                <h2 class="text-2xl font-bold mb-4 text-amber-500">Set Your Username</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-amber-500">Set Your Username</h2>
+                </div>
                 <p class="text-slate-300 mb-4">Please enter a username to get started. This will be used to personalize your experience and retrieve your data.</p>
                 <form id="username-form" class="space-y-4">
                     <div class="flex space-x-2">
-                        <input type="text" id="username-input" class="w-full p-3 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Your Name" required>
+                        <input type="text" id="username-input" class="w-full p-3 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Your Name" required pattern="[A-Za-z0-9]{8,12}" title="Username must be 8-12 alphanumeric characters.">
+                        <button type="button" id="suggest-username-btn" class="bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-3 rounded-lg font-medium shadow-md transition-colors duration-200 whitespace-nowrap">Suggest</button>
                     </div>
                     <button type="submit" class="w-full bg-amber-500 text-slate-900 font-bold p-3 rounded-lg hover:bg-amber-600 transition-colors duration-200">Save Username</button>
                 </form>
@@ -746,7 +792,7 @@
                     </button>
                 </div>
                 <div id="ai-response-area" class="h-80 overflow-y-auto custom-scrollbar bg-slate-700 p-4 rounded-lg text-slate-300 mb-4">
-                    <!-- Chat messages will be appended here -->
+                    <p>Hello! I am your personal financial assistant. How can I help you today? Ask me about your expenses, budgeting, or anything else related to your finances.</p>
                 </div>
                 <div class="flex items-center space-x-2">
                     <input type="text" id="ai-input" class="flex-grow p-3 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Type your question here...">
@@ -754,43 +800,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- Activity Log Modal -->
-        <div id="activity-log-modal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-75 flex items-center justify-center z-50">
-            <div class="bg-slate-800 p-8 rounded-lg shadow-xl max-w-2xl w-full border border-slate-700">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-amber-500">Activity Log</h2>
-                    <button id="close-log-btn" class="text-slate-400 hover:text-slate-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div id="activity-log-content" class="h-80 overflow-y-auto custom-scrollbar bg-slate-700 p-4 rounded-lg text-slate-300">
-                    <p>Log is empty.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Export Modal -->
-        <div id="export-modal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-75 flex items-center justify-center z-50">
-            <div class="bg-slate-800 p-8 rounded-lg shadow-xl max-w-md w-full border border-slate-700">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-amber-500">Export Data</h2>
-                    <button id="close-export-btn" class="text-slate-400 hover:text-slate-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="space-y-4">
-                    <p class="text-slate-300">Choose a format to export your financial data.</p>
-                    <button id="export-csv-btn" class="w-full bg-emerald-500 text-slate-900 font-bold p-3 rounded-lg hover:bg-emerald-600 transition-colors duration-200">Export to CSV</button>
-                    <button id="export-json-btn" class="w-full bg-emerald-500 text-slate-900 font-bold p-3 rounded-lg hover:bg-emerald-600 transition-colors duration-200">Export to JSON</button>
-                </div>
-            </div>
-        </div>
-
+        
         <!-- Main Content Grid -->
         <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Left Column: Forms and Controls -->
@@ -813,7 +823,6 @@
                                 </select>
                                 <input type="number" id="expense-amount" class="flex-grow p-3 bg-slate-700 text-slate-200 rounded-r-lg focus:outline-none" placeholder="e.g., 500" required>
                             </div>
-                            <p id="amount-error" class="text-red-500 text-sm mt-1 hidden">Invalid amount. Please check the currency limits.</p>
                         </div>
                         <div>
                             <label for="expense-category" class="block text-slate-400 mb-1">Category</label>
@@ -838,17 +847,11 @@
                             </label>
                             <span id="recurring-label" class="text-slate-400">Recurring Expense</span>
                         </div>
-
-                        <!-- Recurring options container, initially hidden -->
                         <div id="recurring-options-container" class="space-y-4 p-4 rounded-lg bg-slate-700 hidden">
                             <h3 class="text-lg font-semibold text-amber-500">Recurrence Frequency</h3>
                             <div class="flex space-x-4">
                                 <label class="flex items-center space-x-2">
-                                    <input type="radio" name="recurrence-freq" value="daily" class="form-radio text-amber-500 bg-slate-800 border-slate-600 focus:ring-amber-500" checked>
-                                    <span class="text-slate-300">Daily</span>
-                                </label>
-                                <label class="flex items-center space-x-2">
-                                    <input type="radio" name="recurrence-freq" value="weekly" class="form-radio text-amber-500 bg-slate-800 border-slate-600 focus:ring-amber-500">
+                                    <input type="radio" name="recurrence-freq" value="weekly" class="form-radio text-amber-500 bg-slate-800 border-slate-600 focus:ring-amber-500" checked>
                                     <span class="text-slate-300">Weekly</span>
                                 </label>
                                 <label class="flex items-center space-x-2">
@@ -856,110 +859,135 @@
                                     <span class="text-slate-300">Monthly</span>
                                 </label>
                             </div>
-
-                            <div id="weekly-options" class="flex flex-wrap gap-2 hidden">
-                                <label class="flex items-center space-x-1 text-sm text-slate-300">
-                                    <input type="checkbox" name="weekly-day" value="Mon" class="form-checkbox text-amber-500 rounded bg-slate-800 border-slate-600 focus:ring-amber-500">
-                                    <span>Mon</span>
+                            <div id="weekly-options" class="grid grid-cols-3 gap-2 text-center">
+                                <label class="flex items-center justify-center p-2 rounded-xl border border-slate-600 cursor-pointer hover:bg-slate-600 transition-colors duration-200">
+                                    <input type="checkbox" name="weekly-day" value="mon" class="sr-only peer">
+                                    <span class="text-sm peer-checked:bg-amber-500 peer-checked:text-slate-900 px-2 py-1 rounded-full transition-colors duration-200">Mon</span>
                                 </label>
-                                <label class="flex items-center space-x-1 text-sm text-slate-300">
-                                    <input type="checkbox" name="weekly-day" value="Tue" class="form-checkbox text-amber-500 rounded bg-slate-800 border-slate-600 focus:ring-amber-500">
-                                    <span>Tue</span>
+                                <label class="flex items-center justify-center p-2 rounded-xl border border-slate-600 cursor-pointer hover:bg-slate-600 transition-colors duration-200">
+                                    <input type="checkbox" name="weekly-day" value="tue" class="sr-only peer">
+                                    <span class="text-sm peer-checked:bg-amber-500 peer-checked:text-slate-900 px-2 py-1 rounded-full transition-colors duration-200">Tue</span>
                                 </label>
-                                <label class="flex items-center space-x-1 text-sm text-slate-300">
-                                    <input type="checkbox" name="weekly-day" value="Wed" class="form-checkbox text-amber-500 rounded bg-slate-800 border-slate-600 focus:ring-amber-500">
-                                    <span>Wed</span>
+                                <label class="flex items-center justify-center p-2 rounded-xl border border-slate-600 cursor-pointer hover:bg-slate-600 transition-colors duration-200">
+                                    <input type="checkbox" name="weekly-day" value="wed" class="sr-only peer">
+                                    <span class="text-sm peer-checked:bg-amber-500 peer-checked:text-slate-900 px-2 py-1 rounded-full transition-colors duration-200">Wed</span>
                                 </label>
-                                <label class="flex items-center space-x-1 text-sm text-slate-300">
-                                    <input type="checkbox" name="weekly-day" value="Thu" class="form-checkbox text-amber-500 rounded bg-slate-800 border-slate-600 focus:ring-amber-500">
-                                    <span>Thu</span>
+                                <label class="flex items-center justify-center p-2 rounded-xl border border-slate-600 cursor-pointer hover:bg-slate-600 transition-colors duration-200">
+                                    <input type="checkbox" name="weekly-day" value="thu" class="sr-only peer">
+                                    <span class="text-sm peer-checked:bg-amber-500 peer-checked:text-slate-900 px-2 py-1 rounded-full transition-colors duration-200">Thu</span>
                                 </label>
-                                <label class="flex items-center space-x-1 text-sm text-slate-300">
-                                    <input type="checkbox" name="weekly-day" value="Fri" class="form-checkbox text-amber-500 rounded bg-slate-800 border-slate-600 focus:ring-amber-500">
-                                    <span>Fri</span>
+                                <label class="flex items-center justify-center p-2 rounded-xl border border-slate-600 cursor-pointer hover:bg-slate-600 transition-colors duration-200">
+                                    <input type="checkbox" name="weekly-day" value="fri" class="sr-only peer">
+                                    <span class="text-sm peer-checked:bg-amber-500 peer-checked:text-slate-900 px-2 py-1 rounded-full transition-colors duration-200">Fri</span>
                                 </label>
-                                <label class="flex items-center space-x-1 text-sm text-slate-300">
-                                    <input type="checkbox" name="weekly-day" value="Sat" class="form-checkbox text-amber-500 rounded bg-slate-800 border-slate-600 focus:ring-amber-500">
-                                    <span>Sat</span>
+                                <label class="flex items-center justify-center p-2 rounded-xl border border-slate-600 cursor-pointer hover:bg-slate-600 transition-colors duration-200">
+                                    <input type="checkbox" name="weekly-day" value="sat" class="sr-only peer">
+                                    <span class="text-sm peer-checked:bg-amber-500 peer-checked:text-slate-900 px-2 py-1 rounded-full transition-colors duration-200">Sat</span>
                                 </label>
-                                <label class="flex items-center space-x-1 text-sm text-slate-300">
-                                    <input type="checkbox" name="weekly-day" value="Sun" class="form-checkbox text-amber-500 rounded bg-slate-800 border-slate-600 focus:ring-amber-500">
-                                    <span>Sun</span>
+                                <label class="flex items-center justify-center p-2 rounded-xl border border-slate-600 cursor-pointer hover:bg-slate-600 transition-colors duration-200">
+                                    <input type="checkbox" name="weekly-day" value="sun" class="sr-only peer">
+                                    <span class="text-sm peer-checked:bg-amber-500 peer-checked:text-slate-900 px-2 py-1 rounded-full transition-colors duration-200">Sun</span>
                                 </label>
                             </div>
                             <div id="monthly-options" class="hidden">
-                                <label for="monthly-day-select" class="block text-slate-400 mb-1">Select Day of Month</label>
-                                <select id="monthly-day-select" class="w-full p-3 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                                    <!-- Days 1-31 will be populated by JS -->
-                                </select>
+                                <label for="monthly-date" class="block text-slate-400 mb-1">Day of the Month</label>
+                                <input type="number" id="monthly-date" min="1" max="31" value="1" class="w-full p-3 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-emerald-500 text-slate-900 font-bold p-3 rounded-lg hover:bg-emerald-600 transition-colors duration-200">Add Expense</button>
-                    </form>
-                </div>
-                <!-- Budgeting Section -->
-                <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
-                    <h2 class="text-2xl font-bold text-amber-500 mb-4">Budgeting</h2>
-                    <div id="current-budget-info" class="mb-4 text-slate-300">
-                        <p>Current Budget: <span id="current-budget" class="font-semibold">Not Set</span></p>
-                    </div>
-                    <form id="budget-form" class="space-y-4">
-                        <div>
-                            <label for="budget-amount" class="block text-slate-400 mb-1">Set Monthly Budget</label>
-                            <input type="number" id="budget-amount" class="w-full p-3 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="e.g., 50000" required>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button type="submit" class="flex-grow bg-emerald-500 text-slate-900 font-bold p-3 rounded-lg hover:bg-emerald-600 transition-colors duration-200">Set Budget</button>
-                        </div>
+                        <button type="submit" class="w-full bg-amber-500 text-slate-900 font-bold p-3 rounded-lg hover:bg-amber-600 transition-colors duration-200">Add Expense</button>
                     </form>
                 </div>
             </div>
 
-            <!-- Middle Column: Chart and Tips -->
+            <!-- Right Column: Expenses List & Summary -->
             <div class="lg:col-span-2 space-y-6">
-                <!-- Data Visualization Section -->
+                <!-- Budget & Summary Section -->
                 <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
-                    <h2 class="text-2xl font-bold text-amber-500 mb-4">Your Spending Breakdown</h2>
-                    <div class="h-64 md:h-96">
-                        <canvas id="expense-chart"></canvas>
+                    <h2 class="text-2xl font-bold text-amber-500 mb-4">Summary</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-700 text-slate-200 p-4 rounded-lg shadow-md">
+                            <p class="text-lg font-medium">Total Expenses:</p>
+                            <span id="total-expenses" class="text-3xl font-extrabold text-amber-500">₹0.00</span>
+                        </div>
+                        <div class="bg-slate-700 text-slate-200 p-4 rounded-lg shadow-md">
+                            <p class="text-lg font-medium">Remaining Budget:</p>
+                            <span id="remaining-budget" class="text-3xl font-extrabold text-green-500">₹0.00</span>
+                        </div>
                     </div>
+                    <div class="mt-4">
+                        <p class="text-slate-400 mb-2">Budget Progress:</p>
+                        <div class="w-full bg-slate-700 rounded-full h-4">
+                            <div id="budget-progress" class="bg-amber-500 h-4 rounded-full transition-all duration-500" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <form id="budget-form" class="mt-4">
+                        <label for="budget-input" class="block text-slate-400 mb-1">Set Monthly Budget</label>
+                        <div class="flex space-x-2">
+                            <input type="number" id="budget-input" class="w-full p-3 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="e.g., 50000" min="1" required>
+                            <button type="submit" class="bg-amber-500 text-slate-900 font-bold p-3 rounded-lg hover:bg-amber-600 transition-colors duration-200 whitespace-nowrap">Set Budget</button>
+                        </div>
+                    </form>
                 </div>
-
-                <!-- AI Tips Section -->
+                
+                <!-- Expenses List -->
                 <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold text-amber-500">Financial Insights</h2>
-                        <button id="fetch-suggestions-btn" class="bg-slate-700 text-slate-300 hover:bg-slate-600 px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200">Get Suggestions</button>
+                    <h2 class="text-2xl font-bold text-amber-500 mb-4">All Expenses</h2>
+                    
+                    <!-- Month and Year Filter -->
+                    <div class="flex space-x-4 mb-4">
+                        <div class="flex-grow">
+                            <label for="month-filter" class="sr-only">Filter by Month</label>
+                            <select id="month-filter" class="w-full p-3 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <option value="all">All Months</option>
+                                <option value="0">January</option>
+                                <option value="1">February</option>
+                                <option value="2">March</option>
+                                <option value="3">April</option>
+                                <option value="4">May</option>
+                                <option value="5">June</option>
+                                <option value="6">July</option>
+                                <option value="7">August</option>
+                                <option value="8">September</option>
+                                <option value="9">October</option>
+                                <option value="10">November</option>
+                                <option value="11">December</option>
+                            </select>
+                        </div>
+                        <div class="flex-grow">
+                            <label for="year-filter" class="sr-only">Filter by Year</label>
+                            <select id="year-filter" class="w-full p-3 rounded-lg bg-slate-700 text-slate-200 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <option value="all">All Years</option>
+                            </select>
+                        </div>
                     </div>
-                    <blockquote id="dynamic-quote" class="text-slate-400 italic mb-4 border-l-4 border-amber-500 pl-4">
-                        <!-- Dynamic quote will be loaded here -->
-                    </blockquote>
-                    <div id="ai-suggestion-area" class="text-slate-300">
-                        <!-- AI suggestions will be loaded here -->
-                    </div>
+                    
+                    <ul id="expenses-list" class="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                        <!-- Expenses will be dynamically added here -->
+                    </ul>
                 </div>
+            </div>
+        </div>
+        
+        <!-- AI Quote Section -->
+        <div class="w-full max-w-7xl mt-8 mb-6 text-center">
+            <p id="dynamic-quote" class="text-slate-400 italic max-w-2xl mx-auto">"The only way to get a good idea is to get a lot of ideas." - Linus Pauling</p>
+        </div>
 
-                <!-- Recent Expenses Table -->
-                <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
-                    <h2 class="text-2xl font-bold text-amber-500 mb-4">Recent Expenses</h2>
-                    <div class="overflow-x-auto custom-scrollbar">
-                        <table class="w-full text-left table-auto">
-                            <thead>
-                                <tr class="bg-slate-700 text-slate-300 uppercase text-sm leading-normal">
-                                    <th class="py-3 px-6 text-left">Name</th>
-                                    <th class="py-3 px-6 text-left">Amount</th>
-                                    <th class="py-3 px-6 text-left">Category</th>
-                                    <th class="py-3 px-6 text-left">Date</th>
-                                    <th class="py-3 px-6 text-left">Recurring</th>
-                                    <th class="py-3 px-6 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="expense-table-body" class="text-slate-300 text-sm font-light">
-                                <!-- Expenses will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
+        <!-- Charts Section -->
+        <div class="w-full max-w-7xl mt-6">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+                <h2 class="text-3xl font-bold text-amber-500 mb-2 md:mb-0">Your Financial Journey</h2>
+                <div class="flex flex-wrap gap-2">
+                    <button data-chart-type="category" class="chart-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-amber-500 text-slate-900">Category</button>
+                    <button data-chart-type="monthly" class="chart-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-slate-300">Monthly</button>
+                    <button data-chart-type="daily" class="chart-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-slate-300">Daily</button>
+                </div>
+            </div>
+            <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
+                <h3 id="chart-title" class="text-center text-xl font-bold text-slate-300 mb-4">Category Breakdown</h3>
+                <div class="w-full h-96 flex items-center justify-center">
+                    <canvas id="main-chart-canvas"></canvas>
                 </div>
             </div>
         </div>
