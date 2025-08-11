@@ -37,16 +37,11 @@
             writeBatch
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: Hardcoded Firebase config to resolve environment error
-        const firebaseConfig = {
-            apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
-            authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
-            projectId: "daily-expense-tracker-4a115",
-            storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
-            messagingSenderId: "862714037551",
-            appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
-        };
-        const appId = firebaseConfig.projectId;
+        // The following variables are provided by the canvas environment.
+        // DO NOT change them.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -64,15 +59,16 @@
         let userSettingsDocRef = null;
         let currency = 'INR';
         let currencySymbol = '₹';
+        let currentChartInstance = null;
 
         // Get DOM elements
         const quoteText = document.getElementById('dynamic-quote');
         const usernameDisplay = document.getElementById('username-display');
-        const usernameModal = document.getElementById('username-modal');
-        const usernameForm = document.getElementById('username-form');
-        const usernameInput = document.getElementById('username-input');
-        const suggestUsernameBtn = document.getElementById('suggest-username-btn');
+        const usernameLoginModal = document.getElementById('username-login-modal');
+        const usernameLoginForm = document.getElementById('username-login-form');
+        const usernameLoginInput = document.getElementById('username-login-input');
         const changeUserBtn = document.getElementById('change-user-btn');
+        const deleteAccountBtn = document.getElementById('delete-account-btn');
         const expenseForm = document.getElementById('expense-form');
         const expenseNameInput = document.getElementById('expense-name');
         const expenseAmountInput = document.getElementById('expense-amount');
@@ -93,6 +89,7 @@
         const monthFilterSelect = document.getElementById('month-filter');
         const yearFilterSelect = document.getElementById('year-filter');
         const messageBox = document.getElementById('message-box');
+        const messageTitle = document.getElementById('message-title');
         const messageText = document.getElementById('message-text');
         const closeMessageBtn = document.getElementById('close-message-btn');
         const chartCanvas = document.getElementById('main-chart-canvas');
@@ -109,10 +106,11 @@
         const userIdDisplay = document.getElementById('user-id-display');
         const exportListJsonBtn = document.getElementById('export-list-json-btn');
         const exportListCsvBtn = document.getElementById('export-list-csv-btn');
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
 
-
-        let currentChartInstance = null;
-
+        // AI Budget Suggestions (static array)
         const aiBudgetSuggestions = [
             "Set a daily spending limit and track it actively.",
             "Review your subscriptions and cancel any you don't use.",
@@ -223,7 +221,7 @@
         // Utility Functions
         const showMessage = (title, message, isError = false) => {
             messageBox.classList.remove('hidden');
-            document.getElementById('message-title').textContent = title;
+            messageTitle.textContent = title;
             messageText.textContent = message;
             if (isError) {
                 messageBox.classList.remove('bg-slate-800');
@@ -397,58 +395,89 @@
             clickedBtn.classList.add('bg-amber-500', 'text-slate-900', 'hover:bg-amber-400');
         };
 
-        // Firebase-related Functions
-        const checkUsername = async () => {
-            if (!userId) return;
-            const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/user_data`);
-            try {
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    username = userDoc.data().username;
-                    usernameDisplay.textContent = username;
-                    hideModal(usernameModal);
-                } else {
-                    showModal(usernameModal);
-                }
-            } catch (error) {
-                console.error("Error fetching user profile: ", error);
-                showModal(usernameModal);
+        const setAndSaveUsername = async (newUsername) => {
+            if (!userId) {
+                showMessage("Error", "User not authenticated. Please try refreshing the page.", true);
+                return;
             }
-        };
 
-        const saveUsername = async (newUsername) => {
-            if (!userId || !newUsername) return;
-            const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/user_data`);
             try {
-                await setDoc(userDocRef, {
-                    username: newUsername,
-                    lastUpdated: Date.now()
-                });
-                username = newUsername;
-                usernameDisplay.textContent = newUsername;
-                hideModal(usernameModal);
-                showMessage("Success", `Username "${newUsername}" saved successfully!`);
-                addLog(`Username changed to "${newUsername}"`);
-            } catch (error) {
-                console.error("Error saving username: ", error);
-                showMessage("Error", "Failed to save username. Please try again.", true);
-            }
-        };
-
-        const saveCurrency = async (newCurrency) => {
-            if (!userId) return;
-            try {
+                // Save the username to the user's private settings document
+                const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/settings`);
                 await setDoc(userSettingsDocRef, {
-                    currency: newCurrency
+                    username: newUsername,
+                    currency: 'INR'
                 }, {
                     merge: true
                 });
-                showMessage("Success", `Currency set to ${newCurrency}.`);
-                addLog(`Currency changed to ${newCurrency}`);
+
+                username = newUsername;
+                usernameDisplay.textContent = username;
+                userIdDisplay.textContent = userId;
+                hideModal(usernameLoginModal);
+                showMessage("Success", `Welcome, ${username}! Your data is now linked to this account.`);
+                addLog(`Username set to: ${username}`);
             } catch (error) {
-                console.error("Error saving currency: ", error);
-                showMessage("Error", "Failed to save currency. Please try again.", true);
+                console.error("Error saving username:", error);
+                showMessage("Error", "Failed to set username. Please try again.", true);
             }
+        };
+
+        const deleteAccount = async () => {
+            if (!userId) {
+                showMessage("Error", "No user to delete.", true);
+                return;
+            }
+
+            try {
+                // Delete user's expenses
+                const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
+                const expensesQuery = query(expensesCollectionRef);
+                const expensesSnapshot = await getDocs(expensesQuery);
+                const batch = writeBatch(db);
+                expensesSnapshot.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+
+                // Delete user's logs
+                const logsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/logs`);
+                const logsQuery = query(logsCollectionRef);
+                const logsSnapshot = await getDocs(logsQuery);
+                const logsBatch = writeBatch(db);
+                logsSnapshot.forEach((doc) => {
+                    logsBatch.delete(doc.ref);
+                });
+                await logsBatch.commit();
+                
+                // Delete user's profile and settings documents
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/profile/budget`));
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/profile/settings`));
+
+                showMessage("Success", `Account for "${username}" has been permanently deleted.`);
+                await signOut(auth);
+                resetUI();
+            } catch (error) {
+                console.error("Error deleting account:", error);
+                showMessage("Error", "Failed to delete account. Please try again.", true);
+            }
+        };
+
+        const resetUI = () => {
+            // Clear all UI elements and reset global variables
+            userId = null;
+            username = null;
+            allExpenses = [];
+            budget = 0;
+            usernameDisplay.textContent = 'Guest';
+            userIdDisplay.textContent = '';
+            expensesList.innerHTML = '';
+            logsList.innerHTML = '';
+            renderBudgetUI(0);
+            if (currentChartInstance) {
+                currentChartInstance.destroy();
+            }
+            showModal(usernameLoginModal);
         };
 
         const saveBudget = async (e) => {
@@ -497,29 +526,9 @@
         };
 
         const changeUser = async () => {
-            try {
-                // Delete user data.
-                const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/user_data`);
-                await deleteDoc(userDocRef);
-                const budgetDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/budget`);
-                await deleteDoc(budgetDocRef);
-
-                // Clear expenses collection.
-                const expensesQuery = query(collection(db, `artifacts/${appId}/users/${userId}/expenses`));
-                const querySnapshot = await getDocs(expensesQuery);
-                const batch = writeBatch(db);
-                querySnapshot.forEach((doc) => {
-                    batch.delete(doc.ref);
-                });
-                await batch.commit();
-
-                // Sign out and let onAuthStateChanged handle the new anonymous user
-                await signOut(auth);
-                showMessage("Success", "User profile cleared. Please create a new username.");
-            } catch (error) {
-                console.error("Error changing user:", error);
-                showMessage("Error", "Could not change user. Please try again.", true);
-            }
+            await signOut(auth);
+            resetUI();
+            showMessage("Info", "Session cleared. Please refresh the page to start a new session.");
         };
 
         const addLog = async (action) => {
@@ -548,9 +557,9 @@
                     li.className = 'bg-slate-700 p-3 rounded-lg shadow-md mb-2';
                     const timestamp = new Date(log.timestamp).toLocaleString();
                     li.innerHTML = `
-                        <p class="text-slate-300">${log.action}</p>
-                        <p class="text-xs text-slate-500 mt-1">${timestamp}</p>
-                    `;
+                <p class="text-slate-300">${log.action}</p>
+                <p class="text-xs text-slate-500 mt-1">${timestamp}</p>
+            `;
                     logsList.appendChild(li);
                 });
             }
@@ -619,669 +628,585 @@
             }
         };
 
-        // API Call for Username Suggestion
-        const suggestUsername = async () => {
-            try {
-                const prompt = "Suggest a memorable and sensible username that is 8-12 alphanumeric characters long. Do not include spaces or special characters. Make it financial-themed. Only provide the username, no other text.";
-                const chatHistory = [{
-                    role: "user",
-                    parts: [{
-                        text: prompt
-                    }]
-                }];
-                const payload = {
-                    contents: chatHistory
-                };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-                let response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                let result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts) {
-                    const suggestedName = result.candidates[0].content.parts[0].text.trim();
-                    usernameInput.value = suggestedName;
-                } else {
-                    usernameInput.value = `User_${Math.floor(Math.random() * 9999)}`;
-                }
-            } catch (error) {
-                console.error("Error suggesting username:", error);
-                usernameInput.value = `User_${Math.floor(Math.random() * 9999)}`;
-            }
-        };
-
-        const getAiBudgetSuggestion = () => {
-            const randomIndex = Math.floor(Math.random() * aiBudgetSuggestions.length);
-            const suggestionText = aiBudgetSuggestions[randomIndex];
-
-            const suggestionContainer = document.getElementById('budget-suggestions-container');
-            suggestionContainer.innerHTML = ''; // Clear previous suggestions
-
-            const aiMessageDiv = document.createElement('div');
-            aiMessageDiv.className = 'text-left my-2';
-            aiMessageDiv.innerHTML = `<span class="inline-block bg-slate-700 text-slate-200 rounded-lg p-3 max-w-sm">${suggestionText}</span>`;
-            suggestionContainer.appendChild(aiMessageDiv);
-
-            addLog("Received AI budget suggestion.");
-        };
-
-        const addExpense = async (e) => {
-            e.preventDefault();
-            const name = expenseNameInput.value.trim();
-            const amount = parseFloat(expenseAmountInput.value);
-            const category = expenseCategorySelect.value;
-            const date = expenseDateInput.value;
-            const isRecurring = recurringCheckbox.checked;
-
-            if (!name || amount <= 0 || !date) {
-                showMessage("Validation Error", "Please enter a valid expense name, amount, and date.", true);
+        const renderExpenses = (expenses) => {
+            expensesList.innerHTML = '';
+            if (expenses.length === 0) {
+                expensesList.innerHTML = `<li class="text-center text-slate-400">No expenses found.</li>`;
                 return;
             }
-
-            const expenseData = {
-                name,
-                amount,
-                category,
-                timestamp: new Date(date).getTime(),
-                isRecurring
-            };
-
-            if (isRecurring) {
-                const frequency = document.querySelector('input[name="recurrence-freq"]:checked')?.value;
-                if (!frequency) {
-                    showMessage("Validation Error", "Please select a recurrence frequency.", true);
-                    return;
-                }
-                expenseData.recurrenceFrequency = frequency;
-
-                if (frequency === 'weekly') {
-                    const selectedDays = Array.from(document.querySelectorAll('input[name="weekly-day"]:checked')).map(cb => cb.value);
-                    if (selectedDays.length === 0) {
-                        showMessage("Validation Error", "Please select at least one day for weekly recurrence.", true);
-                        return;
-                    }
-                    expenseData.recurrenceDetails = {
-                        days: selectedDays
-                    };
-                } else if (frequency === 'monthly') {
-                    const selectedDate = document.getElementById('monthly-date').value;
-                    if (!selectedDate || selectedDate < 1 || selectedDate > 31) {
-                        showMessage("Validation Error", "Please select a valid day of the month for monthly recurrence.", true);
-                        return;
-                    }
-                    expenseData.recurrenceDetails = {
-                        date: selectedDate
-                    };
-                }
-            }
-
-            try {
-                if (expensesCollectionRef) {
-                    await addDoc(expensesCollectionRef, expenseData);
-                    showMessage("Success", "Expense added successfully!");
-                    addLog(`Added new expense: ${name} (${currencySymbol}${amount.toFixed(2)})`);
-                    expenseForm.reset();
-                    checkFormValidity();
-                }
-            } catch (error) {
-                console.error("Error adding expense: ", error);
-                showMessage("Error", "Failed to add expense. Please try again.", true);
-            }
-        };
-
-        const deleteExpense = async (docId) => {
-            try {
-                if (userId) {
-                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/expenses`, docId);
-                    await deleteDoc(docRef);
-                    showMessage("Success", "Expense deleted successfully!");
-                    addLog(`Deleted expense with ID: ${docId}`);
-                }
-            } catch (error) {
-                console.error("Error deleting expense: ", error);
-                showMessage("Error", "Failed to delete expense.", true);
-            }
-        };
-        window.deleteExpense = deleteExpense; // Expose to global scope for onclick
-
-        const renderExpensesList = (expenses, total) => {
-            expensesList.innerHTML = '';
-            const selectedMonth = monthFilterSelect.value;
-            const selectedYear = yearFilterSelect.value;
 
             const filteredExpenses = expenses.filter(expense => {
                 const date = new Date(expense.timestamp);
                 const expenseMonth = date.getMonth().toString();
                 const expenseYear = date.getFullYear().toString();
+                const selectedMonth = monthFilterSelect.value;
+                const selectedYear = yearFilterSelect.value;
                 return (selectedMonth === 'all' || expenseMonth === selectedMonth) &&
                     (selectedYear === 'all' || expenseYear === selectedYear);
             });
 
+            let totalExpenses = 0;
             if (filteredExpenses.length === 0) {
-                expensesList.innerHTML = `<li class="text-center text-slate-400">No expenses found.</li>`;
+                expensesList.innerHTML = `<li class="text-center text-slate-400">No expenses for the selected filter.</li>`;
             } else {
                 filteredExpenses.forEach(expense => {
                     const li = document.createElement('li');
-                    li.className = 'flex justify-between items-center bg-slate-700 p-4 rounded-lg shadow-md mb-2 transition-colors duration-200 hover:bg-slate-600';
+                    li.className = 'bg-slate-700 p-4 rounded-lg shadow-md flex justify-between items-center';
+                    li.dataset.id = expense.id;
+                    const date = new Date(expense.timestamp);
+                    const formattedDate = date.toLocaleDateString();
                     li.innerHTML = `
-                        <div>
-                            <p class="font-medium">${expense.name} <span class="text-xs text-slate-400">(${expense.category})</span></p>
-                            <p class="text-sm text-slate-400">${currencySymbol}${expense.amount.toFixed(2)}</p>
-                        </div>
-                        <div class="flex items-center">
-                            <span class="text-xs text-slate-400 mr-4">
-                                ${new Date(expense.timestamp).toLocaleDateString()}
-                            </span>
-                            <button class="text-red-400 hover:text-red-500 transition-colors duration-200" onclick="deleteExpense('${expense.id}')">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-                            </button>
-                        </div>
-                    `;
+                <div>
+                    <h4 class="text-lg font-semibold text-amber-300">${expense.name}</h4>
+                    <p class="text-slate-400 text-sm">Category: ${expense.category}</p>
+                    <p class="text-slate-500 text-xs mt-1">Date: ${formattedDate}</p>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-amber-500 text-xl font-bold mr-4">${currencySymbol}${expense.amount.toFixed(2)}</span>
+                    <button class="edit-expense-btn text-slate-400 hover:text-amber-500 transition-colors duration-200 mr-2" data-id="${expense.id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                    </button>
+                    <button class="delete-expense-btn text-slate-400 hover:text-red-500 transition-colors duration-200" data-id="${expense.id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            `;
                     expensesList.appendChild(li);
+                    totalExpenses += expense.amount;
                 });
             }
-            renderBudgetUI(total);
+
+            renderBudgetUI(totalExpenses);
+            renderChart('category', filteredExpenses);
         };
 
-        const populateFilters = (expenses) => {
-            const years = [...new Set(expenses.map(exp => new Date(exp.timestamp).getFullYear()))].sort((a, b) => b - a);
-            yearFilterSelect.innerHTML = '<option value="all">All Years</option>';
-            years.forEach(year => {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year;
-                yearFilterSelect.appendChild(option);
-            });
+        const setupFirestoreListeners = async (uid) => {
+            userId = uid;
+            expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
+            logsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/logs`);
+            userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/settings`);
 
-            const today = new Date();
-            yearFilterSelect.value = today.getFullYear();
-            monthFilterSelect.value = today.getMonth();
-        };
-
-        const checkFormValidity = () => {
-            const nameIsValid = expenseNameInput.value.trim() !== '';
-            const amountIsValid = parseFloat(expenseAmountInput.value) > 0;
-            if (nameIsValid && amountIsValid) {
-                recurringCheckbox.disabled = false;
+            // Listen for changes in user settings
+            const settingsDoc = await getDoc(userSettingsDocRef);
+            if (settingsDoc.exists()) {
+                const settings = settingsDoc.data();
+                username = settings.username || 'Guest';
+                if (settings.currency) {
+                    currency = settings.currency;
+                    currencySymbol = settings.currency === 'USD' ? '$' : '₹';
+                    currencySelect.value = currency;
+                }
+                hideModal(usernameLoginModal);
             } else {
-                recurringCheckbox.disabled = true;
-                recurringCheckbox.checked = false;
-                recurringOptionsContainer.classList.add('hidden');
+                showModal(usernameLoginModal);
             }
-        };
+            usernameDisplay.textContent = username;
+            userIdDisplay.textContent = userId;
 
-        const exportData = (format) => {
-            const selectedMonth = monthFilterSelect.value;
-            const selectedYear = yearFilterSelect.value;
-
-            const filteredExpenses = allExpenses.filter(expense => {
-                const date = new Date(expense.timestamp);
-                const expenseMonth = date.getMonth().toString();
-                const expenseYear = date.getFullYear().toString();
-                return (selectedMonth === 'all' || expenseMonth === selectedMonth) &&
-                    (selectedYear === 'all' || expenseYear === selectedYear);
+            // Listen for changes in expenses
+            onSnapshot(expensesCollectionRef, (snapshot) => {
+                const changes = snapshot.docChanges();
+                changes.forEach(change => {
+                    const expense = {
+                        id: change.doc.id,
+                        ...change.doc.data()
+                    };
+                    if (change.type === "added") {
+                        allExpenses.push(expense);
+                    }
+                    if (change.type === "modified") {
+                        const index = allExpenses.findIndex(e => e.id === expense.id);
+                        if (index !== -1) {
+                            allExpenses[index] = expense;
+                        }
+                    }
+                    if (change.type === "removed") {
+                        allExpenses = allExpenses.filter(e => e.id !== expense.id);
+                    }
+                });
+                renderExpenses(allExpenses);
             });
 
-            let dataStr;
-            let fileType;
-            let fileName;
+            // Listen for changes in budget
+            onSnapshot(doc(db, `artifacts/${appId}/users/${userId}/profile/budget`), (docSnap) => {
+                if (docSnap.exists()) {
+                    budget = docSnap.data().amount;
+                    renderBudgetUI(allExpenses.reduce((sum, e) => sum + e.amount, 0));
+                }
+            });
 
-            if (format === 'json') {
-                dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filteredExpenses, null, 2));
-                fileType = 'application/json';
-                fileName = `expenses_${selectedYear}_${selectedMonth}.json`;
-            } else if (format === 'csv') {
-                const headers = ["ID", "Name", "Amount", "Category", "Date", "IsRecurring"];
-                const rows = filteredExpenses.map(exp => [
-                    `"${exp.id}"`,
-                    `"${exp.name}"`,
-                    exp.amount,
-                    `"${exp.category}"`,
-                    `"${new Date(exp.timestamp).toLocaleDateString()}"`,
-                    exp.isRecurring ? "Yes" : "No"
-                ].join(','));
-                dataStr = "data:text/csv;charset=utf-8," + headers.join(',') + '\n' + rows.join('\n');
-                fileType = 'text/csv';
-                fileName = `expenses_${selectedYear}_${selectedMonth}.csv`;
-            }
+            // Listen for changes in logs
+            onSnapshot(query(logsCollectionRef), (snapshot) => {
+                const logs = snapshot.docs.map(doc => doc.data());
+                renderLogs(logs);
+            });
 
-            const a = document.createElement('a');
-            a.setAttribute("href", dataStr);
-            a.setAttribute("download", fileName);
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            addLog(`Exported expenses to ${format.toUpperCase()} format.`);
+            getDynamicQuote();
         };
 
-        const updateCurrencySymbol = (newCurrency) => {
-            currency = newCurrency;
-            switch (newCurrency) {
-                case 'INR':
-                    currencySymbol = '₹';
-                    break;
-                case 'USD':
-                    currencySymbol = '$';
-                    break;
-                case 'EUR':
-                    currencySymbol = '€';
-                    break;
+        const saveCurrency = async (newCurrency) => {
+            if (!userId) return;
+            try {
+                await setDoc(userSettingsDocRef, { currency: newCurrency }, { merge: true });
+                showMessage("Success", `Currency set to ${newCurrency}.`);
+            } catch (error) {
+                console.error("Error saving currency:", error);
+                showMessage("Error", "Failed to save currency.", true);
             }
-            // Re-render UI with new currency symbol
-            const total = allExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-            renderExpensesList(allExpenses, total);
         };
-
 
         // Event Listeners
-        window.addEventListener('DOMContentLoaded', () => {
-            // Initial quote load
-            getDynamicQuote();
-            // Set up main tabs
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    showTab(btn.getAttribute('data-tab-id'));
-                });
-            });
-            // Show the first tab by default
-            showTab('finance-tab');
-        });
+        window.onload = async () => {
+            // Check for authentication
+            if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                userId = user.uid;
-                userIdDisplay.textContent = userId;
-                expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
-                logsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/logs`);
-                userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/settings`);
-                checkUsername();
-
-                // Listen for user settings changes (including currency)
-                onSnapshot(userSettingsDocRef, (docSnapshot) => {
-                    if (docSnapshot.exists()) {
-                        const settings = docSnapshot.data();
-                        if (settings.currency) {
-                            updateCurrencySymbol(settings.currency);
-                            currencySelect.value = settings.currency;
-                        }
-                    }
-                });
-
-                // Listen for budget changes
-                const budgetDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/budget`);
-                onSnapshot(budgetDocRef, (docSnapshot) => {
-                    if (docSnapshot.exists()) {
-                        budget = docSnapshot.data().amount;
-                    } else {
-                        budget = 0;
-                    }
-                    const total = allExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-                    renderBudgetUI(total);
-                });
-
-                // Listen for logs changes
-                onSnapshot(logsCollectionRef, (snapshot) => {
-                    const logs = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    renderLogs(logs);
-                });
-
-                // Listen for expense changes
-                onSnapshot(expensesCollectionRef, (snapshot) => {
-                    allExpenses = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    const total = allExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-                    renderExpensesList(allExpenses, total);
-                    populateFilters(allExpenses);
-                    renderChart(document.querySelector('.chart-btn.bg-amber-500')?.dataset.chartType || 'category', allExpenses);
-                });
-
+                console.log("User is authenticated with UID:", user.uid);
+                // Set up listeners for the new user
+                await setupFirestoreListeners(user.uid);
             } else {
-                // User is signed out, sign in anonymously
-                await signInAnonymously(auth);
+                console.log("User is signed out.");
+                resetUI();
             }
         });
 
-        usernameForm.addEventListener('submit', (e) => {
+
+        // Handle username login form submission
+        usernameLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const newUsername = usernameInput.value.trim();
+            const newUsername = usernameLoginInput.value.trim();
             if (newUsername) {
-                saveUsername(newUsername);
+                await setAndSaveUsername(newUsername);
             } else {
-                showMessage("Validation Error", "Username cannot be empty.", true);
+                showMessage("Validation Error", "Please enter a username.", true);
             }
         });
-        suggestUsernameBtn.addEventListener('click', suggestUsername);
+
+        // Other event listeners (unchanged from your original code)
+        expenseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const expense = {
+                name: expenseNameInput.value,
+                amount: parseFloat(expenseAmountInput.value),
+                category: expenseCategorySelect.value,
+                timestamp: expenseDateInput.value ? new Date(expenseDateInput.value).getTime() : Date.now(),
+                isRecurring: recurringCheckbox.checked,
+                recurrence: recurringCheckbox.checked ? document.querySelector('input[name="recurrence-freq"]:checked').value : null,
+            };
+            if (!expense.name || isNaN(expense.amount) || expense.amount <= 0) {
+                showMessage("Validation Error", "Please fill out all fields correctly.", true);
+                return;
+            }
+            try {
+                if (expensesCollectionRef) {
+                    await addDoc(expensesCollectionRef, expense);
+                    expenseForm.reset();
+                    showMessage("Success", `Expense "${expense.name}" added successfully.`);
+                    addLog(`Added expense: ${expense.name} (${currencySymbol}${expense.amount})`);
+                } else {
+                    showMessage("Error", "User data not loaded. Please log in with a username.", true);
+                }
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                showMessage("Error", "Failed to add expense. Please try again.", true);
+            }
+        });
+
+        budgetForm.addEventListener('submit', saveBudget);
         changeUserBtn.addEventListener('click', changeUser);
+
+        deleteAccountBtn.addEventListener('click', () => {
+            showModal(deleteConfirmModal);
+        });
+
+        confirmDeleteBtn.addEventListener('click', deleteAccount);
+        cancelDeleteBtn.addEventListener('click', () => {
+            hideModal(deleteConfirmModal);
+        });
+
+        // Event listener for recurring checkbox
+        recurringCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                recurringOptionsContainer.classList.remove('hidden');
+            } else {
+                recurringOptionsContainer.classList.add('hidden');
+            }
+        });
+
+        expensesList.addEventListener('click', async (e) => {
+            const targetBtn = e.target.closest('.delete-expense-btn');
+            if (targetBtn && expensesCollectionRef) {
+                const expenseId = targetBtn.dataset.id;
+                try {
+                    await deleteDoc(doc(expensesCollectionRef, expenseId));
+                    showMessage("Success", "Expense deleted successfully.");
+                    addLog(`Deleted expense with ID: ${expenseId}`);
+                } catch (error) {
+                    console.error("Error deleting expense: ", error);
+                    showMessage("Error", "Failed to delete expense. Please try again.", true);
+                }
+            }
+        });
 
         closeMessageBtn.addEventListener('click', hideMessage);
 
-        aiBudgetSuggestionBtn.addEventListener('click', getAiBudgetSuggestion);
-        quoteRefreshBtn.addEventListener('click', getDynamicQuote);
-
-        expenseForm.addEventListener('submit', addExpense);
-
-        budgetForm.addEventListener('submit', saveBudget);
-
-        recurringCheckbox.addEventListener('change', () => {
-            recurringOptionsContainer.classList.toggle('hidden', !recurringCheckbox.checked);
-        });
-
-        recurrenceFreqRadios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                weeklyOptions.classList.toggle('hidden', radio.value !== 'weekly');
-                monthlyOptions.classList.toggle('hidden', radio.value !== 'monthly');
+        chartBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                chartBtns.forEach(b => b.classList.remove('bg-amber-500', 'text-slate-900', 'hover:bg-amber-400'));
+                chartBtns.forEach(b => b.classList.add('bg-slate-700', 'text-slate-300', 'hover:bg-slate-600'));
+                e.target.classList.remove('bg-slate-700', 'text-slate-300', 'hover:bg-slate-600');
+                e.target.classList.add('bg-amber-500', 'text-slate-900', 'hover:bg-amber-400');
+                const chartType = e.target.dataset.chart;
+                renderChart(chartType, allExpenses);
             });
         });
 
-        expenseNameInput.addEventListener('input', checkFormValidity);
-        expenseAmountInput.addEventListener('input', checkFormValidity);
+        document.getElementById('ai-budget-suggestion-btn').addEventListener('click', () => {
+            const randomIndex = Math.floor(Math.random() * aiBudgetSuggestions.length);
+            const suggestion = aiBudgetSuggestions[randomIndex];
+            showMessage("AI Suggestion", suggestion);
+            addLog("Requested AI budget suggestion.");
+        });
+
+        exportJsonBtn.addEventListener('click', () => {
+            const data = JSON.stringify(allExpenses, null, 2);
+            const blob = new Blob([data], {
+                type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'expenses.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            addLog("Exported expenses to JSON.");
+            showMessage("Success", "Expenses exported as JSON.");
+        });
+
+        exportCsvBtn.addEventListener('click', () => {
+            const headers = ["id", "name", "amount", "category", "timestamp"];
+            const csv = [
+                headers.join(','),
+                ...allExpenses.map(expense => headers.map(header => JSON.stringify(expense[header])).join(','))
+            ].join('\n');
+            const blob = new Blob([csv], {
+                type: 'text/csv'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'expenses.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            addLog("Exported expenses to CSV.");
+            showMessage("Success", "Expenses exported as CSV.");
+        });
+
+        quoteRefreshBtn.addEventListener('click', getDynamicQuote);
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                showTab(e.target.dataset.tabId);
+            });
+        });
+
+        currencySelect.addEventListener('change', (e) => {
+            currency = e.target.value;
+            currencySymbol = currency === 'USD' ? '$' : '₹';
+            saveCurrency(currency);
+            renderExpenses(allExpenses);
+        });
 
         monthFilterSelect.addEventListener('change', () => {
-            const total = allExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-            renderExpensesList(allExpenses, total);
-            renderChart(document.querySelector('.chart-btn.bg-amber-500')?.dataset.chartType || 'category', allExpenses);
+            renderExpenses(allExpenses);
         });
 
         yearFilterSelect.addEventListener('change', () => {
-            const total = allExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-            renderExpensesList(allExpenses, total);
-            renderChart(document.querySelector('.chart-btn.bg-amber-500')?.dataset.chartType || 'category', allExpenses);
+            renderExpenses(allExpenses);
         });
 
-        chartBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                chartBtns.forEach(b => {
-                    b.classList.remove('bg-amber-500', 'text-slate-900', 'hover:bg-amber-400');
-                    b.classList.add('bg-slate-700', 'text-slate-300', 'hover:bg-slate-600');
-                });
-                btn.classList.remove('bg-slate-700', 'text-slate-300', 'hover:bg-slate-600');
-                btn.classList.add('bg-amber-500', 'text-slate-900', 'hover:bg-amber-400');
-                renderChart(btn.dataset.chartType, allExpenses);
-            });
-        });
-
-        exportJsonBtn.addEventListener('click', () => exportData('json'));
-        exportCsvBtn.addEventListener('click', () => exportData('csv'));
-
-        exportListJsonBtn.addEventListener('click', () => exportData('json'));
-        exportListCsvBtn.addEventListener('click', () => exportData('csv'));
-
-
-        currencySelect.addEventListener('change', (e) => {
-            saveCurrency(e.target.value);
-        });
+        // Set initial tab
+        showTab('dashboard-tab');
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
+        }
+
+        .scroll-container {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            display: none;
         }
     </style>
 </head>
 
-<body class="bg-slate-900 text-slate-200 antialiased">
-    <!-- Message Box -->
-    <div id="message-box" class="fixed top-4 right-4 z-50 p-4 rounded-lg shadow-xl text-white max-w-sm hidden transition-all duration-300 ease-in-out bg-slate-800 border border-slate-700">
-        <div class="flex justify-between items-center">
-            <h4 id="message-title" class="font-bold text-lg"></h4>
-            <button id="close-message-btn" class="text-slate-400 hover:text-white transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
-        <p id="message-text" class="mt-2"></p>
-    </div>
+<body class="bg-slate-900 text-slate-300 flex justify-center items-start min-h-screen p-4 sm:p-8">
 
-    <!-- Username Modal -->
-    <div id="username-modal" class="fixed inset-0 bg-slate-950 bg-opacity-80 backdrop-blur-sm flex items-center justify-center z-40 hidden">
-        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md mx-4">
-            <h2 class="text-2xl font-bold text-amber-500 mb-4">Welcome to Āvarta!</h2>
-            <p class="text-slate-400 mb-6">Let's get started. Please enter a username to save your expenses.</p>
-            <form id="username-form">
-                <input id="username-input" type="text" placeholder="Enter a username..." class="w-full bg-slate-900 text-slate-200 border border-slate-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500 mb-4" required>
-                <div class="flex gap-2">
-                    <button type="submit" class="flex-grow px-4 py-3 bg-amber-500 text-slate-900 font-bold rounded-lg shadow-md transition-colors duration-200 hover:bg-amber-400">Save Username</button>
-                    <button type="button" id="suggest-username-btn" class="flex-grow px-4 py-3 bg-slate-700 text-slate-300 font-bold rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600">Suggest Username</button>
-                </div>
+    <!-- Username Login Modal -->
+    <div id="username-login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-75">
+        <div class="bg-slate-800 p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h2 class="text-2xl font-bold text-slate-300 mb-4 text-center">Welcome to Āvarta</h2>
+            <p class="text-slate-400 mb-6 text-center">Please enter a unique username to personalize your account.</p>
+            <form id="username-login-form">
+                <input type="text" id="username-login-input" placeholder="Enter unique username" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 focus:outline-none focus:border-amber-500 mb-4" required>
+                <button type="submit" class="w-full bg-amber-500 text-slate-900 font-semibold py-3 rounded-lg shadow-md transition-colors duration-200 hover:bg-amber-400">
+                    Set Username
+                </button>
             </form>
         </div>
     </div>
 
+    <!-- Main Content -->
+    <div class="main-container w-full max-w-6xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-white mb-2">Āvarta</h1>
+            <p class="text-amber-500 font-medium tracking-wide">Finance Flow</p>
+            <div class="mt-4 p-4 bg-slate-800 rounded-lg shadow-lg border border-slate-700">
+                <blockquote class="text-sm italic text-slate-400" id="dynamic-quote">
+                    "Loading an inspiring quote..."
+                </blockquote>
+                <button id="quote-refresh-btn" class="mt-2 text-xs text-amber-500 hover:text-amber-400 transition-colors duration-200">
+                    Refresh Quote
+                </button>
+            </div>
+        </header>
 
-    <header class="bg-slate-800 text-white shadow-lg py-4 px-6 md:px-12 flex flex-col md:flex-row justify-between items-center sticky top-0 z-30 border-b border-slate-700">
-        <div class="flex items-center mb-4 md:mb-0">
-            <!-- New SVG Logo -->
-            <svg class="w-8 h-8 mr-3" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="purpleGoldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:rgb(139, 92, 246);stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:rgb(251, 191, 36);stop-opacity:1" />
-                    </linearGradient>
-                </defs>
-                <path d="M25 5C14.507 5 6.096 12.825 5.05 23.013c-.22 2.115.021 4.254.717 6.294 1.25 3.73 3.65 6.88 6.643 9.387 2.653 2.19 5.86 3.757 9.215 4.549 2.16.5 4.41.442 6.66-.179 2.457-.68 4.795-1.92 6.78-3.663a19.78 19.78 0 005.15-5.918c1.39-2.915 2.12-6.19 2.05-9.52C42.27 15.655 34.62 5 25 5zM25 15c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10-4.477-10-10-10z" fill="url(#purpleGoldGradient)" />
-                <path d="M25 20c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5z" fill="#FBBF24" />
-            </svg>
-            <h1 class="text-3xl font-extrabold text-amber-500">Āvarta</h1>
-            <span class="text-sm font-medium text-slate-400 ml-2">Finance Flow</span>
-        </div>
-        <div class="flex items-center space-x-4">
-            <span id="username-display" class="text-slate-300 font-medium">Loading...</span>
-            <select id="currency-select" class="bg-slate-700 text-slate-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                <option value="INR">INR (₹)</option>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EURO (€)</option>
-            </select>
-            <button id="change-user-btn" class="px-3 py-1 bg-slate-700 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-600 transition-colors duration-200">Change User</button>
-        </div>
-    </header>
-
-    <main class="container mx-auto p-4 md:p-8">
-        <div class="flex overflow-x-auto space-x-2 md:space-x-4 mb-8">
-            <button class="tab-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200" data-tab-id="finance-tab">Finance</button>
-            <button class="tab-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200" data-tab-id="analytics-tab">Analytics</button>
+        <!-- Message Box -->
+        <div id="message-box" class="fixed top-4 right-4 z-50 hidden bg-slate-800 text-slate-300 p-4 rounded-lg shadow-xl border border-slate-700">
+            <h3 id="message-title" class="font-bold mb-1"></h3>
+            <p id="message-text" class="text-sm"></p>
+            <button id="close-message-btn" class="absolute top-2 right-2 text-slate-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
 
-        <!-- Finance Tab -->
-        <div id="finance-tab" class="tab-content w-full max-w-4xl mx-auto hidden">
-            <h2 class="text-3xl font-bold text-amber-500 mb-6">Manage Finances</h2>
-            <div class="grid md:grid-cols-2 gap-8">
-                <!-- Add Expense Section -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Sidebar / Controls -->
+            <div class="lg:col-span-1 space-y-8">
+                <!-- User Profile and Account Management -->
+                <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
+                    <h3 class="text-xl font-bold text-slate-300 mb-2">My Profile</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-slate-400">
+                            Username: <span id="username-display" class="font-semibold text-amber-500">Guest</span>
+                        </p>
+                        <button id="change-user-btn" class="px-3 py-1 text-xs bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors duration-200">
+                            Change User
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-slate-400">
+                            User ID: <span id="user-id-display" class="font-semibold text-slate-500"></span>
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <p class="text-slate-400">
+                            Currency:
+                            <select id="currency-select" class="bg-slate-700 text-slate-300 p-1 rounded-lg">
+                                <option value="INR">INR</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </p>
+                        <button id="delete-account-btn" class="px-3 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200">
+                            Delete Account
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div id="delete-confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-75">
+                    <div class="bg-slate-800 p-8 rounded-lg shadow-xl w-full max-w-sm text-center">
+                        <h2 class="text-2xl font-bold text-slate-300 mb-4">Confirm Deletion</h2>
+                        <p class="text-slate-400 mb-6">Are you sure you want to permanently delete your account and all associated data? This action cannot be undone.</p>
+                        <div class="flex justify-center space-x-4">
+                            <button id="cancel-delete-btn" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors duration-200">
+                                Cancel
+                            </button>
+                            <button id="confirm-delete-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200">
+                                Delete Permanently
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Section -->
+                <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
+                    <h3 class="text-xl font-bold text-slate-300 mb-4">Budget</h3>
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-slate-400">Total Expenses:</p>
+                        <span id="total-expenses" class="text-lg font-bold text-amber-500">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-slate-400">Remaining Budget:</p>
+                        <span id="remaining-budget" class="text-lg font-bold text-green-500">₹0.00</span>
+                    </div>
+                    <div class="w-full bg-slate-700 rounded-full h-2.5 mb-4">
+                        <div id="budget-progress" class="bg-amber-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%;"></div>
+                    </div>
+                    <form id="budget-form" class="flex gap-2">
+                        <input type="number" id="budget-input" placeholder="Set Monthly Budget" class="flex-1 p-2 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 focus:outline-none focus:border-amber-500" required>
+                        <button type="submit" class="bg-amber-500 text-slate-900 px-4 py-2 rounded-lg shadow-md transition-colors duration-200 hover:bg-amber-400">
+                            Set
+                        </button>
+                    </form>
+                    <button id="ai-budget-suggestion-btn" class="w-full mt-4 px-4 py-2 bg-slate-700 text-amber-300 font-medium rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600">
+                        Get AI Budget Suggestion
+                    </button>
+                </div>
+
+                <!-- Expense Form -->
                 <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
                     <h3 class="text-xl font-bold text-slate-300 mb-4">Add New Expense</h3>
                     <form id="expense-form" class="space-y-4">
-                        <div>
-                            <label for="expense-name" class="block text-sm font-medium text-slate-400">Expense Name</label>
-                            <input type="text" id="expense-name" placeholder="E.g., Groceries" class="w-full bg-slate-900 text-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500 mt-1" required>
+                        <input type="text" id="expense-name" placeholder="Expense Name" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 focus:outline-none focus:border-amber-500" required>
+                        <input type="number" id="expense-amount" placeholder="Amount" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 focus:outline-none focus:border-amber-500" required>
+                        <select id="expense-category" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 focus:outline-none focus:border-amber-500">
+                            <option value="Groceries">Groceries</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Rent">Rent</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <input type="date" id="expense-date" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 focus:outline-none focus:border-amber-500">
+
+                        <div class="flex items-center justify-between">
+                            <label for="recurring-checkbox" class="text-slate-300">Recurring Expense?</label>
+                            <label for="recurring-checkbox" class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="recurring-checkbox" class="sr-only peer">
+                                <div id="recurring-toggle-label" class="w-11 h-6 bg-slate-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                            </label>
                         </div>
-                        <div>
-                            <label for="expense-amount" class="block text-sm font-medium text-slate-400">Amount</label>
-                            <input type="number" id="expense-amount" placeholder="1500" class="w-full bg-slate-900 text-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500 mt-1" required min="0">
-                        </div>
-                        <div>
-                            <label for="expense-category" class="block text-sm font-medium text-slate-400">Category</label>
-                            <select id="expense-category" class="w-full bg-slate-900 text-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500 mt-1">
-                                <option value="Food">Food</option>
-                                <option value="Transport">Transport</option>
-                                <option value="Shopping">Shopping</option>
-                                <option value="Bills">Bills</option>
-                                <option value="Entertainment">Entertainment</option>
-                                <option value="Health">Health</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="expense-date" class="block text-sm font-medium text-slate-400">Date</label>
-                            <input type="date" id="expense-date" class="w-full bg-slate-900 text-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500 mt-1" required>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <input type="checkbox" id="recurring-checkbox" class="h-4 w-4 text-amber-500 rounded focus:ring-amber-500 border-slate-700 bg-slate-900">
-                            <label for="recurring-checkbox" id="recurring-toggle-label" class="text-sm font-medium text-slate-400">Recurring Expense</label>
-                        </div>
-                        <div id="recurring-options-container" class="space-y-4 hidden transition-all duration-300 ease-in-out">
+                        <div id="recurring-options-container" class="hidden mt-4 bg-slate-700 p-4 rounded-lg">
+                            <p class="text-slate-400 mb-2">Recurrence Frequency</p>
                             <div class="flex items-center space-x-4">
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="recurrence-freq" value="weekly" class="form-radio text-amber-500 focus:ring-amber-500">
-                                    <span class="ml-2 text-slate-300">Weekly</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="recurrence-freq" value="monthly" class="form-radio text-amber-500 focus:ring-amber-500">
-                                    <span class="ml-2 text-slate-300">Monthly</span>
-                                </label>
-                            </div>
-                            <div id="weekly-options" class="flex flex-wrap gap-2 hidden">
-                                <label class="inline-flex items-center"><input type="checkbox" name="weekly-day" value="mon" class="form-checkbox text-amber-500 rounded"> <span class="ml-2 text-slate-300">Mon</span></label>
-                                <label class="inline-flex items-center"><input type="checkbox" name="weekly-day" value="tue" class="form-checkbox text-amber-500 rounded"> <span class="ml-2 text-slate-300">Tue</span></label>
-                                <label class="inline-flex items-center"><input type="checkbox" name="weekly-day" value="wed" class="form-checkbox text-amber-500 rounded"> <span class="ml-2 text-slate-300">Wed</span></label>
-                                <label class="inline-flex items-center"><input type="checkbox" name="weekly-day" value="thu" class="form-checkbox text-amber-500 rounded"> <span class="ml-2 text-slate-300">Thu</span></label>
-                                <label class="inline-flex items-center"><input type="checkbox" name="weekly-day" value="fri" class="form-checkbox text-amber-500 rounded"> <span class="ml-2 text-slate-300">Fri</span></label>
-                                <label class="inline-flex items-center"><input type="checkbox" name="weekly-day" value="sat" class="form-checkbox text-amber-500 rounded"> <span class="ml-2 text-slate-300">Sat</span></label>
-                                <label class="inline-flex items-center"><input type="checkbox" name="weekly-day" value="sun" class="form-checkbox text-amber-500 rounded"> <span class="ml-2 text-slate-300">Sun</span></label>
-                            </div>
-                            <div id="monthly-options" class="hidden">
-                                <label for="monthly-date" class="block text-sm font-medium text-slate-400">Day of the month</label>
-                                <input type="number" id="monthly-date" min="1" max="31" class="w-full bg-slate-900 text-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500 mt-1">
+                                <div>
+                                    <input type="radio" id="weekly" name="recurrence-freq" value="weekly" class="hidden peer" checked>
+                                    <label for="weekly" class="block w-full cursor-pointer px-4 py-2 bg-slate-600 text-slate-300 rounded-lg hover:bg-slate-500 transition-colors duration-200 peer-checked:bg-amber-500 peer-checked:text-slate-900">Weekly</label>
+                                </div>
+                                <div>
+                                    <input type="radio" id="monthly" name="recurrence-freq" value="monthly" class="hidden peer">
+                                    <label for="monthly" class="block w-full cursor-pointer px-4 py-2 bg-slate-600 text-slate-300 rounded-lg hover:bg-slate-500 transition-colors duration-200 peer-checked:bg-amber-500 peer-checked:text-slate-900">Monthly</label>
+                                </div>
                             </div>
                         </div>
-                        <button type="submit" class="w-full px-4 py-3 bg-amber-500 text-slate-900 font-bold rounded-lg shadow-md transition-colors duration-200 hover:bg-amber-400">Add Expense</button>
+
+                        <button type="submit" class="w-full bg-amber-500 text-slate-900 font-semibold py-3 rounded-lg shadow-md transition-colors duration-200 hover:bg-amber-400">
+                            Add Expense
+                        </button>
                     </form>
                 </div>
+            </div>
 
-                <!-- Budgeting Section -->
-                <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
-                    <h3 class="text-xl font-bold text-slate-300 mb-4">Budgeting</h3>
-                    <form id="budget-form" class="flex gap-4 items-end mb-4">
-                        <div class="flex-grow">
-                            <label for="budget-input" class="block text-sm font-medium text-slate-400">Monthly Budget</label>
-                            <input type="number" id="budget-input" placeholder="50000" class="w-full bg-slate-900 text-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500 mt-1" min="0">
+            <!-- Main Content Area -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Tab Navigation -->
+                <div class="bg-slate-800 p-2 rounded-lg shadow-xl flex border border-slate-700">
+                    <button data-tab-id="dashboard-tab" class="tab-btn flex-1 px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-amber-500 text-slate-900 hover:bg-amber-400 mr-2">Dashboard</button>
+                    <button data-tab-id="expenses-tab" class="tab-btn flex-1 px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-slate-300 mr-2">Expenses</button>
+                    <button data-tab-id="logs-tab" class="tab-btn flex-1 px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-slate-300">Logs</button>
+                </div>
+
+                <!-- Dashboard Tab -->
+                <div id="dashboard-tab" class="tab-content">
+                    <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
+                        <h3 id="chart-title" class="text-xl font-bold text-slate-300 mb-4">Category Breakdown</h3>
+                        <div class="flex justify-center mb-4 space-x-2">
+                            <button data-chart="category" class="chart-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-amber-500 hover:bg-amber-400 text-slate-900">Categories</button>
+                            <button data-chart="monthly" class="chart-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-slate-300">Monthly</button>
+                            <button data-chart="daily" class="chart-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-slate-300">Daily</button>
                         </div>
-                        <button type="submit" class="px-4 py-3 bg-amber-500 text-slate-900 font-bold rounded-lg shadow-md transition-colors duration-200 hover:bg-amber-400">Set Budget</button>
-                    </form>
-                    <div class="bg-slate-700 p-4 rounded-lg mb-4">
-                        <div class="flex justify-between items-center">
-                            <p class="text-slate-400 font-medium">Total Expenses:</p>
-                            <p id="total-expenses" class="text-xl font-bold">₹0.00</p>
+                        <div class="chart-container h-80">
+                            <canvas id="main-chart-canvas"></canvas>
                         </div>
-                        <div class="flex justify-between items-center">
-                            <p class="text-slate-400 font-medium">Remaining Budget:</p>
-                            <p id="remaining-budget" class="text-xl font-bold">₹0.00</p>
+                        <div class="flex justify-end mt-4">
+                            <button id="export-json-btn" class="px-4 py-2 bg-slate-700 text-slate-300 font-medium rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600 mr-2">Export JSON</button>
+                            <button id="export-csv-btn" class="px-4 py-2 bg-slate-700 text-slate-300 font-medium rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600">Export CSV</button>
                         </div>
-                        <div class="w-full bg-slate-600 rounded-full h-3.5 mt-2">
-                            <div id="budget-progress" class="bg-amber-500 h-3.5 rounded-full transition-all duration-500 ease-in-out" style="width: 0%;"></div>
-                        </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button type="button" id="ai-budget-suggestion-btn" class="px-4 py-2 bg-slate-700 text-slate-300 font-bold rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600">AI Suggestion</button>
-                    </div>
-                    <div id="budget-suggestions-container" class="mt-4">
-                        <!-- AI suggestions will appear here -->
                     </div>
                 </div>
 
-                <!-- Quotes & Expenses List section -->
-                <div class="md:col-span-2">
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
-                            <h3 class="text-xl font-bold text-slate-300 mb-4">Daily Wisdom</h3>
-                            <div class="flex justify-between items-start mb-4">
-                                <p id="dynamic-quote" class="text-xl font-semibold text-slate-300 italic max-w-full">
-                                    "The only way to get a good idea is to get a lot of ideas." - Linus Pauling
-                                </p>
-                                <div class="flex flex-col items-center">
-                                    <button id="quote-refresh-btn" class="text-amber-500 hover:text-amber-400 transition-colors duration-200 text-3xl">
-                                        &#x21bb;
-                                    </button>
-                                    <span id="refresh-count" class="text-xs text-slate-400 mt-1 hidden"></span>
-                                </div>
+                <!-- Expenses Tab -->
+                <div id="expenses-tab" class="tab-content hidden">
+                    <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
+                        <h3 class="text-xl font-bold text-slate-300 mb-4">Expense List</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex space-x-2">
+                                <select id="month-filter" class="bg-slate-700 text-slate-300 p-2 rounded-lg">
+                                    <option value="all">All Months</option>
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5">June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8">September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                                <select id="year-filter" class="bg-slate-700 text-slate-300 p-2 rounded-lg">
+                                    <option value="all">All Years</option>
+                                    <script>
+                                        const currentYear = new Date().getFullYear();
+                                        for (let i = 0; i < 5; i++) {
+                                            document.write(`<option value="${currentYear - i}">${currentYear - i}</option>`);
+                                        }
+                                    </script>
+                                </select>
+                            </div>
+                            <div>
+                                <button id="export-list-json-btn" class="px-3 py-1 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors duration-200 mr-2">JSON</button>
+                                <button id="export-list-csv-btn" class="px-3 py-1 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors duration-200">CSV</button>
                             </div>
                         </div>
-                        <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
-                            <h3 class="text-xl font-bold text-slate-300 mb-4">Expenses List</h3>
-                            <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4 space-y-2 md:space-y-0">
-                                <div class="flex space-x-2">
-                                    <select id="month-filter" class="bg-slate-700 text-slate-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                                        <option value="all">All Months</option>
-                                        <option value="0">January</option>
-                                        <option value="1">February</option>
-                                        <option value="2">March</option>
-                                        <option value="3">April</option>
-                                        <option value="4">May</option>
-                                        <option value="5">June</option>
-                                        <option value="6">July</option>
-                                        <option value="7">August</option>
-                                        <option value="8">September</option>
-                                        <option value="9">October</option>
-                                        <option value="10">November</option>
-                                        <option value="11">December</option>
-                                    </select>
-                                    <select id="year-filter" class="bg-slate-700 text-slate-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                                        <option value="all">All Years</option>
-                                    </select>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button id="export-list-json-btn" class="px-4 py-2 bg-slate-700 text-slate-300 font-medium rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600">Export JSON</button>
-                                    <button id="export-list-csv-btn" class="px-4 py-2 bg-slate-700 text-slate-300 font-medium rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600">Export CSV</button>
-                                </div>
-                            </div>
-                            <ul id="expenses-list">
+                        <div class="h-96 overflow-y-auto scroll-container">
+                            <ul id="expenses-list" class="space-y-4">
                                 <!-- Expenses will be dynamically added here -->
                             </ul>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Analytics Tab -->
-        <div id="analytics-tab" class="tab-content w-full max-w-4xl mx-auto hidden">
-            <h2 class="text-3xl font-bold text-amber-500 mb-6">Analytics</h2>
-            <div class="grid md:grid-cols-2 gap-8">
-                <!-- Charts Section -->
-                <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
-                    <h3 class="text-xl font-bold text-slate-300 mb-4">Your Financial Journey</h3>
-                    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
-                        <h4 id="chart-title" class="text-center text-md font-semibold text-slate-300 mb-4 md:mb-0">Category Breakdown</h4>
-                        <div class="flex flex-wrap gap-2 justify-center">
-                            <button data-chart-type="category" class="chart-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-amber-500 text-slate-900">Category</button>
-                            <button data-chart-type="monthly" class="chart-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-slate-300">Monthly</button>
-                            <button data-chart-type="daily" class="chart-btn px-4 py-2 rounded-lg font-medium shadow-md transition-colors duration-200 bg-slate-700 hover:bg-slate-600 text-slate-300">Daily</button>
-                        </div>
-                    </div>
-                    <div class="chart-container h-80">
-                        <canvas id="main-chart-canvas"></canvas>
-                    </div>
-                    <div class="flex justify-end mt-4">
-                        <button id="export-json-btn" class="px-4 py-2 bg-slate-700 text-slate-300 font-medium rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600 mr-2">Export JSON</button>
-                        <button id="export-csv-btn" class="px-4 py-2 bg-slate-700 text-slate-300 font-medium rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600">Export CSV</button>
-                    </div>
-                </div>
 
                 <!-- Logs Section -->
-                <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
-                    <h3 class="text-xl font-bold text-slate-300 mb-4">User Logs</h3>
-                    <p class="text-xs text-slate-500 mb-4">User ID: <span id="user-id-display"></span></p>
-                    <div class="h-96 overflow-y-auto">
-                        <ul id="logs-list" class="space-y-2">
-                            <!-- Logs will be dynamically added here -->
-                        </ul>
+                <div id="logs-tab" class="tab-content hidden">
+                    <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
+                        <h3 class="text-xl font-bold text-slate-300 mb-4">User Logs</h3>
+                        <p class="text-xs text-slate-500 mb-4">User ID: <span id="user-id-display"></span></p>
+                        <div class="h-96 overflow-y-auto scroll-container">
+                            <ul id="logs-list" class="space-y-2">
+                                <!-- Logs will be dynamically added here -->
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
 </body>
 
 </html>
