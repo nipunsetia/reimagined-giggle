@@ -7,8 +7,12 @@
     <title>Āvarta: Finance Flow</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        /* Custom styles for a dark theme and scrollbars */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -30,6 +34,7 @@
             background-color: #64748b;
         }
 
+        /* Toggle switch styling */
         .toggle-switch-label::before {
             content: '';
             position: absolute;
@@ -50,13 +55,43 @@
             background-color: #10b981;
         }
 
+        /* Tab button styling */
         .tab-btn.active {
             background-color: #10b981;
             color: #0f172a;
+            font-weight: 700;
+        }
+
+        /* Button hover effects */
+        .btn {
+            @apply transition-colors duration-200;
+        }
+
+        .btn-primary {
+            @apply bg-green-500 text-gray-900 font-bold py-3 px-4 rounded-lg hover:bg-green-400 shadow-lg;
+        }
+
+        .btn-secondary {
+            @apply bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600;
+        }
+
+        .btn-danger {
+            @apply bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-500;
+        }
+
+        /* Loading spinner animation */
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .animate-spin-slow {
+            animation: spin 2s linear infinite;
         }
     </style>
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
 <body class="bg-gray-900 text-gray-200">
@@ -76,7 +111,7 @@
                 </div>
                 <div class="text-right">
                     <p class="text-xs text-gray-400">Welcome,</p>
-                    <p id="username-display" class="font-bold text-green-300"></p>
+                    <p id="username-display" class="font-bold text-green-300">Loading...</p>
                     <button id="change-user-btn"
                         class="text-xs text-green-500 hover:text-green-400 transition-colors duration-200 mt-1">
                         Change User
@@ -133,7 +168,6 @@
                                         <input type="date" id="expense-date"
                                             class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-green-500">
                                     </div>
-
                                     <!-- Recurring Toggle and Options -->
                                     <div class="flex items-center space-x-3 mt-4">
                                         <label class="relative inline-flex items-center cursor-pointer">
@@ -147,8 +181,8 @@
                                             </span>
                                         </label>
                                     </div>
-
-                                    <div id="recurring-options-container" class="hidden mt-4 bg-gray-700 p-4 rounded-lg">
+                                    <div id="recurring-options-container"
+                                        class="hidden mt-4 bg-gray-700 p-4 rounded-lg">
                                         <p class="text-sm font-medium text-gray-300 mb-2">Recurrence Frequency</p>
                                         <div class="flex space-x-4">
                                             <div class="flex items-center">
@@ -167,9 +201,7 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    <button type="submit"
-                                        class="w-full bg-green-500 text-gray-900 font-bold py-3 px-4 rounded-lg hover:bg-green-400 transition-colors duration-200 shadow-lg">
+                                    <button type="submit" class="btn-primary w-full">
                                         Add Expense
                                     </button>
                                 </form>
@@ -180,15 +212,16 @@
                                     <div class="bg-gray-700 p-4 rounded-lg shadow-inner flex items-center justify-between mb-4">
                                         <div>
                                             <p class="text-sm text-gray-400">Total Expenses</p>
-                                            <p id="total-expenses" class="text-2xl font-extrabold text-white"></p>
+                                            <p id="total-expenses" class="text-2xl font-extrabold text-white">0</p>
                                         </div>
                                         <div class="text-right">
                                             <p class="text-sm text-gray-400">Remaining Budget</p>
-                                            <p id="remaining-budget" class="text-2xl font-extrabold text-white"></p>
+                                            <p id="remaining-budget" class="text-2xl font-extrabold text-white">0</p>
                                         </div>
                                     </div>
                                     <div class="w-full bg-gray-700 rounded-full h-2.5">
-                                        <div id="budget-progress" class="bg-green-500 h-2.5 rounded-full transition-all duration-300"
+                                        <div id="budget-progress"
+                                            class="bg-green-500 h-2.5 rounded-full transition-all duration-300"
                                             style="width: 0%;"></div>
                                     </div>
 
@@ -196,16 +229,16 @@
                                         <input type="number" id="budget-input"
                                             class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-3 placeholder-gray-400 focus:outline-none focus:border-green-500"
                                             placeholder="Set Monthly Budget" step="0.01">
-                                        <button type="submit"
-                                            class="bg-green-500 text-gray-900 font-bold py-3 px-4 rounded-lg hover:bg-green-400 transition-colors duration-200">
+                                        <button type="submit" class="btn-primary">
                                             Set
                                         </button>
                                     </form>
 
                                     <!-- AI Budget Suggestion Button -->
                                     <button id="ai-budget-suggestion-btn"
-                                        class="mt-4 w-full bg-gray-700 text-green-300 border border-gray-600 rounded-lg py-3 hover:bg-gray-600 transition-colors duration-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                        class="mt-4 w-full btn-secondary flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2"
+                                            viewBox="0 0 20 20" fill="currentColor">
                                             <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
                                         </svg>
                                         Get AI Budget Suggestion
@@ -218,12 +251,21 @@
                                 <h3 class="text-xl font-bold text-green-400 mb-2">Quote of the Day</h3>
                                 <div class="flex items-center">
                                     <p id="dynamic-quote" class="italic text-gray-400 leading-relaxed">
-                                        "The stock market is a device for transferring money from the impatient to the patient." - Warren Buffett
+                                        <span class="inline-flex items-center">
+                                            <svg class="animate-spin-slow h-5 w-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Loading quote...
+                                        </span>
                                     </p>
                                     <button id="quote-refresh-btn"
                                         class="ml-4 p-2 bg-gray-700 text-green-500 rounded-full hover:bg-gray-600 transition-colors duration-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0116 3.898A1 1 0 0120 11a1 1 0 01-1-1 5.002 5.002 0 00-5-5H7.101A7.002 7.002 0 0115 14.899V17a1 1 0 11-2 0v-2.101A7.002 7.002 0 013 10a1 1 0 01-1-1 1 1 0 011-1h.101A7.002 7.002 0 0113 4.101V2a1 1 0 011-1z" clip-rule="evenodd" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0116 3.898A1 1 0 0120 11a1 1 0 01-1-1 5.002 5.002 0 00-5-5H7.101A7.002 7.002 0 0115 14.899V17a1 1 0 11-2 0v-2.101A7.002 7.002 0 013 10a1 1 0 01-1-1 1 1 0 011-1h.101A7.002 7.002 0 0113 4.101V2a1 1 0 011-1z"
+                                                clip-rule="evenodd" />
                                         </svg>
                                     </button>
                                 </div>
@@ -259,12 +301,10 @@
                                 <div class="flex justify-end mb-4">
                                     <div class="flex items-center">
                                         <span class="text-sm text-gray-400 mr-2">Export Monthly Expenses:</span>
-                                        <button id="export-list-json-btn"
-                                            class="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors duration-200 mr-2">
+                                        <button id="export-list-json-btn" class="btn-secondary">
                                             JSON
                                         </button>
-                                        <button id="export-list-csv-btn"
-                                            class="px-3 py-1 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors duration-200">
+                                        <button id="export-list-csv-btn" class="btn-secondary ml-2">
                                             CSV
                                         </button>
                                     </div>
@@ -272,6 +312,12 @@
                                 <div class="h-96 overflow-y-auto scroll-container">
                                     <ul id="expenses-list" class="space-y-4">
                                         <!-- Expenses will be dynamically added here -->
+                                        <div id="loading-expenses" class="text-center text-gray-500 mt-8 hidden">
+                                            <svg class="animate-spin-slow h-8 w-8 text-gray-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </div>
                                     </ul>
                                 </div>
                             </div>
@@ -287,16 +333,20 @@
                             <div class="bg-gray-900 p-6 rounded-xl shadow-inner border border-gray-700 mb-6">
                                 <h3 class="text-2xl font-bold text-green-300 mb-4">Analytics</h3>
                                 <div class="flex justify-center mb-4 space-x-2">
-                                    <button class="chart-btn bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600 transition-colors duration-200"
+                                    <button
+                                        class="chart-btn btn-secondary active bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600"
                                         data-chart-type="category">Category</button>
-                                    <button class="chart-btn bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600 transition-colors duration-200"
+                                    <button
+                                        class="chart-btn btn-secondary bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600"
                                         data-chart-type="monthly">Monthly</button>
-                                    <button class="chart-btn bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600 transition-colors duration-200"
+                                    <button
+                                        class="chart-btn btn-secondary bg-gray-700 text-gray-300 rounded-lg px-4 py-2 hover:bg-gray-600"
                                         data-chart-type="daily">Daily</button>
                                 </div>
                                 <div class="relative h-96">
                                     <canvas id="main-chart-canvas"></canvas>
-                                    <p id="chart-title" class="absolute top-4 left-1/2 -translate-x-1/2 text-lg font-semibold text-green-400">
+                                    <p id="chart-title"
+                                        class="absolute top-4 left-1/2 -translate-x-1/2 text-lg font-semibold text-green-400">
                                         Category Breakdown</p>
                                 </div>
                             </div>
@@ -307,7 +357,7 @@
                             <div class="bg-gray-900 p-6 rounded-xl shadow-inner border border-gray-700">
                                 <h3 class="text-2xl font-bold text-green-300 mb-4">User Logs</h3>
                                 <p class="text-xs text-gray-500 mb-4">User ID: <span id="user-id-display"
-                                        class="font-mono text-green-300"></span></p>
+                                        class="font-mono text-green-300">Loading...</span></p>
                                 <div class="h-96 overflow-y-auto scroll-container">
                                     <ul id="logs-list" class="space-y-2">
                                         <!-- Logs will be dynamically added here -->
@@ -323,17 +373,16 @@
 
             <!-- Username Login Modal -->
             <div id="username-login-modal"
-                class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md hidden">
-                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-96">
+                class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md hidden z-50">
+                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-96 border border-gray-700">
                     <h2 class="text-3xl font-bold text-green-500 mb-4">Welcome</h2>
-                    <p class="text-gray-300 mb-6">Enter a username to save your financial data. Your user ID will be
-                        unique to this name.</p>
+                    <p class="text-gray-300 mb-6">Enter a username to get started. Your data will be saved securely.
+                    </p>
                     <form id="username-login-form">
                         <input type="text" id="username-login-input"
                             class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-lg p-3 placeholder-gray-400 focus:outline-none focus:border-green-500 mb-4"
                             placeholder="Your Name or Nickname" required>
-                        <button type="submit"
-                            class="w-full bg-green-500 text-gray-900 font-bold py-3 rounded-lg hover:bg-green-400 transition-colors duration-200">
+                        <button type="submit" class="btn-primary w-full">
                             Start Tracking
                         </button>
                     </form>
@@ -345,9 +394,9 @@
                 class="fixed bottom-4 right-4 bg-gray-800 text-gray-200 p-4 rounded-lg shadow-xl border border-gray-700 z-50 transition-transform transform translate-x-full hidden">
                 <div class="flex justify-between items-center mb-2">
                     <h4 id="message-title" class="font-bold">Title</h4>
-                    <button id="close-message-btn"
-                        class="text-gray-400 hover:text-white transition-colors duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <button id="close-message-btn" class="text-gray-400 hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                            fill="currentColor">
                             <path fill-rule="evenodd"
                                 d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
                                 clip-rule="evenodd" />
@@ -359,20 +408,40 @@
 
             <!-- Delete Confirmation Modal -->
             <div id="delete-confirm-modal"
-                class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md hidden">
-                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-96">
+                class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md hidden z-50">
+                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-96 border border-gray-700">
                     <h2 class="text-2xl font-bold text-red-500 mb-4">Confirm Deletion</h2>
-                    <p class="text-gray-300 mb-6">Are you sure you want to delete your account? This action is
-                        permanent and cannot be undone.</p>
+                    <p class="text-gray-300 mb-6">Are you sure you want to delete your account? This action is permanent
+                        and cannot be undone.</p>
                     <div class="flex justify-end space-x-4">
-                        <button id="cancel-delete-btn"
-                            class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors duration-200">
+                        <button id="cancel-delete-btn" class="btn-secondary">
                             Cancel
                         </button>
-                        <button id="confirm-delete-btn"
-                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors duration-200">
+                        <button id="confirm-delete-btn" class="btn-danger">
                             Delete Account
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Budget Modal -->
+            <div id="ai-budget-modal"
+                class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-md hidden z-50">
+                <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-lg border border-gray-700">
+                    <h2 class="text-2xl font-bold text-green-500 mb-4">AI Budget Suggestion</h2>
+                    <div id="ai-budget-content">
+                        <p class="text-gray-300">The AI will analyze your spending habits and suggest a budget.</p>
+                        <p id="ai-budget-loading" class="mt-4 text-center text-gray-500">
+                            <svg class="animate-spin-slow h-8 w-8 text-gray-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="mt-2 block">Analyzing your expenses...</span>
+                        </p>
+                        <p id="ai-budget-result" class="mt-4 text-gray-300 hidden"></p>
+                    </div>
+                    <div class="flex justify-end mt-6">
+                        <button id="close-ai-budget-btn" class="btn-secondary">Close</button>
                     </div>
                 </div>
             </div>
@@ -407,883 +476,276 @@
             writeBatch
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // The following variables are provided by the canvas environment.
-        // DO NOT change them.
+        // Global variables for the canvas environment.
+        // These are provided at runtime and used for authentication and app identification.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = {
-            apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
-            authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
-            projectId: "daily-expense-tracker-4a115",
-            storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
-            messagingSenderId: "862714037551",
-            appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Placeholder config for local testing
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Initialize Firebase
-        let app;
-        let db;
-        let auth;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        // Global variables for user and app state
-        let userId = null;
-        let expensesCollectionRef = null;
-        let allExpenses = [];
-        let username = null;
-        let budget = 0;
-        let quoteRefreshCount = 0;
-        const MAX_QUOTE_REFRESHES = 5;
-        let logsCollectionRef = null;
-        let userSettingsDocRef = null;
-        let currency = 'INR';
-        let currencySymbol = '₹';
-        let currentChartInstance = null;
-
-        // Get DOM elements
-        const quoteText = document.getElementById('dynamic-quote');
-        const usernameDisplay = document.getElementById('username-display');
+        // UI Element References
         const usernameLoginModal = document.getElementById('username-login-modal');
         const usernameLoginForm = document.getElementById('username-login-form');
         const usernameLoginInput = document.getElementById('username-login-input');
+        const usernameDisplay = document.getElementById('username-display');
+        const userIdDisplay = document.getElementById('user-id-display');
         const changeUserBtn = document.getElementById('change-user-btn');
         const deleteAccountBtn = document.getElementById('delete-account-btn');
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
         const expenseForm = document.getElementById('expense-form');
         const expenseNameInput = document.getElementById('expense-name');
         const expenseAmountInput = document.getElementById('expense-amount');
         const expenseCategorySelect = document.getElementById('expense-category');
         const expenseDateInput = document.getElementById('expense-date');
-        const recurringCheckbox = document.getElementById('recurring-checkbox');
-        const recurringToggleLabel = document.getElementById('recurring-toggle-label');
-        const recurringOptionsContainer = document.getElementById('recurring-options-container');
-        const weeklyOptions = document.getElementById('weekly-options');
-        const monthlyOptions = document.getElementById('monthly-options');
         const expensesList = document.getElementById('expenses-list');
-        const totalExpensesText = document.getElementById('total-expenses');
-        const remainingBudgetText = document.getElementById('remaining-budget');
-        const budgetProgress = document.getElementById('budget-progress');
+        const loadingExpenses = document.getElementById('loading-expenses');
+
+        const totalExpensesEl = document.getElementById('total-expenses');
+        const remainingBudgetEl = document.getElementById('remaining-budget');
+        const budgetProgressEl = document.getElementById('budget-progress');
         const budgetForm = document.getElementById('budget-form');
         const budgetInput = document.getElementById('budget-input');
-        const recurrenceFreqRadios = document.querySelectorAll('input[name="recurrence-freq"]');
+        const aiBudgetSuggestionBtn = document.getElementById('ai-budget-suggestion-btn');
+        const aiBudgetModal = document.getElementById('ai-budget-modal');
+        const aiBudgetContent = document.getElementById('ai-budget-content');
+        const closeAiBudgetBtn = document.getElementById('close-ai-budget-btn');
+
+        const dynamicQuoteEl = document.getElementById('dynamic-quote');
+        const quoteRefreshBtn = document.getElementById('quote-refresh-btn');
+
         const monthFilterSelect = document.getElementById('month-filter');
         const yearFilterSelect = document.getElementById('year-filter');
-        const messageBox = document.getElementById('message-box');
-        const messageTitle = document.getElementById('message-title');
-        const messageText = document.getElementById('message-text');
-        const closeMessageBtn = document.getElementById('close-message-btn');
-        const chartCanvas = document.getElementById('main-chart-canvas');
-        const chartTitle = document.getElementById('chart-title');
-        const chartBtns = document.querySelectorAll('.chart-btn');
-        const aiBudgetSuggestionBtn = document.getElementById('ai-budget-suggestion-btn');
+        const currencySelect = document.getElementById('currency-select');
         const exportListJsonBtn = document.getElementById('export-list-json-btn');
         const exportListCsvBtn = document.getElementById('export-list-csv-btn');
-        const quoteRefreshBtn = document.getElementById('quote-refresh-btn');
+
         const logsList = document.getElementById('logs-list');
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const currencySelect = document.getElementById('currency-select');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
 
+        const recurringCheckbox = document.getElementById('recurring-checkbox');
+        const recurringOptionsContainer = document.getElementById('recurring-options-container');
 
-        // AI Budget Suggestions (static array)
-        const aiBudgetSuggestions = [
-            "Set a daily spending limit and track it actively.",
-            "Review your subscriptions and cancel any you don't use.",
-            "Create a 'needs' versus 'wants' list for better spending habits.",
-            "Try the 50/30/20 rule: 50% for needs, 30% for wants, 20% for savings.",
-            "Automate your savings to build wealth effortlessly.",
-            "Cook at home more often to save money on dining out.",
-            "Use a budgeting app to categorize and understand your spending.",
-            "Track your small, daily expenses; they add up quickly!",
-            "Plan your meals for the week to avoid impulse grocery purchases.",
-            "Compare prices before making a major purchase.",
-            "Set specific financial goals, like saving for a vacation or a down payment.",
-            "Review your phone and internet plans for potential savings.",
-            "Negotiate your bills, such as cable or insurance, for a better rate.",
-            "Start an emergency fund with at least 3-6 months of living expenses.",
-            "Pay down high-interest debt, like credit card balances, first.",
-            "Use cash for discretionary spending to stay within your budget.",
-            "Try a no-spend challenge for a week or a month.",
-            "Cut back on impulse purchases by waiting 24 hours before buying.",
-            "Look for free or low-cost entertainment options.",
-            "Buy second-hand items instead of new ones when possible.",
-            "Refinance your mortgage or student loans if it makes financial sense.",
-            "Invest in low-cost index funds for long-term growth.",
-            "Open a high-yield savings account to earn more on your cash.",
-            "Review your monthly statements for any fraudulent or forgotten charges.",
-            "Learn to differentiate between asset and liability.",
-            "Avoid lifestyle creep as your income increases.",
-            "Pack your own lunch to save on daily food costs.",
-            "Consider a side hustle to increase your income.",
-            "Invest in yourself through education or skill-building.",
-            "Understand your tax obligations and plan for them.",
-            "Diversify your investments to manage risk.",
-            "Practice mindful spending by thinking about each purchase.",
-            "Create a debt repayment plan with a clear timeline.",
-            "Build a financial calendar to stay on top of bills.",
-            "Use a credit card with rewards, but pay the balance in full each month.",
-            "Talk to a financial advisor for personalized guidance.",
-            "Make sure your retirement savings are on track.",
-            "Consider canceling unused gym memberships or subscriptions.",
-            "Buy in bulk for non-perishable items to save money.",
-            "Repair instead of replacing items when possible.",
-            "Look for free software alternatives to paid programs.",
-            "Use public transportation or carpool to save on fuel.",
-            "Find cheaper alternatives for your coffee habit.",
-            "Always have a budget, no matter your income level.",
-            "Don't let emotions guide your financial decisions.",
-            "Invest in a good quality, reusable water bottle and coffee mug.",
-            "Plan for annual and semi-annual expenses in your monthly budget.",
-            "Make sure you have adequate insurance coverage.",
-            "Consider a 'sinking fund' for specific future expenses.",
-            "Review your utility bills for ways to save energy.",
-            "Take advantage of employer-sponsored retirement plans.",
-            "Teach yourself about personal finance through books or podcasts.",
-            "Use coupons or discount codes whenever you shop.",
-            "Sell items you no longer need to earn extra cash.",
-            "Set up a password manager for your financial accounts.",
-            "Check your credit report regularly for errors.",
-            "Review your banking fees and switch to a fee-free bank if possible.",
-            "Keep track of your net worth to monitor your progress.",
-            "Don't compare your financial journey to others.",
-            "Focus on long-term wealth building, not quick wins.",
-            "Build good credit by paying bills on time.",
-            "Automate bill payments to avoid late fees.",
-            "Set aside money for a 'fun' budget to prevent burnout.",
-            "Understand the power of compound interest.",
-            "Review your investment fees; they can eat into your returns.",
-            "Avoid carrying a balance on credit cards.",
-            "Save for big purchases in advance to avoid debt.",
-            "Create a budget that is realistic and flexible.",
-            "Track your savings rate and try to increase it over time.",
-            "Invest in your health to prevent future medical costs.",
-            "Avoid taking out personal loans unless absolutely necessary.",
-            "Create a meal plan to reduce food waste.",
-            "Be aware of financial scams and fraud.",
-            "Set aside a small amount each week for a 'play' budget.",
-            "Make sure your beneficiaries are up-to-date on all accounts.",
-            "Keep a record of your financial goals.",
-            "Look for loyalty programs and rewards at places you frequent.",
-            "Understand the difference between tax-deductible and non-deductible expenses.",
-            "Consider creating a will or living trust.",
-            "Try to live below your means.",
-            "Review your monthly bank statements carefully.",
-            "Start a 'side hustle' to create another income stream.",
-            "Use price tracking apps for online shopping.",
-            "Always look for ways to cut down on expenses.",
-            "Review your insurance policies to ensure they meet your needs.",
-            "Set a savings goal for your next big vacation.",
-            "Practice saying 'no' to social events that are outside your budget.",
-            "Keep an eye on market trends, but don't panic sell.",
-            "Educate yourself on different investment vehicles.",
-            "Save a portion of every raise or bonus you receive.",
-            "Avoid get-rich-quick schemes.",
-            "Create a financial binder with all your important documents.",
-            "Don't be afraid to ask for a raise at work.",
-            "Track your net worth and celebrate your progress.",
-            "Set a 'financial check-in' date each month.",
-            "Ensure your financial goals are specific, measurable, and achievable.",
-            "Consider the environmental impact of your purchases.",
-            "Keep your money in a separate account for savings.",
-            "Avoid paying for things you can get for free, like banking services.",
-            "Make sure you're getting the best interest rate on your loans.",
-            "Review your credit card statements for any errors.",
-            "Save for your retirement early to take advantage of compounding.",
-            "Understand the fees associated with your investments."
-        ];
+        const messageBox = document.getElementById('message-box');
+        const messageTitleEl = document.getElementById('message-title');
+        const messageTextEl = document.getElementById('message-text');
+        const closeMessageBtn = document.getElementById('close-message-btn');
 
+        // Chart elements
+        const mainChartCanvas = document.getElementById('main-chart-canvas');
+        const chartTitleEl = document.getElementById('chart-title');
+        const chartButtons = document.querySelectorAll('.chart-btn');
 
-        // Utility Functions
-        const showMessage = (title, message, isError = false) => {
-            messageBox.classList.remove('translate-x-full');
-            messageBox.classList.add('translate-x-0');
-            messageTitle.textContent = title;
-            messageText.textContent = message;
-            if (isError) {
-                messageBox.classList.remove('bg-gray-800', 'border-gray-700');
-                messageBox.classList.add('bg-red-800', 'border-red-700');
-            } else {
-                messageBox.classList.remove('bg-red-800', 'border-red-700');
-                messageBox.classList.add('bg-gray-800', 'border-gray-700');
-            }
-        };
+        let myChart;
+        let userId = null;
+        let userName = null;
+        let allExpenses = [];
+        let userBudget = 0;
+        let currencySymbol = '₹';
+        let userSettingsRef = null;
+        let userExpensesRef = null;
 
-        const hideMessage = () => {
-            messageBox.classList.remove('translate-x-0');
-            messageBox.classList.add('translate-x-full');
-        };
+        // --- Firebase Auth State Management ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in.
+                userId = user.uid;
+                userIdDisplay.textContent = userId;
 
-        const showModal = (modalElement) => {
-            modalElement.classList.remove('hidden');
-        };
+                // Reference to the user's settings and expenses in Firestore
+                const userSettingsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'user_data', 'settings');
+                userSettingsRef = userSettingsDocRef;
+                userExpensesRef = collection(db, 'artifacts', appId, 'users', userId, 'expenses');
 
-        const hideModal = (modalElement) => {
-            modalElement.classList.add('hidden');
-        };
+                try {
+                    const docSnap = await getDoc(userSettingsDocRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        userName = data.username || 'User';
+                        userBudget = data.budget || 0;
+                        currencySymbol = data.currency === 'USD' ? '$' : data.currency === 'EUR' ? '€' : data.currency === 'GBP' ? '£' : data.currency === 'JPY' ? '¥' : '₹';
+                        budgetInput.value = userBudget;
+                        currencySelect.value = data.currency || 'INR';
 
-        const createOrUpdateChart = (type, labels, data, options, title) => {
-            if (currentChartInstance) {
-                currentChartInstance.destroy();
-            }
-            if (chartCanvas) {
-                const ctx = chartCanvas.getContext('2d');
-                currentChartInstance = new Chart(ctx, {
-                    type,
-                    data: {
-                        labels,
-                        datasets: [{
-                            data,
-                            backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#a855f7', '#6366f1'],
-                            borderColor: '#1f2937',
-                            borderWidth: 2,
-                        }]
-                    },
-                    options
-                });
-                chartTitle.textContent = title;
-            }
-        };
-
-        const renderChart = (chartType, expenses) => {
-            const filteredExpenses = expenses.filter(expense => {
-                const date = new Date(expense.timestamp);
-                const expenseMonth = date.getMonth().toString();
-                const expenseYear = date.getFullYear().toString();
-                const selectedMonth = monthFilterSelect.value;
-                const selectedYear = yearFilterSelect.value;
-                return (selectedMonth === 'all' || expenseMonth === selectedMonth) &&
-                    (selectedYear === 'all' || expenseYear === selectedYear);
-            });
-
-            if (filteredExpenses.length === 0) {
-                if (currentChartInstance) {
-                    currentChartInstance.destroy();
+                        // Update UI
+                        usernameDisplay.textContent = userName;
+                        addLog(`Welcome back, ${userName}!`);
+                    } else {
+                        // New user, show login modal to set username
+                        usernameLoginModal.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                    showMessage("Error", "Failed to load user data. Please try again later.", true);
                 }
-                chartTitle.textContent = "No data available for this period.";
-                return;
-            }
 
-            if (chartType === 'category') {
-                const categoryMap = filteredExpenses.reduce((acc, expense) => {
-                    const {
-                        category,
-                        amount
-                    } = expense;
-                    acc[category] = (acc[category] || 0) + amount;
-                    return acc;
-                }, {});
-                const categories = Object.keys(categoryMap);
-                const amounts = Object.values(categoryMap);
-                createOrUpdateChart('doughnut', categories, amounts, {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += `${currencySymbol}${context.parsed.toFixed(2)}`;
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
+                // Listen to real-time updates for expenses
+                onSnapshot(userExpensesRef, (snapshot) => {
+                    allExpenses = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    renderExpenses(allExpenses);
+                    updateBudgetUI();
+                    renderChart(document.querySelector('.chart-btn.active').getAttribute('data-chart-type'), allExpenses);
+                });
+
+                // Listen to real-time updates for user settings (budget, currency)
+                onSnapshot(userSettingsDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        userBudget = data.budget || 0;
+                        currencySymbol = data.currency === 'USD' ? '$' : data.currency === 'EUR' ? '€' : data.currency === 'GBP' ? '£' : data.currency === 'JPY' ? '¥' : '₹';
+                        budgetInput.value = userBudget;
+                        currencySelect.value = data.currency || 'INR';
+                        updateBudgetUI();
+                        addLog(`Settings updated.`);
                     }
-                }, 'Category Breakdown');
-            } else if (chartType === 'monthly') {
-                const monthlyMap = filteredExpenses.reduce((acc, expense) => {
-                    const date = new Date(expense.timestamp);
-                    const month = date.toLocaleString('default', {
-                        month: 'short'
-                    }) + ' ' + date.getFullYear();
-                    acc[month] = (acc[month] || 0) + expense.amount;
-                    return acc;
-                }, {});
-                const months = Object.keys(monthlyMap);
-                const monthlyAmounts = Object.values(monthlyMap);
-                createOrUpdateChart('bar', months, monthlyAmounts, {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(255,255,255,0.1)'
-                            },
-                            ticks: {
-                                color: '#e2e8f0',
-                                callback: function(value) {
-                                    return `${currencySymbol}${value}`;
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: 'rgba(255,255,255,0.1)'
-                            },
-                            ticks: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        label += `${currencySymbol}${context.parsed.y.toFixed(2)}`;
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    }
-                }, 'Monthly Trends');
-            } else if (chartType === 'daily') {
-                const dailyMap = filteredExpenses.reduce((acc, expense) => {
-                    const date = new Date(expense.timestamp).toLocaleDateString();
-                    acc[date] = (acc[date] || 0) + expense.amount;
-                    return acc;
-                }, {});
-                const dates = Object.keys(dailyMap).sort((a, b) => new Date(a) - new Date(b));
-                const dailyAmounts = dates.map(date => dailyMap[date]);
-                createOrUpdateChart('line', dates, dailyAmounts, {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(255,255,255,0.1)'
-                            },
-                            ticks: {
-                                color: '#e2e8f0',
-                                callback: function(value) {
-                                    return `${currencySymbol}${value}`;
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: 'rgba(255,255,255,0.1)'
-                            },
-                            ticks: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        label += `${currencySymbol}${context.parsed.y.toFixed(2)}`;
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    }
-                }, 'Daily Flow');
+                });
+
+                // Load initial quote
+                fetchQuote();
+            } else {
+                // User is signed out. Show the login modal.
+                usernameDisplay.textContent = 'Guest';
+                userIdDisplay.textContent = 'Not logged in';
+                usernameLoginModal.classList.remove('hidden');
+                addLog('Guest user detected. Please log in.');
+            }
+        });
+
+        // Initial sign-in attempt
+        const startApp = async () => {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+                showMessage("Authentication Error", "Could not sign in. Please refresh the page.", true);
             }
         };
 
-        const showTab = (tabId) => {
-            tabContents.forEach(content => content.classList.add('hidden'));
-            tabBtns.forEach(btn => btn.classList.remove('active', 'bg-green-500', 'text-gray-900', 'hover:bg-green-400'));
-            tabBtns.forEach(btn => btn.classList.add('bg-gray-700', 'text-gray-300', 'hover:bg-gray-600'));
-            document.getElementById(tabId).classList.remove('hidden');
-            const clickedBtn = document.querySelector(`[data-tab-id="${tabId}"]`);
-            clickedBtn.classList.add('active', 'bg-green-500', 'text-gray-900', 'hover:bg-green-400');
-            clickedBtn.classList.remove('bg-gray-700', 'text-gray-300', 'hover:bg-gray-600');
-        };
+        // --- Event Listeners and Functions ---
+        window.onload = startApp;
 
-        const setAndSaveUsername = async (newUsername) => {
-            if (!userId) {
-                showMessage("Error", "User not authenticated. Please try refreshing the page.", true);
-                return;
-            }
+        usernameLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newUsername = usernameLoginInput.value.trim();
+            if (!newUsername) return;
 
             try {
-                // Save the username to the user's private settings document
-                userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/settings`);
-                await setDoc(userSettingsDocRef, {
+                // Save the username and other settings for the newly created anonymous user
+                await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_data', 'settings'), {
                     username: newUsername,
+                    budget: 0,
                     currency: 'INR'
-                }, {
-                    merge: true
                 });
-
-                username = newUsername;
-                usernameDisplay.textContent = username;
-                userIdDisplay.textContent = userId;
-                hideModal(usernameLoginModal);
-                showMessage("Success", `Welcome, ${username}! Your data is now linked to this account.`);
-                addLog(`Username set to: ${username}`);
+                userName = newUsername;
+                usernameDisplay.textContent = userName;
+                usernameLoginModal.classList.add('hidden');
+                showMessage("Welcome", `Hello, ${userName}! Let's start tracking your finances.`);
+                addLog(`New user ${userName} registered.`);
             } catch (error) {
-                console.error("Error saving username:", error);
+                console.error("Error setting username:", error);
                 showMessage("Error", "Failed to set username. Please try again.", true);
             }
-        };
+        });
 
-        const deleteAccount = async () => {
-            if (!userId) {
-                showMessage("Error", "No user to delete.", true);
-                return;
-            }
-
+        changeUserBtn.addEventListener('click', async () => {
             try {
-                // Delete user's expenses
-                const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
-                const expensesQuery = query(expensesCollectionRef);
-                const expensesSnapshot = await getDocs(expensesQuery);
+                await signOut(auth);
+                // Clear all UI state
+                usernameDisplay.textContent = 'Loading...';
+                userIdDisplay.textContent = 'Loading...';
+                expensesList.innerHTML = '';
+                allExpenses = [];
+                userBudget = 0;
+                totalExpensesEl.textContent = `${currencySymbol}0`;
+                remainingBudgetEl.textContent = `${currencySymbol}0`;
+                budgetProgressEl.style.width = '0%';
+                budgetInput.value = '';
+                logsList.innerHTML = '';
+                showMessage("Success", "Signed out. You can now log in with a new user.");
+                usernameLoginModal.classList.remove('hidden');
+            } catch (error) {
+                console.error("Error signing out:", error);
+                showMessage("Error", "Failed to sign out. Please try refreshing the page.", true);
+            }
+        });
+
+        deleteAccountBtn.addEventListener('click', () => {
+            deleteConfirmModal.classList.remove('hidden');
+        });
+
+        cancelDeleteBtn.addEventListener('click', () => {
+            deleteConfirmModal.classList.add('hidden');
+        });
+
+        confirmDeleteBtn.addEventListener('click', async () => {
+            try {
+                const user = auth.currentUser;
+                if (!user) throw new Error("No user signed in.");
+
                 const batch = writeBatch(db);
-                expensesSnapshot.forEach((doc) => {
-                    batch.delete(doc.ref);
+                // Delete user settings
+                batch.delete(doc(db, 'artifacts', appId, 'users', userId, 'user_data', 'settings'));
+
+                // Delete all expenses for the user
+                const q = query(collection(db, 'artifacts', appId, 'users', userId, 'expenses'));
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach((document) => {
+                    batch.delete(document.ref);
                 });
+
                 await batch.commit();
 
-                // Delete user's logs
-                const logsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/logs`);
-                const logsQuery = query(logsCollectionRef);
-                const logsSnapshot = await getDocs(logsQuery);
-                const logsBatch = writeBatch(db);
-                logsSnapshot.forEach((doc) => {
-                    logsBatch.delete(doc.ref);
-                });
-                await logsBatch.commit();
-
-                // Delete user's profile and settings documents
-                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/profile/budget`));
-                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/profile/settings`));
-
-                showMessage("Success", `Account for "${username}" has been permanently deleted.`);
+                // Sign out and delete the user
                 await signOut(auth);
-                resetUI();
+                // You can't delete the user on the client-side unless the user has recently authenticated.
+                // It's best practice to handle this on the backend. Here we just sign them out.
+                showMessage("Success", "Your account data has been deleted.");
+                deleteConfirmModal.classList.add('hidden');
+                startApp(); // Restart the app for a new user
             } catch (error) {
                 console.error("Error deleting account:", error);
                 showMessage("Error", "Failed to delete account. Please try again.", true);
             }
-        };
-
-        const resetUI = () => {
-            // Clear all UI elements and reset global variables
-            userId = null;
-            username = null;
-            allExpenses = [];
-            budget = 0;
-            usernameDisplay.textContent = 'Guest';
-            userIdDisplay.textContent = '';
-            expensesList.innerHTML = '';
-            logsList.innerHTML = '';
-            renderBudgetUI(0);
-            if (currentChartInstance) {
-                currentChartInstance.destroy();
-            }
-            showModal(usernameLoginModal);
-        };
-
-        const saveBudget = async (e) => {
-            e.preventDefault();
-            const newBudget = parseFloat(budgetInput.value);
-            if (!userId || newBudget <= 0) {
-                showMessage("Validation Error", "Please enter a valid budget amount.", true);
-                return;
-            }
-            const budgetDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/budget`);
-            try {
-                await setDoc(budgetDocRef, {
-                    amount: newBudget,
-                    lastUpdated: Date.now()
-                });
-                budget = newBudget; // Update local budget variable
-                showMessage("Success", `Budget set to ${currencySymbol}${newBudget.toFixed(2)}.`);
-                addLog(`Budget set to ${currencySymbol}${newBudget.toFixed(2)}`);
-            } catch (error) {
-                console.error("Error saving budget: ", error);
-                showMessage("Error", "Failed to save budget. Please try again.", true);
-            }
-        };
-
-        const renderBudgetUI = (totalExpenses) => {
-            const remaining = budget - totalExpenses;
-            totalExpensesText.textContent = `${currencySymbol}${totalExpenses.toFixed(2)}`;
-            remainingBudgetText.textContent = `${currencySymbol}${remaining.toFixed(2)}`;
-
-            remainingBudgetText.classList.remove('text-green-500', 'text-red-500');
-            remainingBudgetText.classList.add(remaining >= 0 ? 'text-green-500' : 'text-red-500');
-
-            if (budget > 0) {
-                const percentage = Math.min((totalExpenses / budget) * 100, 100);
-                budgetProgress.style.width = `${percentage}%`;
-
-                budgetProgress.classList.remove('bg-green-500', 'bg-red-500');
-                if (percentage >= 100) {
-                    budgetProgress.classList.add('bg-red-500');
-                } else {
-                    budgetProgress.classList.add('bg-green-500');
-                }
-            } else {
-                budgetProgress.style.width = '0%';
-            }
-        };
-
-        const changeUser = async () => {
-            await signOut(auth);
-            resetUI();
-            showMessage("Info", "Session cleared. Please refresh the page to start a new session.");
-        };
-
-        const addLog = async (action) => {
-            if (!userId) return;
-            const logData = {
-                action,
-                timestamp: Date.now()
-            };
-            try {
-                if (logsCollectionRef) {
-                    await addDoc(logsCollectionRef, logData);
-                }
-            } catch (error) {
-                console.error("Error adding log:", error);
-            }
-        };
-
-        const renderLogs = (logs) => {
-            logsList.innerHTML = '';
-            if (logs.length === 0) {
-                logsList.innerHTML = `<li class="text-center text-gray-400">No logs found.</li>`;
-            } else {
-                logs.sort((a, b) => b.timestamp - a.timestamp);
-                logs.forEach(log => {
-                    const li = document.createElement('li');
-                    li.className = 'bg-gray-700 p-3 rounded-lg shadow-md mb-2';
-                    const timestamp = new Date(log.timestamp).toLocaleString();
-                    li.innerHTML = `
-                <p class="text-gray-300">${log.action}</p>
-                <p class="text-xs text-gray-500 mt-1">${timestamp}</p>
-            `;
-                    logsList.appendChild(li);
-                });
-            }
-        };
-
-        // API Call for Quotes
-        const getDynamicQuote = async () => {
-            const staticQuotes = [{
-                text: "The only way to get a good idea is to get a lot of ideas.",
-                source: "Linus Pauling"
-            }, {
-                text: "Don't tell me where your priorities are. Show me where you spend your money and I'll tell you what they are.",
-                source: "James W. Frick"
-            }, {
-                text: "The stock market is a device for transferring money from the impatient to the patient.",
-                source: "Warren Buffett"
-            }, {
-                text: "Do not save what is left after spending; instead, spend what is left after saving.",
-                source: "Warren Buffett"
-            }, {
-                text: "The journey of a thousand miles begins with a single step.",
-                source: "Lao Tzu"
-            }];
-            const quotePrompt = "Give a short, inspiring quote on a topic from: movies, music, culture, poetry, art, science, stoicism, finance, facts, or puns. Provide a brief one-sentence quote.";
-
-            if (quoteRefreshCount < MAX_QUOTE_REFRESHES) {
-                try {
-                    const chatHistory = [{
-                        role: "user",
-                        parts: [{
-                            text: quotePrompt
-                        }]
-                    }];
-                    const payload = {
-                        contents: chatHistory
-                    };
-                    const apiKey = "";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-                    let response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    let result = await response.json();
-
-                    if (result.candidates && result.candidates.length > 0 && result.candidates[0].content &&
-                        result.candidates[0].content.parts) {
-                        const text = result.candidates[0].content.parts[0].text;
-                        quoteText.textContent = text.replace(/["“”„‟‘’‚‛‹›«»「」『』【】《》〈〉《》「」『』】]/g, '');
-                        quoteRefreshCount++;
-                        addLog("Quote refreshed.");
-                    } else {
-                        const randomQuote = staticQuotes[Math.floor(Math.random() * staticQuotes.length)];
-                        quoteText.textContent = `"${randomQuote.text}" - ${randomQuote.source}`;
-                    }
-                } catch (error) {
-                    console.error("Error fetching quote:", error);
-                    const randomQuote = staticQuotes[Math.floor(Math.random() * staticQuotes.length)];
-                    quoteText.textContent = `"${randomQuote.text}" - ${randomQuote.source}`;
-                }
-            } else {
-                showMessage("Limit Reached", "You have reached the maximum number of quote refreshes for this session.", true);
-            }
-        };
-
-        const renderExpenses = (expenses) => {
-            expensesList.innerHTML = '';
-            if (expenses.length === 0) {
-                expensesList.innerHTML = `<li class="text-center text-gray-400">No expenses found.</li>`;
-                return;
-            }
-
-            expenses.sort((a, b) => b.timestamp - a.timestamp);
-
-            expenses.forEach(expense => {
-                const li = document.createElement('li');
-                li.className = 'bg-gray-700 p-4 rounded-xl shadow-lg flex justify-between items-center';
-                const date = new Date(expense.timestamp);
-                const formattedDate = date.toLocaleDateString();
-                const formattedTime = date.toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                li.innerHTML = `
-                <div>
-                    <div class="font-bold text-green-300">${expense.name}</div>
-                    <div class="text-xs text-gray-400">${expense.category} | ${formattedDate} ${formattedTime}</div>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="text-lg font-bold text-white">${currencySymbol}${expense.amount.toFixed(2)}</span>
-                    <button class="delete-expense-btn text-red-500 hover:text-red-400 transition-colors duration-200" data-id="${expense.id}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </div>
-            `;
-                expensesList.appendChild(li);
-            });
-
-            // Add event listeners to newly created delete buttons
-            document.querySelectorAll('.delete-expense-btn').forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    const expenseId = e.currentTarget.getAttribute('data-id');
-                    try {
-                        await deleteDoc(doc(db, expensesCollectionRef.path, expenseId));
-                        addLog(`Expense deleted: ID ${expenseId}`);
-                        showMessage("Success", "Expense deleted successfully.");
-                    } catch (error) {
-                        console.error("Error deleting document: ", error);
-                        showMessage("Error", "Failed to delete expense. Please try again.", true);
-                    }
-                });
-            });
-        };
-
-        const updateDateFilters = (expenses) => {
-            const months = new Set();
-            const years = new Set();
-            expenses.forEach(expense => {
-                const date = new Date(expense.timestamp);
-                months.add(date.getMonth());
-                years.add(date.getFullYear());
-            });
-
-            // Clear existing options
-            monthFilterSelect.innerHTML = '<option value="all">All Months</option>';
-            yearFilterSelect.innerHTML = '<option value="all">All Years</option>';
-
-            const sortedMonths = Array.from(months).sort((a, b) => a - b);
-            sortedMonths.forEach(month => {
-                const option = document.createElement('option');
-                option.value = month;
-                option.textContent = new Date(2000, month, 1).toLocaleString('default', {
-                    month: 'long'
-                });
-                monthFilterSelect.appendChild(option);
-            });
-
-            const sortedYears = Array.from(years).sort((a, b) => b - a);
-            sortedYears.forEach(year => {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year;
-                yearFilterSelect.appendChild(option);
-            });
-        };
-
-        const downloadJSON = (data, filename) => {
-            const jsonStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonStr], {
-                type: 'application/json'
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        };
-
-        const downloadCSV = (data, filename) => {
-            if (data.length === 0) {
-                showMessage("Info", "No data to export.", true);
-                return;
-            }
-            const headers = Object.keys(data[0]).join(',');
-            const csv = data.map(row => Object.values(row).map(value => {
-                const escaped = ('' + value).replace(/"/g, '""');
-                return `"${escaped}"`;
-            }).join(','));
-            csv.unshift(headers);
-            const csvString = csv.join('\n');
-            const blob = new Blob([csvString], {
-                type: 'text/csv'
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        };
-
-
-        // Event Listeners
-        window.addEventListener('DOMContentLoaded', async () => {
-            // Firebase Initialization and Authentication
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses`);
-                        logsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/logs`);
-                        userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/settings`);
-
-                        // Check if username is set
-                        const userSettingsDoc = await getDoc(userSettingsDocRef);
-                        if (userSettingsDoc.exists() && userSettingsDoc.data().username) {
-                            username = userSettingsDoc.data().username;
-                            currency = userSettingsDoc.data().currency || 'INR';
-                            usernameDisplay.textContent = username;
-                            userIdDisplay.textContent = userId;
-                            hideModal(usernameLoginModal);
-                            updateCurrency(currency);
-
-                            // Listen to expenses and logs
-                            onSnapshot(expensesCollectionRef, (snapshot) => {
-                                allExpenses = snapshot.docs.map(doc => ({
-                                    id: doc.id,
-                                    ...doc.data()
-                                }));
-                                renderExpenses(allExpenses);
-                                updateDateFilters(allExpenses);
-                                const totalExpenses = allExpenses.reduce((sum, expense) => sum +
-                                    expense.amount, 0);
-                                renderBudgetUI(totalExpenses);
-                                renderChart('category', allExpenses);
-                            });
-
-                            onSnapshot(logsCollectionRef, (snapshot) => {
-                                const logs = snapshot.docs.map(doc => doc.data());
-                                renderLogs(logs);
-                            });
-
-                            // Listen for budget changes
-                            const budgetDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/budget`);
-                            onSnapshot(budgetDocRef, (docSnap) => {
-                                if (docSnap.exists()) {
-                                    budget = docSnap.data().amount;
-                                    const totalExpenses = allExpenses.reduce((sum, expense) => sum +
-                                        expense.amount, 0);
-                                    renderBudgetUI(totalExpenses);
-                                } else {
-                                    budget = 0;
-                                    renderBudgetUI(0);
-                                }
-                            });
-
-                            // Set default tab
-                            showTab('dashboard-tab');
-                        } else {
-                            // Prompt for username
-                            showModal(usernameLoginModal);
-                            usernameDisplay.textContent = 'Guest';
-                        }
-                    } else {
-                        // User not signed in, sign in anonymously or with custom token
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase initialization or auth error:", error);
-                showMessage("Initialization Error", "Failed to connect to Firebase. Please check the console for details.", true);
-            }
-
-            // Set default date for expense form
-            const today = new Date().toISOString().split('T')[0];
-            expenseDateInput.value = today;
-
-            // Set the first chart as active
-            const defaultChartBtn = document.querySelector('.chart-btn[data-chart-type="category"]');
-            if (defaultChartBtn) {
-                defaultChartBtn.classList.add('active');
-            }
         });
 
-        // Toggle Recurring Options
-        recurringCheckbox.addEventListener('change', () => {
-            if (recurringCheckbox.checked) {
-                recurringOptionsContainer.classList.remove('hidden');
-            } else {
-                recurringOptionsContainer.classList.add('hidden');
-            }
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                tabContents.forEach(content => content.classList.add('hidden'));
+                const targetTab = document.getElementById(button.getAttribute('data-tab-id'));
+                if (targetTab) {
+                    targetTab.classList.remove('hidden');
+                }
+            });
         });
+        // Activate the first tab by default
+        tabButtons[0].click();
 
-
-        // Handle expense form submission
         expenseForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!userId) {
@@ -1291,168 +753,518 @@
                 return;
             }
 
-            const expenseData = {
-                name: expenseNameInput.value,
-                amount: parseFloat(expenseAmountInput.value),
-                category: expenseCategorySelect.value,
-                timestamp: expenseDateInput.value ? new Date(expenseDateInput.value).getTime() : Date.now(),
-                isRecurring: recurringCheckbox.checked,
-                recurrenceFrequency: recurringCheckbox.checked ? document.querySelector(
-                    'input[name="recurrence-freq"]:checked').value : null
-            };
+            const name = expenseNameInput.value.trim();
+            const amount = parseFloat(expenseAmountInput.value);
+            const category = expenseCategorySelect.value;
+            const date = expenseDateInput.value || new Date().toISOString().slice(0, 10);
+            const isRecurring = recurringCheckbox.checked;
+            const recurrenceFrequency = isRecurring ? document.querySelector('input[name="recurrence-freq"]:checked').value : null;
+
+            if (name && !isNaN(amount) && amount > 0) {
+                const newExpense = {
+                    name,
+                    amount,
+                    category,
+                    date,
+                    timestamp: new Date(),
+                    isRecurring,
+                    recurrenceFrequency
+                };
+
+                try {
+                    await addDoc(userExpensesRef, newExpense);
+                    addLog(`New expense added: ${name} (${currencySymbol}${amount.toFixed(2)})`);
+                    expenseForm.reset();
+                    recurringCheckbox.checked = false;
+                    recurringOptionsContainer.classList.add('hidden');
+                } catch (error) {
+                    console.error("Error adding expense:", error);
+                    showMessage("Error", "Failed to add expense. Please try again.", true);
+                }
+            } else {
+                showMessage("Validation Error", "Please fill out all fields correctly.", true);
+            }
+        });
+
+        budgetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newBudget = parseFloat(budgetInput.value);
+            if (!userId) {
+                showMessage("Error", "User not authenticated. Please log in.", true);
+                return;
+            }
+
+            if (!isNaN(newBudget) && newBudget >= 0) {
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_data', 'settings'), {
+                        budget: newBudget
+                    }, {
+                        merge: true
+                    });
+                    showMessage("Success", `Monthly budget set to ${currencySymbol}${newBudget.toFixed(2)}.`);
+                    addLog(`Monthly budget updated to ${currencySymbol}${newBudget.toFixed(2)}.`);
+                } catch (error) {
+                    console.error("Error setting budget:", error);
+                    showMessage("Error", "Failed to set budget. Please try again.", true);
+                }
+            } else {
+                showMessage("Validation Error", "Please enter a valid budget amount.", true);
+            }
+        });
+
+        aiBudgetSuggestionBtn.addEventListener('click', async () => {
+            if (!userId) {
+                showMessage("Error", "User not authenticated. Please log in.", true);
+                return;
+            }
+            aiBudgetModal.classList.remove('hidden');
+            aiBudgetContent.querySelector('#ai-budget-loading').classList.remove('hidden');
+            aiBudgetContent.querySelector('#ai-budget-result').classList.add('hidden');
+
+            const expensesJSON = JSON.stringify(allExpenses.map(e => ({
+                name: e.name,
+                amount: e.amount,
+                category: e.category
+            })));
+
+            const prompt = `Based on the following list of recent expenses, provide a single, concise monthly budget suggestion in the format of a short paragraph. The response should start with "Based on your spending, a suggested monthly budget is..." and include the total spending and an explanation of the suggestion. Do not include any code or special formatting. The expenses are: ${expensesJSON}`;
 
             try {
-                await addDoc(expensesCollectionRef, expenseData);
-                expenseForm.reset();
-                expenseDateInput.value = new Date().toISOString().split('T')[0];
-                showMessage("Success", "Expense added successfully!");
-                addLog(`Added new expense: ${expenseData.name} - ${currencySymbol}${expenseData.amount.toFixed(2)}`);
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                let response;
+                let result;
+                let retryCount = 0;
+                const maxRetries = 5;
+                const baseDelay = 1000;
+
+                while (retryCount < maxRetries) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.status === 429) {
+                            const delay = baseDelay * Math.pow(2, retryCount);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            retryCount++;
+                            continue;
+                        }
+
+                        if (!response.ok) {
+                            throw new Error(`API error: ${response.statusText}`);
+                        }
+
+                        result = await response.json();
+                        break; // Exit the loop on success
+                    } catch (error) {
+                        console.error(`Fetch attempt ${retryCount + 1} failed:`, error);
+                        if (retryCount >= maxRetries - 1) {
+                            throw error; // Rethrow on last retry
+                        }
+                        const delay = baseDelay * Math.pow(2, retryCount);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        retryCount++;
+                    }
+                }
+
+                if (result && result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    aiBudgetContent.querySelector('#ai-budget-result').textContent = text;
+                } else {
+                    aiBudgetContent.querySelector('#ai-budget-result').textContent = "Sorry, I couldn't generate a budget suggestion at this time.";
+                }
             } catch (error) {
-                console.error("Error adding document: ", error);
-                showMessage("Error", "Failed to add expense. Please try again.", true);
+                console.error("Error fetching AI budget suggestion:", error);
+                aiBudgetContent.querySelector('#ai-budget-result').textContent = "An error occurred while fetching the suggestion.";
+            } finally {
+                aiBudgetContent.querySelector('#ai-budget-loading').classList.add('hidden');
+                aiBudgetContent.querySelector('#ai-budget-result').classList.remove('hidden');
             }
         });
 
-        // Tab switching
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                showTab(btn.getAttribute('data-tab-id'));
-            });
+        closeAiBudgetBtn.addEventListener('click', () => {
+            aiBudgetModal.classList.add('hidden');
         });
 
-        // Chart button clicks
-        chartBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                chartBtns.forEach(b => b.classList.remove('active', 'bg-green-500', 'text-gray-900',
-                    'hover:bg-green-400'));
-                chartBtns.forEach(b => b.classList.add('bg-gray-700', 'text-gray-300', 'hover:bg-gray-600'));
-                e.currentTarget.classList.add('active', 'bg-green-500', 'text-gray-900', 'hover:bg-green-400');
-                e.currentTarget.classList.remove('bg-gray-700', 'text-gray-300', 'hover:bg-gray-600');
-                const chartType = e.currentTarget.getAttribute('data-chart-type');
-                renderChart(chartType, allExpenses);
-            });
-        });
+        // --- UI Rendering Functions ---
 
-        // Filter event listeners
-        monthFilterSelect.addEventListener('change', () => renderChart(document.querySelector(
-            '.chart-btn.active').getAttribute('data-chart-type'), allExpenses));
-        yearFilterSelect.addEventListener('change', () => renderChart(document.querySelector(
-            '.chart-btn.active').getAttribute('data-chart-type'), allExpenses));
+        const updateBudgetUI = () => {
+            const total = allExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            totalExpensesEl.textContent = `${currencySymbol}${total.toFixed(2)}`;
+            const remaining = userBudget - total;
+            remainingBudgetEl.textContent = `${currencySymbol}${remaining.toFixed(2)}`;
 
-        // Budget form
-        budgetForm.addEventListener('submit', saveBudget);
-
-        // AI Budget suggestion
-        aiBudgetSuggestionBtn.addEventListener('click', () => {
-            const suggestion = aiBudgetSuggestions[Math.floor(Math.random() * aiBudgetSuggestions.length)];
-            showMessage("AI Suggestion", suggestion);
-            addLog("Received AI budget suggestion.");
-        });
-
-        // Quote Refresh
-        quoteRefreshBtn.addEventListener('click', getDynamicQuote);
-
-        // Export monthly expenses
-        const exportCurrentMonthExpenses = () => {
-            const selectedMonth = monthFilterSelect.value;
-            const selectedYear = yearFilterSelect.value;
-            if (selectedMonth === 'all' || selectedYear === 'all') {
-                showMessage("Export Error", "Please select a specific month and year to export.", true);
-                return [];
+            if (userBudget > 0) {
+                const progress = Math.min(100, (total / userBudget) * 100);
+                budgetProgressEl.style.width = `${progress}%`;
+                if (progress > 80) {
+                    budgetProgressEl.classList.remove('bg-green-500');
+                    budgetProgressEl.classList.add('bg-red-500');
+                } else {
+                    budgetProgressEl.classList.remove('bg-red-500');
+                    budgetProgressEl.classList.add('bg-green-500');
+                }
+            } else {
+                budgetProgressEl.style.width = '0%';
             }
-            const filteredExpenses = allExpenses.filter(expense => {
-                const date = new Date(expense.timestamp);
-                return date.getMonth().toString() === selectedMonth && date.getFullYear().toString() ===
-                    selectedYear;
-            });
-            return filteredExpenses;
         };
 
-        exportListJsonBtn.addEventListener('click', () => {
-            const expensesToExport = exportCurrentMonthExpenses();
-            if (expensesToExport.length > 0) {
-                downloadJSON(expensesToExport, `expenses-${monthFilterSelect.options[monthFilterSelect.selectedIndex].text}-${yearFilterSelect.value}.json`);
-                showMessage("Success", "Monthly expenses exported to JSON.");
+        const renderExpenses = (expenses) => {
+            expensesList.innerHTML = '';
+            if (expenses.length === 0) {
+                expensesList.innerHTML = `<li class="text-center text-gray-500 py-4">No expenses found. Add your first expense!</li>`;
+                return;
             }
+
+            // Group expenses by date
+            const groupedExpenses = expenses.reduce((acc, expense) => {
+                const date = new Date(expense.date).toLocaleDateString();
+                if (!acc[date]) {
+                    acc[date] = [];
+                }
+                acc[date].push(expense);
+                return acc;
+            }, {});
+
+            // Render expenses by date
+            for (const date in groupedExpenses) {
+                const dateHeader = document.createElement('h4');
+                dateHeader.className = "text-md font-bold text-gray-400 mt-4 mb-2";
+                dateHeader.textContent = date;
+                expensesList.appendChild(dateHeader);
+
+                groupedExpenses[date].forEach(expense => {
+                    const li = document.createElement('li');
+                    li.className = 'bg-gray-700 p-4 rounded-xl flex items-center justify-between shadow-md';
+                    li.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-gray-100">${expense.name}</p>
+                            <p class="text-xs text-gray-400">Category: ${expense.category}</p>
+                            ${expense.isRecurring ? '<span class="text-xs text-green-300">Recurring</span>' : ''}
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl font-bold text-green-300">${currencySymbol}${expense.amount.toFixed(2)}</span>
+                            <button class="delete-btn text-red-500 hover:text-red-400" data-id="${expense.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    expensesList.appendChild(li);
+                });
+            }
+
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const expenseId = e.currentTarget.getAttribute('data-id');
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'expenses', expenseId));
+                        addLog('Expense deleted.');
+                    } catch (error) {
+                        console.error("Error deleting document:", error);
+                        showMessage("Error", "Failed to delete expense.", true);
+                    }
+                });
+            });
+
+            // Update month and year filters
+            const expenseDates = expenses.map(e => new Date(e.date));
+            const months = [...new Set(expenseDates.map(d => d.getMonth()))].sort();
+            const years = [...new Set(expenseDates.map(d => d.getFullYear()))].sort();
+
+            monthFilterSelect.innerHTML = '<option value="all">All Months</option>' + months.map(m => `<option value="${m}">${new Date(2000, m, 1).toLocaleString('default', { month: 'long' })}</option>`).join('');
+            yearFilterSelect.innerHTML = '<option value="all">All Years</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+        };
+
+        const renderChart = (chartType, data) => {
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            const chartData = getChartData(chartType, data);
+            chartTitleEl.textContent = chartData.title;
+
+            myChart = new Chart(mainChartCanvas, {
+                type: chartData.type,
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: chartData.label,
+                        data: chartData.data,
+                        backgroundColor: chartData.backgroundColor,
+                        borderColor: chartData.borderColor,
+                        borderWidth: 1,
+                        fill: chartData.fill || false,
+                        tension: chartData.tension || 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: chartData.type === 'doughnut',
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.9)'
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        const getChartData = (chartType, expenses) => {
+            const chartConfig = {
+                title: '',
+                type: '',
+                labels: [],
+                data: [],
+                backgroundColor: [],
+                borderColor: []
+            };
+
+            const colors = ['#10b981', '#ef4444', '#3b82f6', '#f97316', '#a855f7', '#fde047'];
+
+            switch (chartType) {
+                case 'category':
+                    const categoryData = expenses.reduce((acc, expense) => {
+                        acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+                        return acc;
+                    }, {});
+                    chartConfig.title = 'Category Breakdown';
+                    chartConfig.type = 'doughnut';
+                    chartConfig.labels = Object.keys(categoryData);
+                    chartConfig.data = Object.values(categoryData);
+                    chartConfig.backgroundColor = Object.keys(categoryData).map((_, i) => colors[i % colors.length]);
+                    chartConfig.borderColor = Object.keys(categoryData).map(() => '#1f2937');
+                    break;
+                case 'monthly':
+                    const monthlyData = expenses.reduce((acc, expense) => {
+                        const monthYear = new Date(expense.date).toLocaleString('default', {
+                            month: 'short',
+                            year: 'numeric'
+                        });
+                        acc[monthYear] = (acc[monthYear] || 0) + expense.amount;
+                        return acc;
+                    }, {});
+                    chartConfig.title = 'Monthly Spending';
+                    chartConfig.type = 'bar';
+                    chartConfig.labels = Object.keys(monthlyData);
+                    chartConfig.data = Object.values(monthlyData);
+                    chartConfig.backgroundColor = 'rgba(16, 185, 129, 0.5)';
+                    chartConfig.borderColor = '#10b981';
+                    break;
+                case 'daily':
+                    const dailyData = expenses.reduce((acc, expense) => {
+                        const date = new Date(expense.date).toLocaleDateString('en-US', {
+                            month: 'numeric',
+                            day: 'numeric'
+                        });
+                        acc[date] = (acc[date] || 0) + expense.amount;
+                        return acc;
+                    }, {});
+                    chartConfig.title = 'Daily Spending';
+                    chartConfig.type = 'line';
+                    chartConfig.labels = Object.keys(dailyData);
+                    chartConfig.data = Object.values(dailyData);
+                    chartConfig.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+                    chartConfig.borderColor = '#10b981';
+                    chartConfig.fill = true;
+                    chartConfig.tension = 0.4;
+                    break;
+            }
+            return chartConfig;
+        };
+
+        chartButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                chartButtons.forEach(btn => btn.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                renderChart(e.currentTarget.getAttribute('data-chart-type'), allExpenses);
+            });
+        });
+
+        // --- Utility Functions ---
+
+        const fetchQuote = async () => {
+            dynamicQuoteEl.innerHTML = `
+                <span class="inline-flex items-center">
+                    <svg class="animate-spin-slow h-5 w-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading quote...
+                </span>
+            `;
+
+            const prompt = `Provide a single, short, and inspirational quote about money, finance, or saving, along with the author's name. The response should be in the format: "Quote text" - Author. Do not include any other text, code, or special formatting.`;
+            try {
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                let response;
+                let result;
+                let retryCount = 0;
+                const maxRetries = 5;
+                const baseDelay = 1000;
+
+                while (retryCount < maxRetries) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.status === 429) {
+                            const delay = baseDelay * Math.pow(2, retryCount);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            retryCount++;
+                            continue;
+                        }
+
+                        if (!response.ok) {
+                            throw new Error(`API error: ${response.statusText}`);
+                        }
+
+                        result = await response.json();
+                        break; // Exit the loop on success
+                    } catch (error) {
+                        console.error(`Fetch attempt ${retryCount + 1} failed:`, error);
+                        if (retryCount >= maxRetries - 1) {
+                            throw error; // Rethrow on last retry
+                        }
+                        const delay = baseDelay * Math.pow(2, retryCount);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        retryCount++;
+                    }
+                }
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const quote = result.candidates[0].content.parts[0].text;
+                    dynamicQuoteEl.textContent = quote;
+                } else {
+                    dynamicQuoteEl.textContent = `"The best investment you can make is in yourself." - Warren Buffett`;
+                }
+            } catch (error) {
+                console.error("Error fetching quote:", error);
+                dynamicQuoteEl.textContent = `"The best investment you can make is in yourself." - Warren Buffett`;
+            }
+        };
+
+        quoteRefreshBtn.addEventListener('click', fetchQuote);
+
+        const addLog = (message) => {
+            const li = document.createElement('li');
+            li.className = 'text-xs text-gray-400 border-b border-gray-700 pb-1';
+            li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsList.prepend(li);
+        };
+
+        const showMessage = (title, text, isError = false) => {
+            messageTitleEl.textContent = title;
+            messageTextEl.textContent = text;
+            messageBox.classList.remove('translate-x-full');
+            messageBox.classList.add('translate-x-0');
+            messageBox.classList.remove('hidden');
+
+            if (isError) {
+                messageBox.classList.remove('bg-gray-800');
+                messageBox.classList.add('bg-red-800');
+            } else {
+                messageBox.classList.remove('bg-red-800');
+                messageBox.classList.add('bg-gray-800');
+            }
+
+            setTimeout(() => {
+                messageBox.classList.remove('translate-x-0');
+                messageBox.classList.add('translate-x-full');
+            }, 5000);
+        };
+
+        closeMessageBtn.addEventListener('click', () => {
+            messageBox.classList.remove('translate-x-0');
+            messageBox.classList.add('translate-x-full');
+        });
+
+        // Event listener for recurring expense toggle
+        recurringCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                recurringOptionsContainer.classList.remove('hidden');
+            } else {
+                recurringOptionsContainer.classList.add('hidden');
+            }
+        });
+
+        // Event listeners for export buttons
+        exportListJsonBtn.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allExpenses, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `expenses_${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            showMessage("Export", "Expenses exported as JSON.", false);
         });
 
         exportListCsvBtn.addEventListener('click', () => {
-            const expensesToExport = exportCurrentMonthExpenses();
-            if (expensesToExport.length > 0) {
-                downloadCSV(expensesToExport, `expenses-${monthFilterSelect.options[monthFilterSelect.selectedIndex].text}-${yearFilterSelect.value}.csv`);
-                showMessage("Success", "Monthly expenses exported to CSV.");
-            }
-        });
-
-        // Close message box
-        closeMessageBtn.addEventListener('click', hideMessage);
-
-        // Username form submission
-        usernameLoginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const newUsername = usernameLoginInput.value.trim();
-            if (newUsername) {
-                setAndSaveUsername(newUsername);
-            } else {
-                showMessage("Validation Error", "Please enter a valid username.", true);
-            }
-        });
-
-        // Change user and delete account
-        changeUserBtn.addEventListener('click', changeUser);
-        deleteAccountBtn.addEventListener('click', () => showModal(deleteConfirmModal));
-        confirmDeleteBtn.addEventListener('click', deleteAccount);
-        cancelDeleteBtn.addEventListener('click', () => hideModal(deleteConfirmModal));
-
-        const updateCurrency = (newCurrency) => {
-            currency = newCurrency;
-            switch (newCurrency) {
-                case 'USD':
-                    currencySymbol = '$';
-                    break;
-                case 'EUR':
-                    currencySymbol = '€';
-                    break;
-                case 'GBP':
-                    currencySymbol = '£';
-                    break;
-                case 'JPY':
-                    currencySymbol = '¥';
-                    break;
-                case 'INR':
-                default:
-                    currencySymbol = '₹';
-                    break;
-            }
-            // Re-render UI with new currency
-            renderExpenses(allExpenses);
-            const totalExpenses = allExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-            renderBudgetUI(totalExpenses);
-            renderChart(document.querySelector('.chart-btn.active').getAttribute('data-chart-type'), allExpenses);
-        };
-
-        currencySelect.addEventListener('change', async (e) => {
-            const newCurrency = e.target.value;
-            if (!userId) {
-                showMessage("Error", "User not authenticated. Cannot save currency preference.", true);
+            if (allExpenses.length === 0) {
+                showMessage("Export Error", "No expenses to export.", true);
                 return;
             }
-            try {
-                // Save the new currency to the user's private settings document
-                await setDoc(userSettingsDocRef, {
-                    currency: newCurrency
-                }, {
-                    merge: true
-                });
-                updateCurrency(newCurrency);
-                showMessage("Success", `Currency updated to ${newCurrency}.`);
-                addLog(`Currency preference changed to ${newCurrency}.`);
-            } catch (error) {
-                console.error("Error saving currency:", error);
-                showMessage("Error", "Failed to save currency preference. Please try again.", true);
-            }
-        });
 
+            const header = Object.keys(allExpenses[0]).join(',');
+            const csv = allExpenses.map(row => Object.values(row).map(value => {
+                if (typeof value === 'string' && value.includes(',')) {
+                    return `"${value}"`;
+                }
+                return value;
+            }).join(','));
+
+            const csvContent = "data:text/csv;charset=utf-8," + [header, ...csv].join('\n');
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", csvContent);
+            downloadAnchorNode.setAttribute("download", `expenses_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            showMessage("Export", "Expenses exported as CSV.", false);
+        });
     </script>
 </body>
 
