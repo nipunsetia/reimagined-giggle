@@ -102,12 +102,13 @@
         const exportJsonBtn = document.getElementById('export-json-btn');
         const exportCsvBtn = document.getElementById('export-csv-btn');
         const quoteRefreshBtn = document.getElementById('quote-refresh-btn');
-        const refreshCountDisplay = document.getElementById('refresh-count');
         const logsList = document.getElementById('logs-list');
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
         const currencySelect = document.getElementById('currency-select');
         const userIdDisplay = document.getElementById('user-id-display');
+        const exportListJsonBtn = document.getElementById('export-list-json-btn');
+        const exportListCsvBtn = document.getElementById('export-list-csv-btn');
 
 
         let currentChartInstance = null;
@@ -424,7 +425,7 @@
                     lastUpdated: Date.now()
                 });
                 username = newUsername;
-                usernameDisplay.textContent = username;
+                usernameDisplay.textContent = newUsername;
                 hideModal(usernameModal);
                 showMessage("Success", `Username "${newUsername}" saved successfully!`);
                 addLog(`Username changed to "${newUsername}"`);
@@ -433,11 +434,15 @@
                 showMessage("Error", "Failed to save username. Please try again.", true);
             }
         };
-        
+
         const saveCurrency = async (newCurrency) => {
             if (!userId) return;
             try {
-                await setDoc(userSettingsDocRef, { currency: newCurrency }, { merge: true });
+                await setDoc(userSettingsDocRef, {
+                    currency: newCurrency
+                }, {
+                    merge: true
+                });
                 showMessage("Success", `Currency set to ${newCurrency}.`);
                 addLog(`Currency changed to ${newCurrency}`);
             } catch (error) {
@@ -516,7 +521,7 @@
                 showMessage("Error", "Could not change user. Please try again.", true);
             }
         };
-        
+
         const addLog = async (action) => {
             if (!userId) return;
             const logData = {
@@ -525,7 +530,7 @@
             };
             try {
                 if (logsCollectionRef) {
-                     await addDoc(logsCollectionRef, logData);
+                    await addDoc(logsCollectionRef, logData);
                 }
             } catch (error) {
                 console.error("Error adding log:", error);
@@ -570,7 +575,7 @@
                 source: "Lao Tzu"
             }];
             const quotePrompt = "Give a short, inspiring quote on a topic from: movies, music, culture, poetry, art, science, stoicism, finance, facts, or puns. Provide a brief one-sentence quote.";
-            
+
             if (quoteRefreshCount < MAX_QUOTE_REFRESHES) {
                 try {
                     const chatHistory = [{
@@ -599,7 +604,6 @@
                         const text = result.candidates[0].content.parts[0].text;
                         quoteText.textContent = text.replace(/["“”„‟‘’‚‛‹›«»「」『』【】《》〈〉《》「」『』】]/g, '');
                         quoteRefreshCount++;
-                        refreshCountDisplay.textContent = `Refreshes left: ${MAX_QUOTE_REFRESHES - quoteRefreshCount}`;
                         addLog("Quote refreshed.");
                     } else {
                         const randomQuote = staticQuotes[Math.floor(Math.random() * staticQuotes.length)];
@@ -656,15 +660,15 @@
         const getAiBudgetSuggestion = () => {
             const randomIndex = Math.floor(Math.random() * aiBudgetSuggestions.length);
             const suggestionText = aiBudgetSuggestions[randomIndex];
-            
+
             const suggestionContainer = document.getElementById('budget-suggestions-container');
             suggestionContainer.innerHTML = ''; // Clear previous suggestions
-            
+
             const aiMessageDiv = document.createElement('div');
             aiMessageDiv.className = 'text-left my-2';
             aiMessageDiv.innerHTML = `<span class="inline-block bg-slate-700 text-slate-200 rounded-lg p-3 max-w-sm">${suggestionText}</span>`;
             suggestionContainer.appendChild(aiMessageDiv);
-            
+
             addLog("Received AI budget suggestion.");
         };
 
@@ -812,17 +816,17 @@
                 recurringOptionsContainer.classList.add('hidden');
             }
         };
-        
+
         const exportData = (format) => {
             const selectedMonth = monthFilterSelect.value;
             const selectedYear = yearFilterSelect.value;
-            
+
             const filteredExpenses = allExpenses.filter(expense => {
                 const date = new Date(expense.timestamp);
                 const expenseMonth = date.getMonth().toString();
                 const expenseYear = date.getFullYear().toString();
                 return (selectedMonth === 'all' || expenseMonth === selectedMonth) &&
-                       (selectedYear === 'all' || expenseYear === selectedYear);
+                    (selectedYear === 'all' || expenseYear === selectedYear);
             });
 
             let dataStr;
@@ -856,13 +860,19 @@
             a.remove();
             addLog(`Exported expenses to ${format.toUpperCase()} format.`);
         };
-        
+
         const updateCurrencySymbol = (newCurrency) => {
             currency = newCurrency;
-            switch(newCurrency) {
-                case 'INR': currencySymbol = '₹'; break;
-                case 'USD': currencySymbol = '$'; break;
-                case 'EUR': currencySymbol = '€'; break;
+            switch (newCurrency) {
+                case 'INR':
+                    currencySymbol = '₹';
+                    break;
+                case 'USD':
+                    currencySymbol = '$';
+                    break;
+                case 'EUR':
+                    currencySymbol = '€';
+                    break;
             }
             // Re-render UI with new currency symbol
             const total = allExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -874,7 +884,6 @@
         window.addEventListener('DOMContentLoaded', () => {
             // Initial quote load
             getDynamicQuote();
-            refreshCountDisplay.textContent = `Refreshes left: ${MAX_QUOTE_REFRESHES}`;
             // Set up main tabs
             tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -918,11 +927,14 @@
                 });
 
                 // Listen for logs changes
-                 onSnapshot(logsCollectionRef, (snapshot) => {
-                     const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                     renderLogs(logs);
-                 });
-                 
+                onSnapshot(logsCollectionRef, (snapshot) => {
+                    const logs = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    renderLogs(logs);
+                });
+
                 // Listen for expense changes
                 onSnapshot(expensesCollectionRef, (snapshot) => {
                     allExpenses = snapshot.docs.map(doc => ({
@@ -999,10 +1011,14 @@
                 renderChart(btn.dataset.chartType, allExpenses);
             });
         });
-        
+
         exportJsonBtn.addEventListener('click', () => exportData('json'));
         exportCsvBtn.addEventListener('click', () => exportData('csv'));
-        
+
+        exportListJsonBtn.addEventListener('click', () => exportData('json'));
+        exportListCsvBtn.addEventListener('click', () => exportData('csv'));
+
+
         currencySelect.addEventListener('change', (e) => {
             saveCurrency(e.target.value);
         });
@@ -1022,7 +1038,9 @@
         <div class="flex justify-between items-center">
             <h4 id="message-title" class="font-bold text-lg"></h4>
             <button id="close-message-btn" class="text-slate-400 hover:text-white transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
             </button>
         </div>
         <p id="message-text" class="mt-2"></p>
@@ -1046,7 +1064,17 @@
 
     <header class="bg-slate-800 text-white shadow-lg py-4 px-6 md:px-12 flex flex-col md:flex-row justify-between items-center sticky top-0 z-30 border-b border-slate-700">
         <div class="flex items-center mb-4 md:mb-0">
-            <svg class="w-8 h-8 text-amber-500 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+            <!-- New SVG Logo -->
+            <svg class="w-8 h-8 mr-3" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="purpleGoldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:rgb(139, 92, 246);stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:rgb(251, 191, 36);stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <path d="M25 5C14.507 5 6.096 12.825 5.05 23.013c-.22 2.115.021 4.254.717 6.294 1.25 3.73 3.65 6.88 6.643 9.387 2.653 2.19 5.86 3.757 9.215 4.549 2.16.5 4.41.442 6.66-.179 2.457-.68 4.795-1.92 6.78-3.663a19.78 19.78 0 005.15-5.918c1.39-2.915 2.12-6.19 2.05-9.52C42.27 15.655 34.62 5 25 5zM25 15c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10-4.477-10-10-10z" fill="url(#purpleGoldGradient)" />
+                <path d="M25 20c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5z" fill="#FBBF24" />
+            </svg>
             <h1 class="text-3xl font-extrabold text-amber-500">Āvarta</h1>
             <span class="text-sm font-medium text-slate-400 ml-2">Finance Flow</span>
         </div>
@@ -1131,7 +1159,7 @@
                         <button type="submit" class="w-full px-4 py-3 bg-amber-500 text-slate-900 font-bold rounded-lg shadow-md transition-colors duration-200 hover:bg-amber-400">Add Expense</button>
                     </form>
                 </div>
-                
+
                 <!-- Budgeting Section -->
                 <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
                     <h3 class="text-xl font-bold text-slate-300 mb-4">Budgeting</h3>
@@ -1176,13 +1204,13 @@
                                     <button id="quote-refresh-btn" class="text-amber-500 hover:text-amber-400 transition-colors duration-200 text-3xl">
                                         &#x21bb;
                                     </button>
-                                    <span id="refresh-count" class="text-xs text-slate-400 mt-1"></span>
+                                    <span id="refresh-count" class="text-xs text-slate-400 mt-1 hidden"></span>
                                 </div>
                             </div>
                         </div>
                         <div class="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
                             <h3 class="text-xl font-bold text-slate-300 mb-4">Expenses List</h3>
-                            <div class="flex justify-between items-center mb-4">
+                            <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4 space-y-2 md:space-y-0">
                                 <div class="flex space-x-2">
                                     <select id="month-filter" class="bg-slate-700 text-slate-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
                                         <option value="all">All Months</option>
@@ -1202,6 +1230,10 @@
                                     <select id="year-filter" class="bg-slate-700 text-slate-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
                                         <option value="all">All Years</option>
                                     </select>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="export-list-json-btn" class="px-4 py-2 bg-slate-700 text-slate-300 font-medium rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600">Export JSON</button>
+                                    <button id="export-list-csv-btn" class="px-4 py-2 bg-slate-700 text-slate-300 font-medium rounded-lg shadow-md transition-colors duration-200 hover:bg-slate-600">Export CSV</button>
                                 </div>
                             </div>
                             <ul id="expenses-list">
