@@ -4,499 +4,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Āvarta: Finance Flow</title>
+    <title>svasti: finance flow</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js CDN -->
+    <!-- Chart.js for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        /* Custom styles for a dark theme and scrollbars */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        /* Modern, clean font for readability */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap');
+        /* Retro font for the main logo only */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
 
+        .logo {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* Styling for the main theme */
+        .theme-light {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .theme-light .card {
+            background-color: #ffffff;
+            border-color: #e9ecef;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .theme-light .form-input,
+        .theme-light .form-select {
+            background-color: #f1f3f5;
+            border-color: #ced4da;
+            color: #212529;
+        }
+
+        .theme-dark {
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+
+        .theme-dark .card {
+            background-color: #2d3748;
+            border-color: #4a5568;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12);
+        }
+
+        .theme-dark .form-input,
+        .theme-dark .form-select {
+            background-color: #4a5568;
+            border-color: #616e7f;
+            color: #e2e8f0;
+        }
+
+        /* General scrollbar styling */
         .scroll-container::-webkit-scrollbar {
             width: 8px;
         }
 
         .scroll-container::-webkit-scrollbar-track {
-            background: #0f172a;
+            background: #e9ecef;
         }
 
         .scroll-container::-webkit-scrollbar-thumb {
-            background-color: #334155;
+            background-color: #adb5bd;
             border-radius: 4px;
         }
 
         .scroll-container::-webkit-scrollbar-thumb:hover {
-            background-color: #475569;
+            background-color: #868e96;
         }
 
-        /* Toggle switch styling */
+        .theme-dark .scroll-container::-webkit-scrollbar-track {
+            background: #2d3748;
+        }
+
+        .theme-dark .scroll-container::-webkit-scrollbar-thumb {
+            background-color: #4a5568;
+        }
+
+        .theme-dark .scroll-container::-webkit-scrollbar-thumb:hover {
+            background-color: #616e7f;
+        }
+
+        .toggle-switch-label {
+            position: relative;
+            cursor: pointer;
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 13px;
+            display: inline-block;
+            transition: background-color 0.2s;
+        }
+
         .toggle-switch-label::before {
             content: '';
             position: absolute;
             top: 2px;
             left: 2px;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             background-color: #fff;
             border-radius: 50%;
             transition: transform 0.2s ease-in-out;
         }
 
-        .toggle-switch-checkbox:checked+.toggle-switch-label::before {
-            transform: translateX(20px);
-        }
-
         .toggle-switch-checkbox:checked+.toggle-switch-label {
-            background-color: #34d399;
+            background-color: #2d3748;
         }
 
-        /* Tab button styling */
-        .tab-btn.active {
-            background-color: #34d399;
-            color: #0c4a6e;
-            font-weight: 700;
+        .toggle-switch-checkbox:checked+.toggle-switch-label::before {
+            transform: translateX(24px);
         }
 
-        /* General button styling */
-        .btn {
-            @apply transition-colors duration-200;
+        .progress-bar-container {
+            height: 8px;
+            background-color: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
         }
 
-        /* Refined button styles for a more engaging look */
-        .btn-primary {
-            @apply bg-emerald-400 text-slate-900 font-bold py-3 px-4 rounded-xl transition-all duration-200 drop-shadow-lg;
-            transform: translateY(0);
+        .progress-bar {
+            height: 100%;
+            background-color: #3b82f6;
+            transition: width 0.3s ease-in-out;
         }
 
-        .btn-primary:hover {
-            @apply bg-emerald-300;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 14px rgba(52, 211, 153, 0.4);
-        }
-
-        .btn-primary:active {
-            @apply bg-emerald-500;
-            transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(52, 211, 153, 0.2);
-        }
-
-        .btn-secondary {
-            @apply bg-slate-700 text-slate-300 rounded-lg px-4 py-2 hover:bg-slate-600 transition-colors duration-200;
-        }
-
-        .btn-danger {
-            @apply bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-500 transition-colors duration-200;
-        }
-
-        /* Loading spinner animation */
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        .animate-spin-slow {
-            animation: spin 2s linear infinite;
+        .theme-dark .progress-bar-container {
+            background-color: #4a5568;
         }
     </style>
 </head>
 
-<body class="bg-slate-900 text-slate-200">
-    <div class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-slate-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-4xl border border-slate-700 relative">
-            <!-- Logo and Header -->
-            <header class="flex items-center justify-between mb-6 pb-4 border-b-2 border-emerald-600">
-                <div class="flex items-center space-x-4">
-                    <div class="flex flex-col items-center">
-                        <svg class="h-10 w-10 text-emerald-400" fill="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                        </svg>
-                        <h1 class="text-3xl font-extrabold tracking-tight text-emerald-400 mt-2">Āvarta</h1>
-                        <p class="text-sm text-slate-400">Finance Flow</p>
+<body class="theme-light min-h-screen">
+
+    <!-- Loading/Confirmation Screen -->
+    <div id="loading-screen" class="fixed inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-50">
+        <div class="text-center transition-opacity duration-500 ease-in-out">
+            <div class="logo text-4xl mb-4 text-blue-600 dark:text-blue-400">svasti</div>
+            <p id="loading-message" class="text-gray-600 dark:text-gray-400">Initializing your finance flow...</p>
+        </div>
+    </div>
+
+    <div id="app" class="p-4 hidden">
+        <header class="w-full max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center py-6 px-4 md:px-8 mb-6 card rounded-2xl border">
+            <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                <h1 class="logo text-4xl text-blue-600 dark:text-blue-400">svasti</h1>
+                <span class="text-sm font-light text-gray-500 dark:text-gray-400">finance flow</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm font-medium">Dark Mode</span>
+                    <div class="relative inline-block align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="dark-mode-toggle" class="toggle-switch-checkbox absolute opacity-0 w-0 h-0" />
+                        <label for="dark-mode-toggle" class="toggle-switch-label"></label>
                     </div>
                 </div>
-                <div class="text-right">
-                    <p class="text-xs text-slate-400">Welcome,</p>
-                    <p id="username-display" class="font-bold text-emerald-300">Loading...</p>
-                    <button id="change-user-btn"
-                        class="text-xs text-emerald-500 hover:text-emerald-400 transition-colors duration-200 mt-1">
-                        Start New Session
-                    </button>
-                    <button id="delete-account-btn"
-                        class="text-xs text-red-500 hover:text-red-400 transition-colors duration-200 ml-2 mt-1">
-                        Delete Account
-                    </button>
-                </div>
-            </header>
+            </div>
+        </header>
 
-            <!-- Main Content Area -->
-            <main>
-                <!-- Tab Navigation -->
-                <div class="flex justify-center mb-6 space-x-4">
-                    <button class="tab-btn px-4 py-2 rounded-full transition-all duration-200 bg-slate-700 text-slate-300 hover:bg-slate-600"
-                        data-tab-id="dashboard-tab">
-                        Dashboard
-                    </button>
-                    <button class="tab-btn px-4 py-2 rounded-full transition-all duration-200 bg-slate-700 text-slate-300 hover:bg-slate-600"
-                        data-tab-id="analytics-tab">
-                        Analytics
-                    </button>
-                </div>
+        <main class="w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                <!-- Dashboard Tab Content -->
-                <div id="dashboard-tab" class="tab-content">
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <!-- Left Column: Expenses, Budget, Quotes -->
-                        <div>
-                            <!-- Expenses & Budget -->
-                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700 mb-6">
-                                <h2 class="text-2xl font-bold text-emerald-300 mb-4">Financial Overview</h2>
-                                <!-- Expense Form -->
-                                <form id="expense-form" class="space-y-4">
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <input type="text" id="expense-name"
-                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                                            placeholder="Expense Name" required>
-                                        <input type="number" id="expense-amount"
-                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                                            placeholder="Amount" step="0.01" required>
-                                    </div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <select id="expense-category"
-                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 focus:outline-none focus:border-emerald-500">
-                                            <option value="Food">Food</option>
-                                            <option value="Shopping">Shopping</option>
-                                            <option value="Bills">Bills</option>
-                                            <option value="Transport">Transport</option>
-                                            <option value="Entertainment">Entertainment</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                        <input type="date" id="expense-date"
-                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 focus:outline-none focus:border-emerald-500">
-                                    </div>
-                                    <!-- Recurring Toggle and Options -->
-                                    <div class="flex items-center space-x-3 mt-4">
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" id="recurring-checkbox" value=""
-                                                class="sr-only peer toggle-switch-checkbox">
-                                            <div id="recurring-toggle-label"
-                                                class="w-11 h-6 bg-slate-600 rounded-full peer peer-checked:bg-emerald-500 transition-colors duration-200 toggle-switch-label">
-                                            </div>
-                                            <span class="ml-3 text-sm font-medium text-slate-300">
-                                                Recurring Expense
-                                            </span>
-                                        </label>
-                                    </div>
-                                    <div id="recurring-options-container"
-                                        class="hidden mt-4 bg-slate-700 p-4 rounded-lg">
-                                        <p class="text-sm font-medium text-slate-300 mb-2">Recurrence Frequency</p>
-                                        <div class="flex space-x-4 mb-4">
-                                            <div class="flex items-center">
-                                                <input id="weekly-radio" type="radio" name="recurrence-freq"
-                                                    value="weekly" class="text-emerald-500">
-                                                <label for="weekly-radio" class="ml-2 text-sm text-slate-300">
-                                                    Weekly
-                                                </label>
-                                            </div>
-                                            <div class="flex items-center">
-                                                <input id="monthly-radio" type="radio" name="recurrence-freq"
-                                                    value="monthly" checked class="text-emerald-500">
-                                                <label for="monthly-radio" class="ml-2 text-sm text-slate-300">
-                                                    Monthly
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <!-- Weekly days selector -->
-                                        <div id="weekly-days-container" class="hidden">
-                                            <p class="text-sm font-medium text-slate-300 mb-2">Select Days of the Week</p>
-                                            <div class="grid grid-cols-7 gap-1">
-                                                <div class="flex flex-col items-center">
-                                                    <input type="checkbox" id="day-mon" class="day-checkbox hidden" value="Mon">
-                                                    <label for="day-mon" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">M</label>
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <input type="checkbox" id="day-tue" class="day-checkbox hidden" value="Tue">
-                                                    <label for="day-tue" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">T</label>
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <input type="checkbox" id="day-wed" class="day-checkbox hidden" value="Wed">
-                                                    <label for="day-wed" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">W</label>
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <input type="checkbox" id="day-thu" class="day-checkbox hidden" value="Thu">
-                                                    <label for="day-thu" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">T</label>
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <input type="checkbox" id="day-fri" class="day-checkbox hidden" value="Fri">
-                                                    <label for="day-fri" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">F</label>
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <input type="checkbox" id="day-sat" class="day-checkbox hidden" value="Sat">
-                                                    <label for="day-sat" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">S</label>
-                                                </div>
-                                                <div class="flex flex-col items-center">
-                                                    <input type="checkbox" id="day-sun" class="day-checkbox hidden" value="Sun">
-                                                    <label for="day-sun" class="day-label bg-slate-600 text-slate-200 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-emerald-500 transition-colors duration-200">S</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn-primary w-full">
-                                        Add Expense
-                                    </button>
-                                </form>
-
-                                <!-- Budgeting Section -->
-                                <div class="mt-8">
-                                    <h3 class="text-xl font-bold text-emerald-400 mb-2">Monthly Budget</h3>
-                                    <div class="bg-slate-700 p-4 rounded-lg drop-shadow-lg flex items-center justify-between mb-4">
-                                        <div>
-                                            <p class="text-sm text-slate-400">Total Expenses</p>
-                                            <p id="total-expenses" class="text-2xl font-extrabold text-white">0</p>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-sm text-slate-400">Remaining Budget</p>
-                                            <p id="remaining-budget" class="text-2xl font-extrabold text-white">0</p>
-                                        </div>
-                                    </div>
-                                    <div class="w-full bg-slate-700 rounded-full h-2.5">
-                                        <div id="budget-progress"
-                                            class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300"
-                                            style="width: 0%;"></div>
-                                    </div>
-
-                                    <form id="budget-form" class="mt-4 flex space-x-2">
-                                        <input type="number" id="budget-input"
-                                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                                            placeholder="Set Monthly Budget" step="0.01">
-                                        <button type="submit" class="btn-primary">
-                                            Set
-                                        </button>
-                                    </form>
-
-                                    <!-- AI Budget Suggestion Button -->
-                                    <button id="ai-budget-suggestion-btn"
-                                        class="mt-4 w-full btn-secondary flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2"
-                                            viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                                        </svg>
-                                        Get AI Budget Suggestion
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Dynamic Quote Section -->
-                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700">
-                                <h3 class="text-xl font-bold text-emerald-400 mb-2">Quote of the Day</h3>
-                                <div class="flex items-center">
-                                    <p id="dynamic-quote" class="italic text-slate-400 leading-relaxed">
-                                        <span class="inline-flex items-center">
-                                            <svg class="animate-spin-slow h-5 w-5 text-slate-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Loading quote...
-                                        </span>
-                                    </p>
-                                    <button id="quote-refresh-btn"
-                                        class="ml-4 p-2 bg-slate-700 text-emerald-500 rounded-full hover:bg-slate-600 transition-colors duration-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
-                                            fill="currentColor">
-                                            <path fill-rule="evenodd"
-                                                d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0116 3.898A1 1 0 0120 11a1 1 0 01-1-1 5.002 5.002 0 00-5-5H7.101A7.002 7.002 0 0115 14.899V17a1 1 0 11-2 0v-2.101A7.002 7.002 0 013 10a1 1 0 01-1-1 1 1 0 011-1h.101A7.002 7.002 0 0113 4.101V2a1 1 0 011-1z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
+            <!-- Expense Form -->
+            <div class="lg:col-span-1 card p-6 rounded-2xl border">
+                <h2 class="text-2xl font-semibold mb-4">Add New Expense</h2>
+                <form id="add-expense-form" class="space-y-4">
+                    <div>
+                        <label for="expense-name" class="block text-sm font-medium mb-1">Expense Name</label>
+                        <input type="text" id="expense-name" placeholder="e.g., Groceries" required class="form-input w-full p-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="expense-amount" class="block text-sm font-medium mb-1">Amount</label>
+                        <div class="relative">
+                            <span id="currency-symbol" class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
+                            <input type="number" id="expense-amount" placeholder="0.00" step="0.01" required min="0" class="form-input w-full pl-8 pr-2 p-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none">
                         </div>
+                    </div>
+                    <div>
+                        <label for="expense-category" class="block text-sm font-medium mb-1">Category</label>
+                        <select id="expense-category" required class="form-select w-full p-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none">
+                            <option value="Food">🍔 Food</option>
+                            <option value="Groceries">🛒 Groceries</option>
+                            <option value="Shopping">🛍️ Shopping</option>
+                            <option value="Transportation">🚗 Transportation</option>
+                            <option value="Housing">🏠 Housing</option>
+                            <option value="Entertainment">🎬 Entertainment</option>
+                            <option value="Health">🏥 Health</option>
+                            <option value="Education">🎓 Education</option>
+                            <option value="Subscriptions">💳 Subscriptions</option>
+                            <option value="Bills">🧾 Bills</option>
+                            <option value="Other">❓ Other</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Add Expense</button>
+                </form>
+            </div>
 
-                        <!-- Right Column: Expense List -->
-                        <div>
-                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-2xl font-bold text-emerald-300">Expenses</h3>
-                                    <div class="flex space-x-2">
-                                        <div class="flex items-center space-x-2">
-                                            <select id="month-filter"
-                                                class="bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-2 text-sm focus:outline-none focus:border-emerald-500">
-                                                <option value="all">All Months</option>
-                                            </select>
-                                            <select id="year-filter"
-                                                class="bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-2 text-sm focus:outline-none focus:border-emerald-500">
-                                                <option value="all">All Years</option>
-                                            </select>
-                                            <select id="currency-select"
-                                                class="bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-2 text-sm focus:outline-none focus:border-emerald-500">
-                                                <option value="INR">INR (₹)</option>
-                                                <option value="USD">USD ($)</option>
-                                                <option value="EUR">EUR (€)</option>
-                                                <option value="GBP">GBP (£)</option>
-                                                <option value="JPY">JPY (¥)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex justify-end mb-4">
-                                    <div class="flex items-center">
-                                        <span class="text-sm text-slate-400 mr-2">Export Monthly Expenses:</span>
-                                        <button id="export-list-json-btn" class="btn-secondary">
-                                            JSON
-                                        </button>
-                                        <button id="export-list-csv-btn" class="btn-secondary ml-2">
-                                            CSV
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="h-96 overflow-y-auto scroll-container">
-                                    <ul id="expenses-list" class="space-y-4">
-                                        <!-- Expenses will be dynamically added here -->
-                                        <div id="loading-expenses" class="text-center text-slate-500 mt-8 hidden">
-                                            <svg class="animate-spin-slow h-8 w-8 text-slate-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                        </div>
-                                    </ul>
-                                </div>
-                            </div>
+            <!-- Expense List & Summary -->
+            <div class="lg:col-span-2 card p-6 rounded-2xl border flex flex-col">
+                <div class="flex justify-between items-center mb-4 flex-wrap">
+                    <h2 class="text-2xl font-semibold">Expenses</h2>
+                    <div class="flex items-center space-x-4 mt-2 md:mt-0">
+                        <div class="flex items-center space-x-2">
+                            <label for="currency-select" class="text-sm font-medium">Currency:</label>
+                            <select id="currency-select" class="form-select p-1 rounded-md border text-sm">
+                                <option value="INR">INR (₹)</option>
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                            </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Analytics Tab Content -->
-                <div id="analytics-tab" class="tab-content hidden">
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <!-- Charts Section -->
-                        <div>
-                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700 mb-6">
-                                <h3 class="text-2xl font-bold text-emerald-300 mb-4">Analytics</h3>
-                                <div class="flex justify-center mb-4 space-x-2">
-                                    <button
-                                        class="chart-btn btn-secondary active bg-slate-700 text-slate-300 rounded-lg px-4 py-2 hover:bg-slate-600"
-                                        data-chart-type="category">Category</button>
-                                    <button
-                                        class="chart-btn btn-secondary bg-slate-700 text-slate-300 rounded-lg px-4 py-2 hover:bg-slate-600"
-                                        data-chart-type="monthly">Monthly</button>
-                                    <button
-                                        class="chart-btn btn-secondary bg-slate-700 text-slate-300 rounded-lg px-4 py-2 hover:bg-slate-600"
-                                        data-chart-type="daily">Daily</button>
-                                </div>
-                                <div class="relative h-96">
-                                    <canvas id="main-chart-canvas"></canvas>
-                                    <p id="chart-title"
-                                        class="absolute top-4 left-1/2 -translate-x-1/2 text-lg font-semibold text-emerald-400">
-                                        Category Breakdown</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Logs Section -->
-                        <div>
-                            <div class="bg-slate-900 p-6 rounded-xl drop-shadow-2xl border border-slate-700">
-                                <h3 class="text-2xl font-bold text-emerald-300 mb-4">User Logs</h3>
-                                <p class="text-xs text-slate-500 mb-4">User ID: <span id="user-id-display"
-                                        class="font-mono text-emerald-300">Loading...</span></p>
-                                <div class="h-96 overflow-y-auto scroll-container">
-                                    <ul id="logs-list" class="space-y-2">
-                                        <!-- Logs will be dynamically added here -->
-                                    </ul>
-                                </div>
-                            </div>
+                <!-- Budget & Summary Section -->
+                <div id="expense-summary" class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg border dark:border-gray-600 mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-lg font-medium">Total Expenses:</span>
+                        <span id="total-expenses" class="text-2xl font-bold text-red-500">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="budget-input" class="text-lg font-medium">Monthly Budget:</label>
+                        <div class="relative w-1/2">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500" id="budget-currency-symbol">₹</span>
+                            <input type="number" id="budget-input" placeholder="0.00" min="0" class="form-input w-full pl-8 pr-2 p-2 border rounded-lg text-right focus:ring focus:ring-blue-200 focus:outline-none" />
                         </div>
                     </div>
+                    <p id="budget-status" class="text-sm text-gray-500 dark:text-gray-400 mb-2">Remaining: <span id="budget-remaining">₹0.00</span></p>
+                    <div class="progress-bar-container">
+                        <div id="budget-progress" class="progress-bar rounded-full" style="width: 0%;"></div>
+                    </div>
                 </div>
-            </main>
 
-            <!-- Modals and Alerts -->
-
-            <!-- Username Login Modal -->
-            <div id="username-login-modal"
-                class="absolute inset-0 flex items-center justify-center bg-slate-900 bg-opacity-75 backdrop-blur-md hidden z-50">
-                <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-96 border border-slate-700">
-                    <h2 class="text-3xl font-bold text-emerald-500 mb-4">Welcome</h2>
-                    <p class="text-slate-300 mb-6">Enter a username to get started. Your data will be saved securely.
-                    </p>
-                    <form id="username-login-form">
-                        <input type="text" id="username-login-input"
-                            class="w-full bg-slate-700 text-slate-200 border border-slate-600 rounded-lg p-3 placeholder-slate-400 focus:outline-none focus:border-emerald-500 mb-4"
-                            placeholder="Your Name or Nickname" required>
-                        <button type="submit" class="btn-primary w-full">
-                            Start Tracking
-                        </button>
-                    </form>
+                <div class="flex-grow flex flex-col">
+                    <div class="mb-4">
+                        <input type="text" id="expense-filter" placeholder="Filter expenses..." class="form-input w-full p-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none">
+                    </div>
+                    <div class="flex-grow scroll-container overflow-y-auto pr-2">
+                        <table id="expense-table" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Expense
+                                    </th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Amount
+                                    </th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="expense-list-table-body" class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                                <!-- Expense rows will be dynamically added here -->
+                            </tbody>
+                        </table>
+                        <p id="no-expenses-message" class="text-center text-gray-500 dark:text-gray-400 py-4 hidden">No expenses added yet.</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Message Box -->
-            <div id="message-box"
-                class="fixed bottom-4 right-4 bg-slate-800 text-slate-200 p-4 rounded-lg shadow-xl border border-slate-700 z-50 transition-transform transform translate-x-full hidden">
-                <div class="flex justify-between items-center mb-2">
-                    <h4 id="message-title" class="font-bold">Title</h4>
-                    <button id="close-message-btn" class="text-slate-400 hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
-                            fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                clip-rule="evenodd" />
+            <!-- Chart and Data Management -->
+            <div class="lg:col-span-3 card p-6 rounded-2xl border">
+                <div class="flex justify-between items-center mb-4 flex-wrap">
+                    <h2 class="text-2xl font-semibold">Insights</h2>
+                    <div class="flex space-x-2 mt-2 md:mt-0">
+                        <button data-chart-type="pie" class="chart-btn active p-2 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors">Pie Chart</button>
+                        <button data-chart-type="bar" class="chart-btn p-2 rounded-lg bg-gray-200 text-gray-800 font-semibold text-sm hover:bg-gray-300 transition-colors dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Bar Chart</button>
+                    </div>
+                </div>
+                <div class="chart-container relative h-80 mb-4 bg-gray-100 dark:bg-gray-700 p-4 rounded-lg border dark:border-gray-600">
+                    <canvas id="expense-chart"></canvas>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-xl font-semibold mb-2">Data Management</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <button id="export-json-btn" class="p-2 font-semibold text-white rounded-lg bg-green-600 hover:bg-green-700 transition-colors">Export to JSON</button>
+                        <button id="export-csv-btn" class="p-2 font-semibold text-white rounded-lg bg-purple-600 hover:bg-purple-700 transition-colors">Export to CSV</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Custom message modal -->
+        <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4">
+            <div class="card p-6 w-full max-w-sm rounded-xl border transform transition-all duration-300 scale-95 opacity-0">
+                <div class="flex justify-between items-center border-b pb-2 mb-4 border-gray-200 dark:border-gray-700">
+                    <h3 id="modal-title" class="text-xl font-bold"></h3>
+                    <button id="modal-close-btn" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
-                <p id="message-text" class="text-sm">Message content.</p>
-            </div>
-
-            <!-- Delete Confirmation Modal -->
-            <div id="delete-confirm-modal"
-                class="absolute inset-0 flex items-center justify-center bg-slate-900 bg-opacity-75 backdrop-blur-md hidden z-50">
-                <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-96 border border-slate-700">
-                    <h2 class="text-2xl font-bold text-red-500 mb-4">Confirm Deletion</h2>
-                    <p class="text-slate-300 mb-6">Are you sure you want to delete your account? This action is permanent
-                        and cannot be undone.</p>
-                    <div class="flex justify-end space-x-4">
-                        <button id="cancel-delete-btn" class="btn-secondary">
-                            Cancel
-                        </button>
-                        <button id="confirm-delete-btn" class="btn-danger">
-                            Delete Account
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI Budget Modal -->
-            <div id="ai-budget-modal"
-                class="absolute inset-0 flex items-center justify-center bg-slate-900 bg-opacity-75 backdrop-blur-md hidden z-50">
-                <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-lg border border-slate-700">
-                    <h2 class="text-2xl font-bold text-emerald-500 mb-4">AI Budget Suggestion</h2>
-                    <div id="ai-budget-content">
-                        <p class="text-slate-300">The AI will analyze your spending habits and suggest a budget.</p>
-                        <p id="ai-budget-loading" class="mt-4 text-center text-slate-500">
-                            <svg class="animate-spin-slow h-8 w-8 text-slate-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span class="mt-2 block">Analyzing your expenses...</span>
-                        </p>
-                        <p id="ai-budget-result" class="mt-4 text-slate-300 hidden"></p>
-                    </div>
-                    <div class="flex justify-end mt-6">
-                        <button id="close-ai-budget-btn" class="btn-secondary">Close</button>
-                    </div>
+                <p id="modal-message" class="text-gray-700 dark:text-gray-300 mb-4"></p>
+                <div class="flex justify-end">
+                    <button id="modal-ok-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">OK</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Firebase SDKs -->
     <script type="module">
         import {
             initializeApp
@@ -504,870 +319,675 @@
         import {
             getAuth,
             signInAnonymously,
-            onAuthStateChanged,
-            signOut
+            signInWithCustomToken,
+            onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import {
             getFirestore,
-            doc,
-            getDoc,
-            setDoc,
-            onSnapshot,
             collection,
+            doc,
             addDoc,
+            setDoc,
             deleteDoc,
-            updateDoc,
-            getDocs,
+            onSnapshot,
             query,
-            writeBatch
+            orderBy,
+            serverTimestamp,
+            getDocs,
+            getDoc
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase configuration provided by the user.
-        const firebaseConfig = {
-            apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
-            authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
-            projectId: "daily-expense-tracker-4a115",
-            storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
-            messagingSenderId: "862714037551",
-            appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
-        };
-        // The project ID is used to structure the Firestore data path.
-        const projectId = "daily-expense-tracker-4a115";
+        // Global variables for Firebase config and app ID
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        let db;
+        let auth;
+        let userId = null;
+        let currentCurrency = 'INR';
+        let currencySymbol = '₹';
+        let myChart; // Chart instance
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        // UI Element References
-        const usernameLoginModal = document.getElementById('username-login-modal');
-        const usernameLoginForm = document.getElementById('username-login-form');
-        const usernameLoginInput = document.getElementById('username-login-input');
-        const usernameDisplay = document.getElementById('username-display');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const changeUserBtn = document.getElementById('change-user-btn');
-        const deleteAccountBtn = document.getElementById('delete-account-btn');
-        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
-
-        const expenseForm = document.getElementById('expense-form');
+        // DOM elements
+        const loadingScreen = document.getElementById('loading-screen');
+        const loadingMessage = document.getElementById('loading-message');
+        const appContainer = document.getElementById('app');
+        const expenseForm = document.getElementById('add-expense-form');
         const expenseNameInput = document.getElementById('expense-name');
         const expenseAmountInput = document.getElementById('expense-amount');
         const expenseCategorySelect = document.getElementById('expense-category');
-        const expenseDateInput = document.getElementById('expense-date');
-        const expensesList = document.getElementById('expenses-list');
-        const loadingExpenses = document.getElementById('loading-expenses');
-
-        const totalExpensesEl = document.getElementById('total-expenses');
-        const remainingBudgetEl = document.getElementById('remaining-budget');
-        const budgetProgressEl = document.getElementById('budget-progress');
-        const budgetForm = document.getElementById('budget-form');
-        const budgetInput = document.getElementById('budget-input');
-        const aiBudgetSuggestionBtn = document.getElementById('ai-budget-suggestion-btn');
-        const aiBudgetModal = document.getElementById('ai-budget-modal');
-        const aiBudgetContent = document.getElementById('ai-budget-content');
-        const closeAiBudgetBtn = document.getElementById('close-ai-budget-btn');
-
-        const dynamicQuoteEl = document.getElementById('dynamic-quote');
-        const quoteRefreshBtn = document.getElementById('quote-refresh-btn');
-
-        const monthFilterSelect = document.getElementById('month-filter');
-        const yearFilterSelect = document.getElementById('year-filter');
+        const expenseTableBody = document.getElementById('expense-list-table-body');
+        const totalExpensesSpan = document.getElementById('total-expenses');
         const currencySelect = document.getElementById('currency-select');
-        const exportListJsonBtn = document.getElementById('export-list-json-btn');
-        const exportListCsvBtn = document.getElementById('export-list-csv-btn');
+        const currencySymbolSpan = document.getElementById('currency-symbol');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const modal = document.getElementById('message-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalOkBtn = document.getElementById('modal-ok-btn');
+        const chartBtns = document.querySelectorAll('.chart-btn');
+        const exportJsonBtn = document.getElementById('export-json-btn');
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        const expenseFilterInput = document.getElementById('expense-filter');
+        const noExpensesMessage = document.getElementById('no-expenses-message');
+        const budgetInput = document.getElementById('budget-input');
+        const budgetStatus = document.getElementById('budget-status');
+        const budgetRemaining = document.getElementById('budget-remaining');
+        const budgetProgress = document.getElementById('budget-progress');
+        const budgetCurrencySymbol = document.getElementById('budget-currency-symbol');
 
-        const logsList = document.getElementById('logs-list');
-
-        const recurringCheckbox = document.getElementById('recurring-checkbox');
-        const recurringOptionsContainer = document.getElementById('recurring-options-container');
-        const weeklyRadio = document.getElementById('weekly-radio');
-        const monthlyRadio = document.getElementById('monthly-radio');
-        const weeklyDaysContainer = document.getElementById('weekly-days-container');
-
-        const messageBox = document.getElementById('message-box');
-        const messageTitleEl = document.getElementById('message-title');
-        const messageTextEl = document.getElementById('message-text');
-        const closeMessageBtn = document.getElementById('close-message-btn');
-
-        // Chart elements
-        const mainChartCanvas = document.getElementById('main-chart-canvas');
-        const chartTitleEl = document.getElementById('chart-title');
-        const chartButtons = document.querySelectorAll('.chart-btn');
-
-        let myChart;
-        let userId = null;
-        let userName = null;
-        let allExpenses = [];
-        let userBudget = 0;
-        let currencySymbol = '₹';
-        let userSettingsRef = null;
-        let userExpensesRef = null;
-
-        // --- Firebase Auth State Management ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // User is signed in.
-                userId = user.uid;
-                userIdDisplay.textContent = userId;
-
-                // Reference to the user's settings and expenses in Firestore
-                const userSettingsDocRef = doc(db, 'artifacts', projectId, 'users', userId, 'user_data', 'settings');
-                userSettingsRef = userSettingsDocRef;
-                userExpensesRef = collection(db, 'artifacts', projectId, 'users', userId, 'expenses');
-
-                try {
-                    const docSnap = await getDoc(userSettingsDocRef);
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        userName = data.username || 'User';
-                        userBudget = data.budget || 0;
-                        currencySymbol = data.currency === 'USD' ? '$' : data.currency === 'EUR' ? '€' : data.currency === 'GBP' ? '£' : data.currency === 'JPY' ? '¥' : '₹';
-                        budgetInput.value = userBudget;
-                        currencySelect.value = data.currency || 'INR';
-
-                        // Update UI
-                        usernameDisplay.textContent = userName;
-                        addLog(`Welcome back, ${userName}!`);
-                    } else {
-                        // New user, show login modal to set username
-                        usernameLoginModal.classList.remove('hidden');
-                    }
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
-                    showMessage("Error", "Failed to load user data. Please try again later.", true);
-                }
-
-                // Listen to real-time updates for expenses
-                onSnapshot(userExpensesRef, (snapshot) => {
-                    allExpenses = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    renderExpenses(allExpenses);
-                    updateBudgetUI();
-                    renderChart(document.querySelector('.chart-btn.active').getAttribute('data-chart-type'), allExpenses);
-                });
-
-                // Listen to real-time updates for user settings (budget, currency)
-                onSnapshot(userSettingsDocRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        userBudget = data.budget || 0;
-                        currencySymbol = data.currency === 'USD' ? '$' : data.currency === 'EUR' ? '€' : data.currency === 'GBP' ? '£' : data.currency === 'JPY' ? '¥' : '₹';
-                        budgetInput.value = userBudget;
-                        currencySelect.value = data.currency || 'INR';
-                        updateBudgetUI();
-                        addLog(`Settings updated.`);
-                    }
-                });
-
-                // Load initial quote
-                fetchQuote();
-            } else {
-                // User is signed out. Show the login modal.
-                usernameDisplay.textContent = 'Guest';
-                userIdDisplay.textContent = 'Not logged in';
-                usernameLoginModal.classList.remove('hidden');
-                addLog('Guest user detected. Please log in.');
-            }
-        });
-
-        // The custom token login method is not available on GitHub Pages,
-        // so we can always default to anonymous sign-in.
-        const startApp = async () => {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Authentication failed:", error);
-                showMessage("Authentication Error", "Could not sign in. Please refresh the page.", true);
-            }
+        // Category emoji mapping for the list items
+        const categoryEmojis = {
+            'Food': '🍔',
+            'Groceries': '🛒',
+            'Shopping': '🛍️',
+            'Transportation': '�',
+            'Housing': '🏠',
+            'Entertainment': '🎬',
+            'Health': '🏥',
+            'Education': '🎓',
+            'Subscriptions': '💳',
+            'Bills': '🧾',
+            'Other': '❓'
         };
 
-        // --- Event Listeners and Functions ---
-        window.onload = startApp;
+        // Function to show custom modal messages
+        function showMessage(title, message, isError = false) {
+            modalTitle.textContent = title;
+            modalTitle.className = `text-xl font-bold ${isError ? 'text-red-500' : 'text-blue-600'}`;
+            modalMessage.textContent = message;
+            modal.querySelector('div').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('div').classList.add('scale-100', 'opacity-100');
+            modal.style.display = 'flex';
+        }
 
-        usernameLoginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newUsername = usernameLoginInput.value.trim();
-            if (!newUsername) return;
+        modalCloseBtn.addEventListener('click', () => {
+            modal.querySelector('div').classList.remove('scale-100', 'opacity-100');
+            modal.querySelector('div').classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.style.display = 'none', 300);
+        });
 
+        modalOkBtn.addEventListener('click', () => {
+            modalCloseBtn.click();
+        });
+
+        // Function to log actions
+        function addLog(message) {
+            console.log(`[LOG] ${new Date().toISOString()}: ${message}`);
+        }
+
+        // Initialize Firebase and set up authentication
+        document.addEventListener('DOMContentLoaded', async () => {
             try {
-                // Save the username and other settings for the newly created anonymous user
-                await setDoc(doc(db, 'artifacts', projectId, 'users', userId, 'user_data', 'settings'), {
-                    username: newUsername,
-                    budget: 0,
-                    currency: 'INR'
-                });
-                userName = newUsername;
-                usernameDisplay.textContent = userName;
-                usernameLoginModal.classList.add('hidden');
-                showMessage("Welcome", `Hello, ${userName}! Let's start tracking your finances.`);
-                addLog(`New user ${userName} registered.`);
-            } catch (error) {
-                console.error("Error setting username:", error);
-                showMessage("Error", "Failed to set username. Please try again.", true);
-            }
-        });
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                addLog("Firebase initialized.");
 
-        changeUserBtn.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                // Clear all UI state
-                usernameDisplay.textContent = 'Loading...';
-                userIdDisplay.textContent = 'Loading...';
-                expensesList.innerHTML = '';
-                allExpenses = [];
-                userBudget = 0;
-                totalExpensesEl.textContent = `${currencySymbol}0`;
-                remainingBudgetEl.textContent = `${currencySymbol}0`;
-                budgetProgressEl.style.width = '0%';
-                budgetInput.value = '';
-                logsList.innerHTML = '';
-                showMessage("Success", "Signed out. You can now log in with a new user.");
-                usernameLoginModal.classList.remove('hidden');
-            } catch (error) {
-                console.error("Error signing out:", error);
-                showMessage("Error", "Failed to sign out. Please try refreshing the page.", true);
-            }
-        });
+                // Use the custom token if available, otherwise sign in anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    addLog("Signed in with custom token.");
+                } else {
+                    await signInAnonymously(auth);
+                    addLog("Signed in anonymously.");
+                }
 
-        deleteAccountBtn.addEventListener('click', () => {
-            deleteConfirmModal.classList.remove('hidden');
-        });
-
-        cancelDeleteBtn.addEventListener('click', () => {
-            deleteConfirmModal.classList.add('hidden');
-        });
-
-        confirmDeleteBtn.addEventListener('click', async () => {
-            try {
-                const user = auth.currentUser;
-                if (!user) throw new Error("No user signed in.");
-
-                const batch = writeBatch(db);
-                // Delete user settings
-                batch.delete(doc(db, 'artifacts', projectId, 'users', userId, 'user_data', 'settings'));
-
-                // Delete all expenses for the user
-                const q = collection(db, 'artifacts', projectId, 'users', userId, 'expenses');
-                const querySnapshot = await getDocs(q);
-                querySnapshot.forEach((document) => {
-                    batch.delete(document.ref);
+                // Now that the auth object is initialized, we can set up the listener
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        addLog(`User authenticated with UID: ${userId}.`);
+                        setupFirestoreListeners();
+                        setTimeout(() => {
+                            loadingScreen.classList.add('opacity-0');
+                            setTimeout(() => {
+                                loadingScreen.classList.add('hidden');
+                                appContainer.classList.remove('hidden');
+                            }, 500);
+                        }, 1500);
+                    } else {
+                        addLog("User signed out.");
+                        // Handle signed out state if needed
+                    }
                 });
 
-                await batch.commit();
-
-                // Sign out and delete the user
-                await signOut(auth);
-                // You can't delete the user on the client-side unless the user has recently authenticated.
-                // It's best practice to handle this on the backend. Here we just sign them out.
-                showMessage("Success", "Your account data has been deleted.");
-                deleteConfirmModal.classList.add('hidden');
-                startApp(); // Restart the app for a new user
             } catch (error) {
-                console.error("Error deleting account:", error);
-                showMessage("Error", "Failed to delete account. Please try again.", true);
+                console.error("Error initializing Firebase:", error);
+                showMessage("Error", "Failed to initialize Firebase. Check your configuration.", true);
             }
         });
 
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                tabButtons.forEach(btn => btn.classList.remove('active', 'bg-emerald-400', 'text-slate-900'));
-                tabButtons.forEach(btn => btn.classList.add('bg-slate-700', 'text-slate-300'));
-                button.classList.add('active', 'bg-emerald-400', 'text-slate-900');
-                button.classList.remove('bg-slate-700', 'text-slate-300');
 
+        // Function to set up Firestore listeners
+        function setupFirestoreListeners() {
+            // Path is now hardcoded for a single user
+            const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+            onSnapshot(userSettingsDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const settings = docSnap.data();
+                    // Update theme
+                    if (settings.theme === 'dark') {
+                        document.body.classList.add('theme-dark');
+                        document.body.classList.remove('theme-light');
+                        darkModeToggle.checked = true;
+                    } else {
+                        document.body.classList.add('theme-light');
+                        document.body.classList.remove('theme-dark');
+                        darkModeToggle.checked = false;
+                    }
 
-                tabContents.forEach(content => content.classList.add('hidden'));
-                const targetTab = document.getElementById(button.getAttribute('data-tab-id'));
-                if (targetTab) {
-                    targetTab.classList.remove('hidden');
-                }
-            });
-        });
-        // Activate the first tab by default
-        tabButtons[0].click();
-
-        expenseForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!userId) {
-                showMessage("Error", "User not authenticated. Please log in.", true);
-                return;
-            }
-
-            const name = expenseNameInput.value.trim();
-            const amount = parseFloat(expenseAmountInput.value);
-            const category = expenseCategorySelect.value;
-            const date = expenseDateInput.value || new Date().toISOString().slice(0, 10);
-            const isRecurring = recurringCheckbox.checked;
-            const recurrenceFrequency = isRecurring ? document.querySelector('input[name="recurrence-freq"]:checked').value : null;
-            const daysOfWeek = isRecurring && recurrenceFrequency === 'weekly' ?
-                Array.from(document.querySelectorAll('.day-checkbox:checked')).map(cb => cb.value) :
-                null;
-
-            if (name && !isNaN(amount) && amount > 0) {
-                const newExpense = {
-                    name,
-                    amount,
-                    category,
-                    date,
-                    timestamp: new Date(),
-                    isRecurring,
-                    recurrenceFrequency,
-                    daysOfWeek
-                };
-
-                try {
-                    await addDoc(userExpensesRef, newExpense);
-                    addLog(`New expense added: ${name} (${currencySymbol}${amount.toFixed(2)})`);
-                    expenseForm.reset();
-                    recurringCheckbox.checked = false;
-                    recurringOptionsContainer.classList.add('hidden');
-                    document.querySelectorAll('.day-checkbox').forEach(cb => {
-                        cb.checked = false;
-                        document.querySelector(`label[for="${cb.id}"]`).classList.remove('bg-emerald-500', 'text-slate-900');
-                        document.querySelector(`label[for="${cb.id}"]`).classList.add('bg-slate-600', 'text-slate-200');
-                    });
-                } catch (error) {
-                    console.error("Error adding expense:", error);
-                    showMessage("Error", "Failed to add expense. Please try again.", true);
-                }
-            } else {
-                showMessage("Validation Error", "Please fill out all fields correctly.", true);
-            }
-        });
-
-        budgetForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newBudget = parseFloat(budgetInput.value);
-            if (!userId) {
-                showMessage("Error", "User not authenticated. Please log in.", true);
-                return;
-            }
-
-            if (!isNaN(newBudget) && newBudget >= 0) {
-                try {
-                    await setDoc(doc(db, 'artifacts', projectId, 'users', userId, 'user_data', 'settings'), {
-                        budget: newBudget
+                    // Update currency and budget
+                    if (settings.currency) {
+                        updateCurrency(settings.currency);
+                        currencySelect.value = settings.currency;
+                    }
+                    if (settings.budget) {
+                        budgetInput.value = settings.budget;
+                        updateBudgetDisplay();
+                    } else {
+                        budgetInput.value = 0;
+                        updateBudgetDisplay();
+                    }
+                } else {
+                    addLog("No user settings found. Using defaults.");
+                    // Save default settings if they don't exist
+                    setDoc(userSettingsDocRef, {
+                        currency: 'INR',
+                        theme: 'light',
+                        budget: 100000
                     }, {
                         merge: true
-                    });
-                    showMessage("Success", `Monthly budget set to ${currencySymbol}${newBudget.toFixed(2)}.`);
-                    addLog(`Monthly budget updated to ${currencySymbol}${newBudget.toFixed(2)}.`);
-                } catch (error) {
-                    console.error("Error setting budget:", error);
-                    showMessage("Error", "Failed to set budget. Please try again.", true);
+                    }).catch(err => console.error("Error saving default settings:", err));
+                    budgetInput.value = 100000;
+                    updateBudgetDisplay();
                 }
-            } else {
-                showMessage("Validation Error", "Please enter a valid budget amount.", true);
-            }
-        });
-
-        aiBudgetSuggestionBtn.addEventListener('click', async () => {
-            if (!userId) {
-                showMessage("Error", "User not authenticated. Please log in.", true);
-                return;
-            }
-            aiBudgetModal.classList.remove('hidden');
-            aiBudgetContent.querySelector('#ai-budget-loading').classList.remove('hidden');
-            aiBudgetContent.querySelector('#ai-budget-result').classList.add('hidden');
-
-            const expensesJSON = JSON.stringify(allExpenses.map(e => ({
-                name: e.name,
-                amount: e.amount,
-                category: e.category
-            })));
-
-            const prompt = `Based on the following list of recent expenses, provide a single, concise monthly budget suggestion in the format of a short paragraph. The response should start with "Based on your spending, a suggested monthly budget is..." and include the total spending and an explanation of the suggestion. Do not include any code or special formatting. The expenses are: ${expensesJSON}`;
-
-            try {
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-                let response;
-                let result;
-                let retryCount = 0;
-                const maxRetries = 5;
-                const baseDelay = 1000;
-
-                while (retryCount < maxRetries) {
-                    try {
-                        response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-
-                        if (response.status === 429) {
-                            const delay = baseDelay * Math.pow(2, retryCount);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            retryCount++;
-                            continue;
-                        }
-
-                        if (!response.ok) {
-                            throw new Error(`API error: ${response.statusText}`);
-                        }
-
-                        result = await response.json();
-                        break; // Exit the loop on success
-                    } catch (error) {
-                        console.error(`Fetch attempt ${retryCount + 1} failed:`, error);
-                        if (retryCount >= maxRetries - 1) {
-                            throw error; // Rethrow on last retry
-                        }
-                        const delay = baseDelay * Math.pow(2, retryCount);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        retryCount++;
-                    }
-                }
-
-                if (result && result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    aiBudgetContent.querySelector('#ai-budget-result').textContent = text;
-                } else {
-                    aiBudgetContent.querySelector('#ai-budget-result').textContent = "Sorry, I couldn't generate a budget suggestion at this time.";
-                }
-            } catch (error) {
-                console.error("Error fetching AI budget suggestion:", error);
-                aiBudgetContent.querySelector('#ai-budget-result').textContent = "An error occurred while fetching the suggestion.";
-            } finally {
-                aiBudgetContent.querySelector('#ai-budget-loading').classList.add('hidden');
-                aiBudgetContent.querySelector('#ai-budget-result').classList.remove('hidden');
-            }
-        });
-
-        closeAiBudgetBtn.addEventListener('click', () => {
-            aiBudgetModal.classList.add('hidden');
-        });
-
-        // --- UI Rendering Functions ---
-
-        const updateBudgetUI = () => {
-            const total = allExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-            totalExpensesEl.textContent = `${currencySymbol}${total.toFixed(2)}`;
-            const remaining = userBudget - total;
-            remainingBudgetEl.textContent = `${currencySymbol}${remaining.toFixed(2)}`;
-
-            if (userBudget > 0) {
-                const progress = Math.min(100, (total / userBudget) * 100);
-                budgetProgressEl.style.width = `${progress}%`;
-                if (progress > 80) {
-                    budgetProgressEl.classList.remove('bg-emerald-500');
-                    budgetProgressEl.classList.add('bg-red-500');
-                } else {
-                    budgetProgressEl.classList.remove('bg-red-500');
-                    budgetProgressEl.classList.add('bg-emerald-500');
-                }
-            } else {
-                budgetProgressEl.style.width = '0%';
-            }
-        };
-
-        const renderExpenses = (expenses) => {
-            expensesList.innerHTML = '';
-            if (expenses.length === 0) {
-                expensesList.innerHTML = `<li class="text-center text-slate-500 py-4">No expenses found. Add your first expense!</li>`;
-                return;
-            }
-
-            // Group expenses by date
-            const groupedExpenses = expenses.reduce((acc, expense) => {
-                const date = new Date(expense.date).toLocaleDateString();
-                if (!acc[date]) {
-                    acc[date] = [];
-                }
-                acc[date].push(expense);
-                return acc;
-            }, {});
-
-            // Render expenses by date
-            for (const date in groupedExpenses) {
-                const dateHeader = document.createElement('h4');
-                dateHeader.className = "text-md font-bold text-slate-400 mt-4 mb-2";
-                dateHeader.textContent = date;
-                expensesList.appendChild(dateHeader);
-
-                groupedExpenses[date].forEach(expense => {
-                    const li = document.createElement('li');
-                    li.className = 'bg-slate-700 p-4 rounded-xl flex items-center justify-between drop-shadow-md';
-                    
-                    let recurringInfo = '';
-                    if (expense.isRecurring) {
-                        recurringInfo += '<span class="text-xs text-emerald-300">Recurring</span>';
-                        if (expense.recurrenceFrequency === 'weekly' && expense.daysOfWeek && expense.daysOfWeek.length > 0) {
-                            recurringInfo += `<span class="text-xs text-slate-400 ml-2">(${expense.daysOfWeek.join(', ')})</span>`;
-                        } else if (expense.recurrenceFrequency === 'monthly') {
-                             recurringInfo += `<span class="text-xs text-slate-400 ml-2">(Monthly)</span>`;
-                        }
-                    }
-
-                    li.innerHTML = `
-                        <div>
-                            <p class="font-semibold text-slate-100">${expense.name}</p>
-                            <p class="text-xs text-slate-400">Category: ${expense.category}</p>
-                            ${recurringInfo}
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-xl font-bold text-emerald-300">${currencySymbol}${expense.amount.toFixed(2)}</span>
-                            <button class="delete-btn text-red-500 hover:text-red-400" data-id="${expense.id}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                    `;
-                    expensesList.appendChild(li);
-                });
-            }
-
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', async (e) => {
-                    const expenseId = e.currentTarget.getAttribute('data-id');
-                    try {
-                        await deleteDoc(doc(db, 'artifacts', projectId, 'users', userId, 'expenses', expenseId));
-                        addLog('Expense deleted.');
-                    } catch (error) {
-                        console.error("Error deleting document:", error);
-                        showMessage("Error", "Failed to delete expense.", true);
-                    }
-                });
             });
 
-            // Update month and year filters
-            const expenseDates = expenses.map(e => new Date(e.date));
-            const months = [...new Set(expenseDates.map(d => d.getMonth()))].sort();
-            const years = [...new Set(expenseDates.map(d => d.getFullYear()))].sort();
+            // Set up listener for the default currency (INR) on initial load
+            setupExpenseListener(currentCurrency);
+        }
 
-            monthFilterSelect.innerHTML = '<option value="all">All Months</option>' + months.map(m => `<option value="${m}">${new Date(2000, m, 1).toLocaleString('default', { month: 'long' })}</option>`).join('');
-            yearFilterSelect.innerHTML = '<option value="all">All Years</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
-        };
+        let unsubscribeExpenses; // Hold the unsubscribe function for the expense listener
 
-        const renderChart = (chartType, data) => {
+        function setupExpenseListener(currency) {
+            if (unsubscribeExpenses) {
+                unsubscribeExpenses(); // Unsubscribe from the previous currency listener
+            }
+
+            // Path uses the hardcoded user ID
+            const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses/${currency}/data`);
+            const q = query(expensesCollectionRef);
+            unsubscribeExpenses = onSnapshot(q, (snapshot) => {
+                const allExpenses = [];
+                snapshot.forEach(doc => {
+                    allExpenses.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                renderExpenses(allExpenses);
+                const totalExpenses = allExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+                renderBudgetUI(totalExpenses);
+                const activeChartBtn = document.querySelector('.chart-btn.active');
+                if (activeChartBtn) {
+                    renderChart(activeChartBtn.getAttribute('data-chart-type'), allExpenses);
+                }
+            });
+        }
+
+
+        // Add Expense Form Submission
+        expenseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const newExpense = {
+                name: expenseNameInput.value,
+                amount: parseFloat(expenseAmountInput.value),
+                category: expenseCategorySelect.value,
+                createdAt: serverTimestamp()
+            };
+
+            try {
+                // Path uses the authenticated user ID
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`), newExpense);
+                showMessage("Success", "Expense added successfully!");
+                expenseForm.reset();
+            } catch (error) {
+                console.error("Error adding expense:", error);
+                showMessage("Error", "Failed to add expense. Please try again.", true);
+            }
+        });
+
+        // Expense Table Renderer
+        function renderExpenses(expenses) {
+            expenseTableBody.innerHTML = '';
+            if (expenses.length === 0) {
+                noExpensesMessage.classList.remove('hidden');
+            } else {
+                noExpensesMessage.classList.add('hidden');
+                let filteredExpenses = expenses;
+                const filterText = expenseFilterInput.value.toLowerCase();
+                if (filterText) {
+                    filteredExpenses = expenses.filter(expense =>
+                        expense.name.toLowerCase().includes(filterText) ||
+                        expense.category.toLowerCase().includes(filterText)
+                    );
+                }
+
+                if (filteredExpenses.length === 0) {
+                    noExpensesMessage.classList.remove('hidden');
+                    noExpensesMessage.textContent = "No expenses match your filter.";
+                } else {
+                    noExpensesMessage.classList.add('hidden');
+                    filteredExpenses.forEach(expense => {
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                        tr.innerHTML = `
+                        <td class="px-3 py-3 whitespace-nowrap">
+                            <div class="font-medium">${expense.name}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${categoryEmojis[expense.category]} ${expense.category}</div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap font-bold text-red-500">
+                            ${currencySymbol}${expense.amount.toFixed(2)}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                            <button class="delete-btn text-gray-400 hover:text-red-500 transition-colors" data-id="${expense.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1H9a1 1 0 00-1 1v3m1-4h6"></path>
+                                </svg>
+                            </button>
+                        </td>
+                    `;
+                        expenseTableBody.appendChild(tr);
+                    });
+                }
+            }
+        }
+
+        // Filter event listener
+        expenseFilterInput.addEventListener('input', () => {
+            if (!userId) return; // Wait for user to be authenticated
+            // Path uses the authenticated user ID
+            const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`);
+            const q = query(expensesCollectionRef);
+            getDocs(q).then(snapshot => {
+                const allExpenses = [];
+                snapshot.forEach(doc => allExpenses.push({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderExpenses(allExpenses);
+            }).catch(err => console.error("Error fetching filtered expenses:", err));
+        });
+
+        // Delete Expense
+        expenseTableBody.addEventListener('click', async (e) => {
+            if (!userId) return; // Wait for user to be authenticated
+            if (e.target.closest('.delete-btn')) {
+                const button = e.target.closest('.delete-btn');
+                const expenseId = button.getAttribute('data-id');
+
+                try {
+                    // Path uses the authenticated user ID
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`, expenseId));
+                    showMessage("Success", "Expense deleted.");
+                } catch (error) {
+                    console.error("Error deleting expense:", error);
+                    showMessage("Error", "Failed to delete expense. Please try again.", true);
+                }
+            }
+        });
+
+        // Budget & UI updates
+        let totalExpenses = 0;
+        let monthlyBudget = 0;
+
+        function updateBudgetDisplay() {
+            monthlyBudget = parseFloat(budgetInput.value) || 0;
+            const remaining = monthlyBudget - totalExpenses;
+            budgetRemaining.textContent = `${currencySymbol}${remaining.toFixed(2)}`;
+
+            const progressPercentage = (totalExpenses / monthlyBudget) * 100;
+            if (monthlyBudget > 0) {
+                budgetProgress.style.width = `${Math.min(progressPercentage, 100)}%`;
+            } else {
+                budgetProgress.style.width = '0%';
+            }
+
+            if (remaining < 0) {
+                budgetProgress.style.backgroundColor = '#ef4444'; // Red for over budget
+                budgetRemaining.classList.add('text-red-500');
+                budgetRemaining.classList.remove('text-green-500');
+            } else {
+                budgetProgress.style.backgroundColor = '#3b82f6'; // Blue for on track
+                budgetRemaining.classList.add('text-green-500');
+                budgetRemaining.classList.remove('text-red-500');
+            }
+        }
+
+        function renderBudgetUI(total) {
+            totalExpenses = total;
+            totalExpensesSpan.textContent = `${currencySymbol}${total.toFixed(2)}`;
+            updateBudgetDisplay();
+        }
+
+        budgetInput.addEventListener('change', async (e) => {
+            if (!userId) return; // Wait for user to be authenticated
+            const newBudget = parseFloat(e.target.value) || 0;
+            let maxBudget = 20000;
+            if (currentCurrency === 'INR') {
+                maxBudget = 100000;
+            }
+
+            if (newBudget > maxBudget) {
+                showMessage("Warning", `Budget cannot exceed ${currencySymbol}${maxBudget.toFixed(2)} for this currency.`);
+                budgetInput.value = maxBudget;
+                monthlyBudget = maxBudget;
+            } else {
+                monthlyBudget = newBudget;
+            }
+
+            try {
+                // Path uses the authenticated user ID
+                const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+                await setDoc(userSettingsDocRef, {
+                    budget: monthlyBudget
+                }, {
+                    merge: true
+                });
+                updateBudgetDisplay();
+                showMessage("Success", `Budget updated to ${currencySymbol}${monthlyBudget.toFixed(2)}.`);
+            } catch (error) {
+                console.error("Error saving budget:", error);
+                showMessage("Error", "Failed to save budget. Please try again.", true);
+            }
+        });
+
+
+        // Chart rendering
+        function renderChart(chartType, expenses) {
             if (myChart) {
                 myChart.destroy();
             }
 
-            const chartData = getChartData(chartType, data);
-            chartTitleEl.textContent = chartData.title;
+            const chartCanvas = document.getElementById('expense-chart');
+            const ctx = chartCanvas.getContext('2d');
 
-            myChart = new Chart(mainChartCanvas, {
-                type: chartData.type,
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        label: chartData.label,
-                        data: chartData.data,
-                        backgroundColor: chartData.backgroundColor,
-                        borderColor: chartData.borderColor,
-                        borderWidth: 1,
-                        fill: chartData.fill || false,
-                        tension: chartData.tension || 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: 'rgba(255, 255, 255, 0.7)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: 'rgba(255, 255, 255, 0.7)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: chartData.type === 'doughnut',
-                            labels: {
-                                color: 'rgba(255, 255, 255, 0.9)'
-                            }
-                        }
-                    }
-                }
-            });
-        };
+            const categoryData = expenses.reduce((acc, expense) => {
+                acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+                return acc;
+            }, {});
 
-        const getChartData = (chartType, expenses) => {
-            const chartConfig = {
-                title: '',
-                type: '',
-                labels: [],
-                data: [],
-                backgroundColor: [],
-                borderColor: []
+            const data = {
+                labels: Object.keys(categoryData),
+                datasets: [{
+                    label: `Expenses in ${currentCurrency}`,
+                    data: Object.values(categoryData),
+                    backgroundColor: [
+                        '#ef4444', '#f97316', '#f59e0b', '#22c55e', '#a855f7',
+                        '#3b82f6', '#14b8a6', '#64748b', '#ec4899', '#78350f', '#e5e7eb'
+                    ],
+                    borderColor: document.body.classList.contains('theme-dark') ? '#1a202c' : '#f8f9fa',
+                    borderWidth: 1
+                }]
             };
 
-            const colors = ['#34d399', '#f87171', '#60a5fa', '#fb923c', '#a78bfa', '#fde047'];
-
-            switch (chartType) {
-                case 'category':
-                    const categoryData = expenses.reduce((acc, expense) => {
-                        acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-                        return acc;
-                    }, {});
-                    chartConfig.title = 'Category Breakdown';
-                    chartConfig.type = 'doughnut';
-                    chartConfig.labels = Object.keys(categoryData);
-                    chartConfig.data = Object.values(categoryData);
-                    chartConfig.backgroundColor = Object.keys(categoryData).map((_, i) => colors[i % colors.length]);
-                    chartConfig.borderColor = Object.keys(categoryData).map(() => '#1f2937');
-                    break;
-                case 'monthly':
-                    const monthlyData = expenses.reduce((acc, expense) => {
-                        const monthYear = new Date(expense.date).toLocaleString('default', {
-                            month: 'short',
-                            year: 'numeric'
-                        });
-                        acc[monthYear] = (acc[monthYear] || 0) + expense.amount;
-                        return acc;
-                    }, {});
-                    chartConfig.title = 'Monthly Spending';
-                    chartConfig.type = 'bar';
-                    chartConfig.labels = Object.keys(monthlyData);
-                    chartConfig.data = Object.values(monthlyData);
-                    chartConfig.backgroundColor = '#34d399';
-                    chartConfig.borderColor = '#10b981';
-                    break;
-                case 'daily':
-                    const dailyData = expenses.reduce((acc, expense) => {
-                        const date = new Date(expense.date).toLocaleDateString('en-US', {
-                            month: 'numeric',
-                            day: 'numeric'
-                        });
-                        acc[date] = (acc[date] || 0) + expense.amount;
-                        return acc;
-                    }, {});
-                    chartConfig.title = 'Daily Spending';
-                    chartConfig.type = 'line';
-                    chartConfig.labels = Object.keys(dailyData);
-                    chartConfig.data = Object.values(dailyData);
-                    chartConfig.backgroundColor = 'rgba(52, 211, 153, 0.2)';
-                    chartConfig.borderColor = '#34d399';
-                    chartConfig.fill = true;
-                    chartConfig.tension = 0.4;
-                    break;
-            }
-            return chartConfig;
-        };
-
-        chartButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                chartButtons.forEach(btn => btn.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-                renderChart(e.currentTarget.getAttribute('data-chart-type'), allExpenses);
-            });
-        });
-
-        // --- Utility Functions ---
-
-        const fetchQuote = async () => {
-            dynamicQuoteEl.innerHTML = `
-                <span class="inline-flex items-center">
-                    <svg class="animate-spin-slow h-5 w-5 text-slate-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Loading quote...
-                </span>
-            `;
-
-            const prompt = `Provide a single, short, and inspirational quote about money, finance, or saving, along with the author's name. The response should be in the format: "Quote text" - Author. Do not include any other text, code, or special formatting.`;
-            try {
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                
-                let response;
-                let result;
-                let retryCount = 0;
-                const maxRetries = 5;
-                const baseDelay = 1000;
-
-                while (retryCount < maxRetries) {
-                    try {
-                        response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-
-                        if (response.status === 429) {
-                            const delay = baseDelay * Math.pow(2, retryCount);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            retryCount++;
-                            continue;
+            const options = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: document.body.classList.contains('theme-dark') ? '#e2e8f0' : '#212529',
+                            font: {
+                                family: 'Inter',
+                                size: 12
+                            }
                         }
-
-                        if (!response.ok) {
-                            throw new Error(`API error: ${response.statusText}`);
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        display: chartType === 'bar',
+                        ticks: {
+                            color: document.body.classList.contains('theme-dark') ? '#e2e8f0' : '#212529',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            },
+                            callback: function(value) {
+                                return `${currencySymbol}${value}`;
+                            }
+                        },
+                        grid: {
+                            color: document.body.classList.contains('theme-dark') ? '#2d3748' : '#e9ecef',
                         }
-
-                        result = await response.json();
-                        break; // Exit the loop on success
-                    } catch (error) {
-                        console.error(`Fetch attempt ${retryCount + 1} failed:`, error);
-                        if (retryCount >= maxRetries - 1) {
-                            throw error; // Rethrow on last retry
+                    },
+                    x: {
+                        display: chartType === 'bar',
+                        ticks: {
+                            color: document.body.classList.contains('theme-dark') ? '#e2e8f0' : '#212529',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            }
+                        },
+                        grid: {
+                            color: document.body.classList.contains('theme-dark') ? '#2d3748' : '#e9ecef',
                         }
-                        const delay = baseDelay * Math.pow(2, retryCount);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        retryCount++;
                     }
                 }
+            };
 
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const quote = result.candidates[0].content.parts[0].text;
-                    dynamicQuoteEl.textContent = quote;
-                    addLog('Quote fetched successfully.');
-                } else {
-                    dynamicQuoteEl.textContent = `"The best investment you can make is in yourself." - Warren Buffett`;
-                    addLog('Failed to fetch quote, using fallback.');
+            if (chartType === 'pie') {
+                options.plugins.legend.labels.color = document.body.classList.contains('theme-dark') ? '#e2e8f0' : '#212529';
+            }
+
+            myChart = new Chart(ctx, {
+                type: chartType,
+                data: data,
+                options: options
+            });
+        }
+
+        chartBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (!userId) return;
+                chartBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-blue-600', 'text-white');
+                    b.classList.add('bg-gray-200', 'text-gray-800', 'dark:bg-gray-600', 'dark:text-gray-200');
+                });
+                e.target.classList.add('active', 'bg-blue-600', 'text-white');
+                e.target.classList.remove('bg-gray-200', 'text-gray-800', 'dark:bg-gray-600', 'dark:text-gray-200');
+                const chartType = e.target.getAttribute('data-chart-type');
+                // Path uses the authenticated user ID
+                const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`);
+                const q = query(expensesCollectionRef);
+                getDocs(q).then(snapshot => {
+                    const allExpenses = [];
+                    snapshot.forEach(doc => allExpenses.push(doc.data()));
+                    renderChart(chartType, allExpenses);
+                });
+            });
+        });
+
+        darkModeToggle.addEventListener('change', async (e) => {
+            if (!userId) return;
+            const theme = e.target.checked ? 'dark' : 'light';
+            document.body.classList.toggle('theme-dark', e.target.checked);
+            document.body.classList.toggle('theme-light', !e.target.checked);
+
+            if (myChart) {
+                myChart.options.plugins.legend.labels.color = e.target.checked ? '#e2e8f0' : '#212529';
+                if (myChart.options.scales.y) {
+                    myChart.options.scales.y.ticks.color = e.target.checked ? '#e2e8f0' : '#212529';
+                    myChart.options.scales.y.grid.color = e.target.checked ? '#2d3748' : '#e9ecef';
                 }
+                if (myChart.options.scales.x) {
+                    myChart.options.scales.x.ticks.color = e.target.checked ? '#e2e8f0' : '#212529';
+                    myChart.options.scales.x.grid.color = e.target.checked ? '#2d3748' : '#e9ecef';
+                }
+                myChart.data.datasets.forEach(dataset => {
+                    dataset.borderColor = e.target.checked ? '#1a202c' : '#f8f9fa';
+                });
+                myChart.update();
+            }
+
+            // Path uses the authenticated user ID
+            const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+            await setDoc(userSettingsDocRef, {
+                theme
+            }, {
+                merge: true
+            });
+        });
+
+        // Currency Update function and listener
+        const updateCurrency = async (newCurrency) => {
+            currentCurrency = newCurrency;
+            switch (newCurrency) {
+                case 'USD':
+                    currencySymbol = '$';
+                    budgetInput.max = 20000;
+                    break;
+                case 'EUR':
+                    currencySymbol = '€';
+                    budgetInput.max = 20000;
+                    break;
+                case 'INR':
+                default:
+                    currencySymbol = '₹';
+                    budgetInput.max = 100000;
+                    break;
+            }
+            currencySymbolSpan.textContent = currencySymbol;
+            budgetCurrencySymbol.textContent = currencySymbol;
+
+            if (!userId) return;
+            // Path uses the authenticated user ID
+            const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+            const docSnap = await getDoc(userSettingsDocRef);
+            let currentBudget = 0;
+            if (docSnap.exists() && docSnap.data().budget) {
+                currentBudget = docSnap.data().budget;
+            }
+
+            // If a user has a budget for the previous currency that's over the new currency's max, adjust it down
+            if(currentBudget > budgetInput.max){
+                budgetInput.value = budgetInput.max;
+                setDoc(userSettingsDocRef, { budget: parseFloat(budgetInput.max) }, { merge: true });
+            } else {
+                budgetInput.value = currentBudget;
+            }
+
+            setupExpenseListener(currentCurrency);
+        };
+
+        currencySelect.addEventListener('change', async (e) => {
+            if (!userId) return;
+            const newCurrency = e.target.value;
+            try {
+                // Path uses the authenticated user ID
+                const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+                await setDoc(userSettingsDocRef, {
+                    currency: newCurrency
+                }, {
+                    merge: true
+                });
+                updateCurrency(newCurrency);
+                showMessage("Success", `Currency updated to ${newCurrency}.`);
+                addLog(`Currency preference changed to ${newCurrency}.`);
             } catch (error) {
-                console.error("Error fetching quote:", error);
-                dynamicQuoteEl.textContent = `"The best investment you can make is in yourself." - Warren Buffett`;
-                showMessage("Quote Error", "Failed to fetch a new quote. Please try again later.", true);
-            }
-        };
-
-        quoteRefreshBtn.addEventListener('click', fetchQuote);
-
-        const addLog = (message) => {
-            const li = document.createElement('li');
-            li.className = 'text-xs text-slate-400 border-b border-slate-700 pb-1';
-            li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logsList.prepend(li);
-        };
-
-        const showMessage = (title, text, isError = false) => {
-            messageTitleEl.textContent = title;
-            messageTextEl.textContent = text;
-            messageBox.classList.remove('translate-x-full');
-            messageBox.classList.add('translate-x-0');
-            messageBox.classList.remove('hidden');
-
-            if (isError) {
-                messageBox.classList.remove('bg-slate-800');
-                messageBox.classList.add('bg-red-800');
-            } else {
-                messageBox.classList.remove('bg-red-800');
-                messageBox.classList.add('bg-slate-800');
-            }
-
-            setTimeout(() => {
-                messageBox.classList.remove('translate-x-0');
-                messageBox.classList.add('translate-x-full');
-            }, 5000);
-        };
-
-        closeMessageBtn.addEventListener('click', () => {
-            messageBox.classList.remove('translate-x-0');
-            messageBox.classList.add('translate-x-full');
-        });
-
-        // Event listener for recurring expense toggle
-        recurringCheckbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                recurringOptionsContainer.classList.remove('hidden');
-                // Check if weekly is selected by default
-                if(weeklyRadio.checked) {
-                    weeklyDaysContainer.classList.remove('hidden');
-                } else {
-                    weeklyDaysContainer.classList.add('hidden');
-                }
-            } else {
-                recurringOptionsContainer.classList.add('hidden');
-                weeklyDaysContainer.classList.add('hidden');
+                console.error("Error saving currency:", error);
+                showMessage("Error", "Failed to save currency preference. Please try again.", true);
             }
         });
 
-        // Event listener for weekly/monthly radio buttons
-        document.querySelectorAll('input[name="recurrence-freq"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if (e.target.value === 'weekly') {
-                    weeklyDaysContainer.classList.remove('hidden');
-                } else {
-                    weeklyDaysContainer.classList.add('hidden');
-                }
+
+        // --- Data Export Functions ---
+        async function fetchAllExpenses() {
+            if (!userId) return;
+            try {
+                // Path uses the authenticated user ID
+                const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`);
+                const querySnapshot = await getDocs(expensesCollectionRef);
+                const allExpenses = [];
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const createdAt = data.createdAt ? data.createdAt.toDate().toISOString() : null;
+                    allExpenses.push({
+                        id: doc.id,
+                        name: data.name,
+                        amount: data.amount,
+                        category: data.category,
+                        createdAt
+                    });
+                });
+                return allExpenses;
+            } catch (error) {
+                console.error("Error fetching expenses for export:", error);
+                showMessage("Error", "Failed to fetch data for export. Please try again.", true);
+                return null;
+            }
+        }
+
+        async function exportToJson() {
+            const expenses = await fetchAllExpenses();
+            if (!expenses) return;
+            const jsonString = JSON.stringify(expenses, null, 2);
+            const blob = new Blob([jsonString], {
+                type: 'application/json'
             });
-        });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `svasti_expenses_${currentCurrency}_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage("Success", "Expense data exported to JSON.");
+        }
 
-        // Event listener for day checkboxes
-        document.querySelectorAll('.day-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', (e) => {
-                const label = document.querySelector(`label[for="${e.target.id}"]`);
-                if (e.target.checked) {
-                    label.classList.remove('bg-slate-600', 'text-slate-200');
-                    label.classList.add('bg-emerald-500', 'text-slate-900');
-                } else {
-                    label.classList.remove('bg-emerald-500', 'text-slate-900');
-                    label.classList.add('bg-slate-600', 'text-slate-200');
-                }
-            });
-        });
-
-        // Event listeners for export buttons
-        exportListJsonBtn.addEventListener('click', () => {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allExpenses, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", `expenses_${new Date().toISOString().slice(0, 10)}.json`);
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-            showMessage("Export", "Expenses exported as JSON.", false);
-        });
-
-        exportListCsvBtn.addEventListener('click', () => {
-            if (allExpenses.length === 0) {
-                showMessage("Export Error", "No expenses to export.", true);
+        async function exportToCsv() {
+            const expenses = await fetchAllExpenses();
+            if (!expenses || expenses.length === 0) {
+                showMessage("Info", "No data to export.", false);
                 return;
             }
+            const headers = ["id", "name", "amount", "category", "createdAt"];
+            const csvRows = [headers.join(',')];
+            for (const expense of expenses) {
+                const values = headers.map(header => {
+                    const value = expense[header];
+                    const escaped = ('' + value).replace(/"/g, '""');
+                    return `"${escaped}"`;
+                });
+                csvRows.push(values.join(','));
+            }
+            const csvString = csvRows.join('\n');
+            const blob = new Blob([csvString], {
+                type: 'text/csv'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `svasti_expenses_${currentCurrency}_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage("Success", "Expense data exported to CSV.");
+        }
 
-            const header = Object.keys(allExpenses[0]).join(',');
-            const csv = allExpenses.map(row => Object.values(row).map(value => {
-                if (typeof value === 'string' && value.includes(',')) {
-                    return `"${value}"`;
-                }
-                return value;
-            }).join(','));
-
-            const csvContent = "data:text/csv;charset=utf-8," + [header, ...csv].join('\n');
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", csvContent);
-            downloadAnchorNode.setAttribute("download", `expenses_${new Date().toISOString().slice(0, 10)}.csv`);
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-            showMessage("Export", "Expenses exported as CSV.", false);
-        });
+        exportJsonBtn.addEventListener('click', exportToJson);
+        exportCsvBtn.addEventListener('click', exportToCsv);
     </script>
 </body>
-
 </html>
+�
