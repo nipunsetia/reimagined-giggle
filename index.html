@@ -26,39 +26,39 @@
 
         /* Styling for the main theme */
         .theme-light {
-            background-color: #f8f9fa;
-            color: #212529;
+            background-color: #ffffff;
+            color: #1f2937;
         }
 
         .theme-light .card {
-            background-color: #ffffff;
-            border-color: #e9ecef;
+            background-color: #f9fafb;
+            border-color: #e5e7eb;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
         .theme-light .form-input,
         .theme-light .form-select {
-            background-color: #f1f3f5;
-            border-color: #ced4da;
-            color: #212529;
+            background-color: #f3f4f6;
+            border-color: #d1d5db;
+            color: #1f2937;
         }
 
         .theme-dark {
-            background-color: #1a202c;
-            color: #e2e8f0;
+            background-color: #111827;
+            color: #e5e7eb;
         }
 
         .theme-dark .card {
-            background-color: #2d3748;
-            border-color: #4a5568;
+            background-color: #1f2937;
+            border-color: #374151;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12);
         }
 
         .theme-dark .form-input,
         .theme-dark .form-select {
-            background-color: #4a5568;
-            border-color: #616e7f;
-            color: #e2e8f0;
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #e5e7eb;
         }
 
         /* General scrollbar styling */
@@ -67,28 +67,28 @@
         }
 
         .scroll-container::-webkit-scrollbar-track {
-            background: #e9ecef;
+            background: #f3f4f6;
         }
 
         .scroll-container::-webkit-scrollbar-thumb {
-            background-color: #adb5bd;
+            background-color: #9ca3af;
             border-radius: 4px;
         }
 
         .scroll-container::-webkit-scrollbar-thumb:hover {
-            background-color: #868e96;
+            background-color: #6b7280;
         }
 
         .theme-dark .scroll-container::-webkit-scrollbar-track {
-            background: #2d3748;
+            background: #1f2937;
         }
 
         .theme-dark .scroll-container::-webkit-scrollbar-thumb {
-            background-color: #4a5568;
+            background-color: #374151;
         }
 
         .theme-dark .scroll-container::-webkit-scrollbar-thumb:hover {
-            background-color: #616e7f;
+            background-color: #4b5563;
         }
 
         .toggle-switch-label {
@@ -96,7 +96,7 @@
             cursor: pointer;
             width: 50px;
             height: 26px;
-            background: #ccc;
+            background: #d1d5db;
             border-radius: 13px;
             display: inline-block;
             transition: background-color 0.2s;
@@ -115,7 +115,7 @@
         }
 
         .toggle-switch-checkbox:checked+.toggle-switch-label {
-            background-color: #2d3748;
+            background-color: #4b5563;
         }
 
         .toggle-switch-checkbox:checked+.toggle-switch-label::before {
@@ -124,19 +124,19 @@
 
         .progress-bar-container {
             height: 8px;
-            background-color: #e2e8f0;
+            background-color: #e5e7eb;
             border-radius: 9999px;
             overflow: hidden;
         }
 
         .progress-bar {
             height: 100%;
-            background-color: #3b82f6;
+            background-color: #374151;
             transition: width 0.3s ease-in-out;
         }
 
         .theme-dark .progress-bar-container {
-            background-color: #4a5568;
+            background-color: #4b5563;
         }
     </style>
 </head>
@@ -144,17 +144,17 @@
 <body class="theme-light min-h-screen">
 
     <!-- Loading/Confirmation Screen -->
-    <div id="loading-screen" class="fixed inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-50">
+    <div id="loading-screen" class="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50">
         <div class="text-center transition-opacity duration-500 ease-in-out">
-            <div class="logo text-4xl mb-4 text-blue-600 dark:text-blue-400">svasti</div>
-            <p id="loading-message" class="text-gray-600 dark:text-gray-400">Initializing your finance flow...</p>
+            <div class="logo text-4xl mb-4 text-gray-800 dark:text-gray-100">svasti</div>
+            <p id="loading-message" class="text-gray-500 dark:text-gray-400">Initializing your finance flow...</p>
         </div>
     </div>
 
     <div id="app" class="p-4 hidden">
         <header class="w-full max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center py-6 px-4 md:px-8 mb-6 card rounded-2xl border">
             <div class="flex items-center space-x-4 mb-4 md:mb-0">
-                <h1 class="logo text-4xl text-blue-600 dark:text-blue-400">svasti</h1>
+                <h1 class="logo text-4xl text-gray-800 dark:text-gray-100">svasti</h1>
                 <span class="text-sm font-light text-gray-500 dark:text-gray-400">finance flow</span>
             </div>
             <div class="flex items-center space-x-4">
@@ -176,18 +176,18 @@
                 <form id="add-expense-form" class="space-y-4">
                     <div>
                         <label for="expense-name" class="block text-sm font-medium mb-1">Expense Name</label>
-                        <input type="text" id="expense-name" placeholder="e.g., Groceries" required class="form-input w-full p-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none">
+                        <input type="text" id="expense-name" placeholder="e.g., Groceries" required class="form-input w-full p-2 border rounded-lg focus:ring focus:ring-gray-300 focus:outline-none">
                     </div>
                     <div>
                         <label for="expense-amount" class="block text-sm font-medium mb-1">Amount</label>
                         <div class="relative">
                             <span id="currency-symbol" class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                            <input type="number" id="expense-amount" placeholder="0.00" step="0.01" required min="0" class="form-input w-full pl-8 pr-2 p-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none">
+                            <input type="number" id="expense-amount" placeholder="0.00" step="0.01" required min="0" class="form-input w-full pl-8 pr-2 p-2 border rounded-lg focus:ring focus:ring-gray-300 focus:outline-none">
                         </div>
                     </div>
                     <div>
                         <label for="expense-category" class="block text-sm font-medium mb-1">Category</label>
-                        <select id="expense-category" required class="form-select w-full p-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none">
+                        <select id="expense-category" required class="form-select w-full p-2 border rounded-lg focus:ring focus:ring-gray-300 focus:outline-none">
                             <option value="Food">🍔 Food</option>
                             <option value="Groceries">🛒 Groceries</option>
                             <option value="Shopping">🛍️ Shopping</option>
@@ -201,7 +201,7 @@
                             <option value="Other">❓ Other</option>
                         </select>
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Add Expense</button>
+                    <button type="submit" class="w-full bg-gray-800 text-white p-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-gray-200">Add Expense</button>
                 </form>
             </div>
 
@@ -231,7 +231,7 @@
                         <label for="budget-input" class="text-lg font-medium">Monthly Budget:</label>
                         <div class="relative w-1/2">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500" id="budget-currency-symbol">₹</span>
-                            <input type="number" id="budget-input" placeholder="0.00" min="0" class="form-input w-full pl-8 pr-2 p-2 border rounded-lg text-right focus:ring focus:ring-blue-200 focus:outline-none" />
+                            <input type="number" id="budget-input" placeholder="0.00" min="0" class="form-input w-full pl-8 pr-2 p-2 border rounded-lg text-right focus:ring focus:ring-gray-300 focus:outline-none" />
                         </div>
                     </div>
                     <p id="budget-status" class="text-sm text-gray-500 dark:text-gray-400 mb-2">Remaining: <span id="budget-remaining">₹0.00</span></p>
@@ -242,7 +242,7 @@
 
                 <div class="flex-grow flex flex-col">
                     <div class="mb-4">
-                        <input type="text" id="expense-filter" placeholder="Filter expenses..." class="form-input w-full p-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none">
+                        <input type="text" id="expense-filter" placeholder="Filter expenses..." class="form-input w-full p-2 border rounded-lg focus:ring focus:ring-gray-300 focus:outline-none">
                     </div>
                     <div class="flex-grow scroll-container overflow-y-auto pr-2">
                         <table id="expense-table" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -273,7 +273,7 @@
                 <div class="flex justify-between items-center mb-4 flex-wrap">
                     <h2 class="text-2xl font-semibold">Insights</h2>
                     <div class="flex space-x-2 mt-2 md:mt-0">
-                        <button data-chart-type="pie" class="chart-btn active p-2 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors">Pie Chart</button>
+                        <button data-chart-type="pie" class="chart-btn active p-2 rounded-lg bg-gray-800 text-white font-semibold text-sm hover:bg-gray-700 transition-colors dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-gray-200">Pie Chart</button>
                         <button data-chart-type="bar" class="chart-btn p-2 rounded-lg bg-gray-200 text-gray-800 font-semibold text-sm hover:bg-gray-300 transition-colors dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Bar Chart</button>
                     </div>
                 </div>
@@ -284,8 +284,8 @@
                 <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <h3 class="text-xl font-semibold mb-2">Data Management</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <button id="export-json-btn" class="p-2 font-semibold text-white rounded-lg bg-green-600 hover:bg-green-700 transition-colors">Export to JSON</button>
-                        <button id="export-csv-btn" class="p-2 font-semibold text-white rounded-lg bg-purple-600 hover:bg-purple-700 transition-colors">Export to CSV</button>
+                        <button id="export-json-btn" class="p-2 font-semibold text-white rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-gray-200">Export to JSON</button>
+                        <button id="export-csv-btn" class="p-2 font-semibold text-white rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-gray-200">Export to CSV</button>
                     </div>
                 </div>
             </div>
@@ -305,7 +305,7 @@
                 </div>
                 <p id="modal-message" class="text-gray-700 dark:text-gray-300 mb-4"></p>
                 <div class="flex justify-end">
-                    <button id="modal-ok-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">OK</button>
+                    <button id="modal-ok-btn" class="bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-gray-200">OK</button>
                 </div>
             </div>
         </div>
@@ -338,9 +338,20 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global variables for Firebase config and app ID
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // --- YOU CAN HARDCODE YOUR CONFIGURATION HERE ---
+        // REPLACE THE FOLLOWING LINE WITH YOUR OWN FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
+            authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
+            projectId: "daily-expense-tracker-4a115",
+            storageBucket: "daily-expense-tracker-4a115.firebasestorage.app",
+            messagingSenderId: "862714037551",
+            appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
+        };
+        const appId = "default-app-id"; // This is just a placeholder, your projectId can be used instead if needed.
+        const initialAuthToken = null; // We are not using a custom auth token in this self-contained app.
+        // ---------------------------------------------
+
         let db;
         let auth;
         let userId = null;
@@ -380,9 +391,9 @@
         // Category emoji mapping for the list items
         const categoryEmojis = {
             'Food': '🍔',
-            'Groceries': '🛒',
+            'Groceries': '�',
             'Shopping': '🛍️',
-            'Transportation': '�',
+            'Transportation': '🚗',
             'Housing': '🏠',
             'Entertainment': '🎬',
             'Health': '🏥',
@@ -395,7 +406,7 @@
         // Function to show custom modal messages
         function showMessage(title, message, isError = false) {
             modalTitle.textContent = title;
-            modalTitle.className = `text-xl font-bold ${isError ? 'text-red-500' : 'text-blue-600'}`;
+            modalTitle.className = `text-xl font-bold ${isError ? 'text-red-500' : 'text-gray-800 dark:text-gray-100'}`;
             modalMessage.textContent = message;
             modal.querySelector('div').classList.remove('scale-95', 'opacity-0');
             modal.querySelector('div').classList.add('scale-100', 'opacity-100');
@@ -425,16 +436,7 @@
                 auth = getAuth(app);
                 addLog("Firebase initialized.");
 
-                // Use the custom token if available, otherwise sign in anonymously
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                    addLog("Signed in with custom token.");
-                } else {
-                    await signInAnonymously(auth);
-                    addLog("Signed in anonymously.");
-                }
-
-                // Now that the auth object is initialized, we can set up the listener
+                // Set up the auth state listener first
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
@@ -453,9 +455,20 @@
                     }
                 });
 
+                // Then, attempt to sign in anonymously
+                try {
+                    await signInAnonymously(auth);
+                    addLog("Signed in anonymously.");
+                } catch (error) {
+                    console.error("Error signing in anonymously:", error);
+                    showMessage("Error", "Failed to sign in. Check your Firebase rules.", true);
+                    loadingMessage.textContent = "Authentication failed.";
+                }
+
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
                 showMessage("Error", "Failed to initialize Firebase. Check your configuration.", true);
+                loadingMessage.textContent = "Initialization failed.";
             }
         });
 
@@ -491,16 +504,16 @@
                         updateBudgetDisplay();
                     }
                 } else {
-                    addLog("No user settings found. Using defaults.");
+                    addLog("No user settings found. Creating defaults.");
                     // Save default settings if they don't exist
                     setDoc(userSettingsDocRef, {
                         currency: 'INR',
                         theme: 'light',
-                        budget: 100000
+                        budget: 10000
                     }, {
                         merge: true
                     }).catch(err => console.error("Error saving default settings:", err));
-                    budgetInput.value = 100000;
+                    budgetInput.value = 10000;
                     updateBudgetDisplay();
                 }
             });
@@ -661,7 +674,7 @@
                 budgetRemaining.classList.add('text-red-500');
                 budgetRemaining.classList.remove('text-green-500');
             } else {
-                budgetProgress.style.backgroundColor = '#3b82f6'; // Blue for on track
+                budgetProgress.style.backgroundColor = '#10b981'; // Green for on track
                 budgetRemaining.classList.add('text-green-500');
                 budgetRemaining.classList.remove('text-red-500');
             }
@@ -729,7 +742,7 @@
                         '#ef4444', '#f97316', '#f59e0b', '#22c55e', '#a855f7',
                         '#3b82f6', '#14b8a6', '#64748b', '#ec4899', '#78350f', '#e5e7eb'
                     ],
-                    borderColor: document.body.classList.contains('theme-dark') ? '#1a202c' : '#f8f9fa',
+                    borderColor: document.body.classList.contains('theme-dark') ? '#111827' : '#ffffff',
                     borderWidth: 1
                 }]
             };
@@ -742,7 +755,7 @@
                         display: true,
                         position: 'top',
                         labels: {
-                            color: document.body.classList.contains('theme-dark') ? '#e2e8f0' : '#212529',
+                            color: document.body.classList.contains('theme-dark') ? '#e5e7eb' : '#1f2937',
                             font: {
                                 family: 'Inter',
                                 size: 12
@@ -755,7 +768,7 @@
                         beginAtZero: true,
                         display: chartType === 'bar',
                         ticks: {
-                            color: document.body.classList.contains('theme-dark') ? '#e2e8f0' : '#212529',
+                            color: document.body.classList.contains('theme-dark') ? '#e5e7eb' : '#1f2937',
                             font: {
                                 family: 'Inter',
                                 size: 10
@@ -765,27 +778,27 @@
                             }
                         },
                         grid: {
-                            color: document.body.classList.contains('theme-dark') ? '#2d3748' : '#e9ecef',
+                            color: document.body.classList.contains('theme-dark') ? '#374151' : '#f3f4f6',
                         }
                     },
                     x: {
                         display: chartType === 'bar',
                         ticks: {
-                            color: document.body.classList.contains('theme-dark') ? '#e2e8f0' : '#212529',
+                            color: document.body.classList.contains('theme-dark') ? '#e5e7eb' : '#1f2937',
                             font: {
                                 family: 'Inter',
                                 size: 10
                             }
                         },
                         grid: {
-                            color: document.body.classList.contains('theme-dark') ? '#2d3748' : '#e9ecef',
+                            color: document.body.classList.contains('theme-dark') ? '#374151' : '#f3f4f6',
                         }
                     }
                 }
             };
 
             if (chartType === 'pie') {
-                options.plugins.legend.labels.color = document.body.classList.contains('theme-dark') ? '#e2e8f0' : '#212529';
+                options.plugins.legend.labels.color = document.body.classList.contains('theme-dark') ? '#e5e7eb' : '#1f2937';
             }
 
             myChart = new Chart(ctx, {
@@ -799,10 +812,10 @@
             btn.addEventListener('click', (e) => {
                 if (!userId) return;
                 chartBtns.forEach(b => {
-                    b.classList.remove('active', 'bg-blue-600', 'text-white');
+                    b.classList.remove('active', 'bg-gray-800', 'text-white');
                     b.classList.add('bg-gray-200', 'text-gray-800', 'dark:bg-gray-600', 'dark:text-gray-200');
                 });
-                e.target.classList.add('active', 'bg-blue-600', 'text-white');
+                e.target.classList.add('active', 'bg-gray-800', 'text-white');
                 e.target.classList.remove('bg-gray-200', 'text-gray-800', 'dark:bg-gray-600', 'dark:text-gray-200');
                 const chartType = e.target.getAttribute('data-chart-type');
                 // Path uses the authenticated user ID
@@ -823,17 +836,17 @@
             document.body.classList.toggle('theme-light', !e.target.checked);
 
             if (myChart) {
-                myChart.options.plugins.legend.labels.color = e.target.checked ? '#e2e8f0' : '#212529';
+                myChart.options.plugins.legend.labels.color = e.target.checked ? '#e5e7eb' : '#1f2937';
                 if (myChart.options.scales.y) {
-                    myChart.options.scales.y.ticks.color = e.target.checked ? '#e2e8f0' : '#212529';
-                    myChart.options.scales.y.grid.color = e.target.checked ? '#2d3748' : '#e9ecef';
+                    myChart.options.scales.y.ticks.color = e.target.checked ? '#e5e7eb' : '#1f2937';
+                    myChart.options.scales.y.grid.color = e.target.checked ? '#374151' : '#f3f4f6';
                 }
                 if (myChart.options.scales.x) {
-                    myChart.options.scales.x.ticks.color = e.target.checked ? '#e2e8f0' : '#212529';
-                    myChart.options.scales.x.grid.color = e.target.checked ? '#2d3748' : '#e9ecef';
+                    myChart.options.scales.x.ticks.color = e.target.checked ? '#e5e7eb' : '#1f2937';
+                    myChart.options.scales.x.grid.color = e.target.checked ? '#374151' : '#f3f4f6';
                 }
                 myChart.data.datasets.forEach(dataset => {
-                    dataset.borderColor = e.target.checked ? '#1a202c' : '#f8f9fa';
+                    dataset.borderColor = e.target.checked ? '#111827' : '#ffffff';
                 });
                 myChart.update();
             }
