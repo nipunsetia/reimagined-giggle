@@ -190,7 +190,7 @@
                     <div>
                         <label for="expense-amount" class="block text-sm font-medium mb-1">Amount</label>
                         <div class="relative">
-                            <span id="currency-symbol" class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
+                            <span id="currency-symbol" class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
                             <input type="number" id="expense-amount" placeholder="0.00" step="0.01" required min="0" class="form-input w-full pl-8 pr-2 p-2 border rounded-lg focus:ring focus:ring-gray-300 focus:outline-none">
                         </div>
                     </div>
@@ -210,9 +210,9 @@
                             <option value="Other">❓ Other</option>
                         </select>
                     </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="is-recurring" class="form-checkbox h-4 w-4 text-gray-600 rounded">
-                        <label for="is-recurring" class="ml-2 block text-sm font-medium">Recurring Expense</label>
+                    <div>
+                        <label for="expense-date" class="block text-sm font-medium mb-1">Date</label>
+                        <input type="date" id="expense-date" required class="form-input w-full p-2 border rounded-lg focus:ring focus:ring-gray-300 focus:outline-none">
                     </div>
                     <button type="submit" class="w-full bg-gray-800 text-white p-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-gray-200">Add Expense</button>
                 </form>
@@ -266,6 +266,9 @@
                                     </th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Amount
+                                    </th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Date
                                     </th>
                                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Actions
@@ -356,9 +359,6 @@
         // =====================================================================
         //
         // Your Firebase project configuration goes here.
-        // NOTE: The `__firebase_config` and `__app_id` are special variables
-        // provided by the collaborative environment. They are used here to ensure
-        // the app works correctly within this specific context.
         const firebaseConfig = {
             apiKey: "AIzaSyBdagBD3G6fBRVWztEfpXR4ZzcCHuVR5Rc",
             authDomain: "daily-expense-tracker-4a115.firebaseapp.com",
@@ -367,13 +367,13 @@
             messagingSenderId: "862714037551",
             appId: "1:862714037551:web:00d29aeef2fc3c33880dda"
         };
+        // This is a special variable for the collaborative environment.
+        // If you are hosting on GitHub Pages, this will be "daily-expense-tracker-4a115"
+        // and is used for the Firestore collection path.
         const appId = "daily-expense-tracker-4a115";
-        // Override with environment variables if available
-        const environmentFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-        const environmentAppId = typeof __app_id !== 'undefined' ? __app_id : appId;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         //
         // =====================================================================
+
 
         let db;
         let auth;
@@ -381,8 +381,6 @@
         let currentCurrency = 'INR';
         let currencySymbol = '₹';
         let myChart; // Chart instance
-        let allExpenses = [];
-        let expensesUnsubscribe; // To unsubscribe from the Firestore listener
 
         // DOM elements
         const loadingScreen = document.getElementById('loading-screen');
@@ -392,6 +390,7 @@
         const expenseNameInput = document.getElementById('expense-name');
         const expenseAmountInput = document.getElementById('expense-amount');
         const expenseCategorySelect = document.getElementById('expense-category');
+        const expenseDateInput = document.getElementById('expense-date');
         const expenseTableBody = document.getElementById('expense-list-table-body');
         const totalExpensesSpan = document.getElementById('total-expenses');
         const currencySelect = document.getElementById('currency-select');
@@ -415,7 +414,6 @@
         const syncBtn = document.getElementById('sync-btn');
         const syncSpinner = document.getElementById('sync-spinner');
         const syncIcon = document.getElementById('sync-icon');
-        const isRecurringCheckbox = document.getElementById('is-recurring');
 
 
         // Category emoji mapping for the list items
@@ -426,8 +424,8 @@
             'Transportation': '🚗',
             'Housing': '🏠',
             'Entertainment': '🎬',
-            'Health': '�',
-            'Education': '🎓',
+            'Health': '🏥',
+            'Education': '�',
             'Subscriptions': '💳',
             'Bills': '🧾',
             'Other': '❓'
@@ -450,511 +448,574 @@
         });
 
         modalOkBtn.addEventListener('click', () => {
-            modal.querySelector('div').classList.remove('scale-100', 'opacity-100');
-            modal.querySelector('div').classList.add('scale-95', 'opacity-0');
-            setTimeout(() => modal.style.display = 'none', 300);
+            modalCloseBtn.click();
         });
 
+        // Function to log actions
+        function addLog(message) {
+            console.log(`[LOG] ${new Date().toISOString()}: ${message}`);
+        }
 
-        // =====================================================================
-        // === THEME, CURRENCY, AND INITIALIZATION LOGIC =======================
-        // =====================================================================
-
-        // Initialize Theme
-        const storedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'theme-dark' : 'theme-light');
-        document.body.className = storedTheme + ' min-h-screen';
-        darkModeToggle.checked = storedTheme === 'theme-dark';
-
-        darkModeToggle.addEventListener('change', () => {
-            if (darkModeToggle.checked) {
-                document.body.className = 'theme-dark min-h-screen';
-                localStorage.setItem('theme', 'theme-dark');
-            } else {
-                document.body.className = 'theme-light min-h-screen';
-                localStorage.setItem('theme', 'theme-light');
-            }
-            // Re-render chart to pick up new theme colors
-            if (myChart) {
-                myChart.destroy();
-                renderChart(allExpenses);
-            }
-        });
-
-        // Currency selection logic
-        const currencySymbols = {
-            'INR': '₹',
-            'USD': '$',
-            'EUR': '€'
-        };
-
-        currencySelect.addEventListener('change', () => {
-            currentCurrency = currencySelect.value;
-            currencySymbol = currencySymbols[currentCurrency];
-            // Update all currency symbols on the page
-            document.querySelectorAll('#currency-symbol, #budget-currency-symbol').forEach(el => el.textContent = currencySymbol);
-            // Re-render to reflect new currency
-            updateSummary(allExpenses);
-            renderExpenses(allExpenses);
-        });
-
-        // =====================================================================
-        // === FIREBASE INITIALIZATION AND AUTHENTICATION ======================
-        // =====================================================================
-        let isAuthReady = false;
-
-        async function initFirebase() {
+        // Initialize Firebase and set up authentication
+        document.addEventListener('DOMContentLoaded', async () => {
             try {
-                const app = initializeApp(environmentFirebaseConfig);
+                const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+                addLog("Firebase initialized.");
 
-                // Sign in the user. If an auth token is provided (for the environment), use it.
-                // Otherwise, sign in anonymously.
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                // Listen for authentication state changes
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        isAuthReady = true;
-                        loadingMessage.textContent = "Data loaded. Welcome back!";
-                        loadingScreen.classList.add('opacity-0');
+                        addLog(`User authenticated with UID: ${userId}.`);
+                        await setupFirestoreListeners();
                         setTimeout(() => {
-                            loadingScreen.classList.add('hidden');
-                            appContainer.classList.remove('hidden');
-                        }, 500);
-
-                        // Attach the real-time listener for expenses and budget
-                        setupRealtimeListeners();
+                            loadingScreen.classList.add('opacity-0');
+                            setTimeout(() => {
+                                loadingScreen.classList.add('hidden');
+                                appContainer.classList.remove('hidden');
+                            }, 500);
+                        }, 1500);
                     } else {
-                        // User is signed out. Handle this case if needed.
-                        console.log("User is signed out.");
+                        addLog("User signed out.");
+                        // Handle signed out state if needed
                     }
                 });
+
+                try {
+                    await signInAnonymously(auth);
+                    addLog("Signed in anonymously.");
+                } catch (error) {
+                    console.error("Error signing in anonymously:", error);
+                    showMessage("Error", "Failed to sign in. Check your Firebase rules.", true);
+                    loadingMessage.textContent = "Authentication failed.";
+                }
+
             } catch (error) {
-                console.error("Error initializing Firebase or signing in: ", error);
-                showMessage("Error", "Failed to initialize the app. Please check your Firebase configuration or connection.", true);
+                console.error("Error initializing Firebase:", error);
+                showMessage("Error", "Failed to initialize Firebase. Check your configuration.", true);
+                loadingMessage.textContent = "Initialization failed.";
             }
-        }
+        });
 
-        // =====================================================================
-        // === FIRESTORE DATABASE OPERATIONS ===================================
-        // =====================================================================
 
-        function getCollectionPath() {
-            if (!userId) {
-                return null;
-            }
-            // Use the provided environmentAppId and userId for collection path
-            return `artifacts/${environmentAppId}/users/${userId}/expenses`;
-        }
-
-        async function saveBudget(budget) {
-            if (!userId) return;
-            const budgetRef = doc(db, `artifacts/${environmentAppId}/users/${userId}/metadata/budget`);
-            try {
-                await setDoc(budgetRef, {
-                    value: budget,
-                    currency: currentCurrency
-                }, {
-                    merge: true
-                });
-            } catch (e) {
-                console.error("Error saving budget: ", e);
-                showMessage("Error", "Could not save your budget.", true);
-            }
-        }
-
-        async function fetchBudget() {
-            if (!userId) return;
-            const budgetRef = doc(db, `artifacts/${environmentAppId}/users/${userId}/metadata/budget`);
-            try {
-                const budgetSnap = await getDoc(budgetRef);
-                if (budgetSnap.exists()) {
-                    const data = budgetSnap.data();
-                    if (data.currency === currentCurrency) {
-                        budgetInput.value = data.value;
+        // Function to set up Firestore listeners
+        async function setupFirestoreListeners() {
+            // Path is now hardcoded for a single user
+            const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+            onSnapshot(userSettingsDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const settings = docSnap.data();
+                    // Update theme
+                    if (settings.theme === 'dark') {
+                        document.body.classList.add('theme-dark');
+                        document.body.classList.remove('theme-light');
+                        darkModeToggle.checked = true;
                     } else {
-                        // Reset budget input if currency changed
-                        budgetInput.value = '';
+                        document.body.classList.add('theme-light');
+                        document.body.classList.remove('theme-dark');
+                        darkModeToggle.checked = false;
+                    }
+
+                    // Update currency and budget
+                    if (settings.currency) {
+                        updateCurrency(settings.currency);
+                        currencySelect.value = settings.currency;
+                    }
+                    if (settings.budget) {
+                        budgetInput.value = settings.budget;
+                        updateBudgetDisplay();
+                    } else {
+                        budgetInput.value = 0;
+                        updateBudgetDisplay();
                     }
                 } else {
-                    // Clear budget input if no budget is set for the current currency
-                    budgetInput.value = '';
+                    addLog("No user settings found. Creating defaults.");
+                    // Save default settings if they don't exist
+                    setDoc(userSettingsDocRef, {
+                        currency: 'INR',
+                        theme: 'light',
+                        budget: 10000
+                    }, {
+                        merge: true
+                    }).catch(err => console.error("Error saving default settings:", err));
+                    budgetInput.value = 10000;
+                    updateBudgetDisplay();
                 }
-            } catch (e) {
-                console.error("Error fetching budget:", e);
-            }
-        }
-
-        function setupRealtimeListeners() {
-            if (!userId) {
-                console.error("User ID is not available.");
-                return;
-            }
-
-            // Unsubscribe from previous listener if it exists
-            if (expensesUnsubscribe) {
-                expensesUnsubscribe();
-            }
-
-            const expensesPath = getCollectionPath();
-            if (!expensesPath) return;
-
-            const q = query(collection(db, expensesPath));
-            expensesUnsubscribe = onSnapshot(q, (querySnapshot) => {
-                const fetchedExpenses = [];
-                let total = 0;
-                querySnapshot.forEach((doc) => {
-                    const expense = {
-                        id: doc.id,
-                        ...doc.data()
-                    };
-                    // Only process expenses with the current currency
-                    if (expense.currency === currentCurrency) {
-                        fetchedExpenses.push(expense);
-                        total += expense.amount;
-                    }
-                });
-
-                // Sort expenses by createdAt timestamp in descending order
-                allExpenses = fetchedExpenses.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
-
-                renderExpenses(allExpenses);
-                updateSummary(allExpenses);
-                renderChart(allExpenses);
-                // Also fetch budget when expenses update
-                fetchBudget();
-                hideSyncSpinner();
-            }, (error) => {
-                console.error("Error getting real-time expenses: ", error);
-                showMessage("Error", "Could not fetch your expenses in real-time. Please check your connection.", true);
-            });
-        }
-
-        // =====================================================================
-        // === EXPENSE MANAGEMENT (ADD, DELETE, RENDER) ========================
-        // =====================================================================
-
-        async function addExpense(expense) {
-            const expensesPath = getCollectionPath();
-            if (!expensesPath) {
-                showMessage("Error", "Authentication failed. Please refresh the page.", true);
-                return;
-            }
-            try {
-                const docRef = await addDoc(collection(db, expensesPath), {
-                    ...expense,
-                    createdAt: serverTimestamp()
-                });
-                console.log("Document written with ID: ", docRef.id);
-                showMessage("Success", "New expense added successfully!");
-                // The onSnapshot listener will handle re-rendering the UI
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                showMessage("Error", "Failed to add expense.", true);
-            }
-        }
-
-        async function deleteExpense(id) {
-            const expensesPath = getCollectionPath();
-            if (!expensesPath) return;
-            const docRef = doc(db, expensesPath, id);
-            try {
-                await deleteDoc(docRef);
-                showMessage("Success", "Expense deleted successfully!");
-                // The onSnapshot listener will handle re-rendering the UI
-            } catch (e) {
-                console.error("Error deleting document: ", e);
-                showMessage("Error", "Failed to delete expense.", true);
-            }
-        }
-
-        function renderExpenses(expenses) {
-            expenseTableBody.innerHTML = '';
-            const filterText = expenseFilterInput.value.toLowerCase();
-            const filteredExpenses = expenses.filter(expense =>
-                expense.name.toLowerCase().includes(filterText) ||
-                expense.category.toLowerCase().includes(filterText)
-            );
-
-            if (filteredExpenses.length === 0) {
-                noExpensesMessage.classList.remove('hidden');
-                return;
-            } else {
-                noExpensesMessage.classList.add('hidden');
-            }
-
-            filteredExpenses.forEach(expense => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors';
-                const emoji = categoryEmojis[expense.category] || categoryEmojis['Other'];
-                const isRecurring = expense.isRecurring ? `<span class="text-xs font-bold text-green-500 ml-2">🔁</span>` : '';
-                const date = expense.createdAt ? new Date(expense.createdAt.toDate()).toLocaleDateString() : 'N/A';
-                row.innerHTML = `
-                    <td class="px-3 py-3 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <span class="text-xl mr-2">${emoji}</span>
-                            <div>
-                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">${expense.name} ${isRecurring}</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">${expense.category} | ${date}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        ${currencySymbol} ${parseFloat(expense.amount).toFixed(2)}
-                    </td>
-                    <td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <button data-id="${expense.id}" class="delete-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200">Delete</button>
-                    </td>
-                `;
-                expenseTableBody.appendChild(row);
             });
 
-            // Add event listeners to delete buttons
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const expenseId = e.target.dataset.id;
-                    if (expenseId) {
-                        deleteExpense(expenseId);
-                    }
-                });
-            });
+            // Set up listener for the default currency (INR) on initial load
+            setupExpenseListener(currentCurrency);
         }
 
-        // =====================================================================
-        // === SUMMARY, BUDGET, AND CHART LOGIC ================================
-        // =====================================================================
+        let unsubscribeExpenses; // Hold the unsubscribe function for the expense listener
 
-        function updateSummary(expenses) {
-            const total = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-            totalExpensesSpan.textContent = `${currencySymbol}${total.toFixed(2)}`;
-
-            const budget = parseFloat(budgetInput.value) || 0;
-            const remaining = budget - total;
-            budgetRemaining.textContent = `${currencySymbol}${remaining.toFixed(2)}`;
-
-            if (remaining < 0) {
-                budgetRemaining.classList.add('text-red-500');
-                budgetRemaining.classList.remove('text-green-500');
-            } else {
-                budgetRemaining.classList.add('text-green-500');
-                budgetRemaining.classList.remove('text-red-500');
+        function setupExpenseListener(currency) {
+            if (unsubscribeExpenses) {
+                unsubscribeExpenses(); // Unsubscribe from the previous currency listener
             }
 
-            let progress = (total / budget) * 100;
-            if (isNaN(progress) || !isFinite(progress)) {
-                progress = 0;
-            }
-            if (progress > 100) progress = 100;
-            budgetProgress.style.width = `${progress}%`;
-        }
-
-        function renderChart(expenses) {
-            if (myChart) {
-                myChart.destroy();
-            }
-
-            if (expenses.length === 0) {
-                return;
-            }
-
-            const chartType = document.querySelector('.chart-btn.active').dataset.chartType;
-            const ctx = document.getElementById('expense-chart').getContext('2d');
-
-            const expensesByCategory = expenses.reduce((acc, expense) => {
-                const category = expense.category;
-                const amount = parseFloat(expense.amount);
-                acc[category] = (acc[category] || 0) + amount;
-                return acc;
-            }, {});
-
-            const labels = Object.keys(expensesByCategory);
-            const data = Object.values(expensesByCategory);
-            const themeColors = document.body.classList.contains('theme-dark') ? {
-                bg: '#374151',
-                text: '#e5e7eb'
-            } : {
-                bg: '#d1d5db',
-                text: '#1f2937'
-            };
-            const backgroundColors = [
-                '#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981', '#06b6d4',
-                '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899'
-            ];
-            const borderColors = [
-                '#b91c1c', '#c2410c', '#a16207', '#15803d', '#047857', '#0e7490',
-                '#1d4ed8', '#4338ca', '#6d28d9', '#9d174d', '#be185d'
-            ];
-
-            const chartConfig = {
-                type: chartType,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: `Total Expenses (${currencySymbol})`,
-                        data: data,
-                        backgroundColor: backgroundColors,
-                        borderColor: borderColors,
-                        borderWidth: 1,
-                        hoverOffset: 4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: themeColors.text
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: themeColors.bg
-                            },
-                            ticks: {
-                                color: themeColors.text,
-                                callback: function(value) {
-                                    return `${currencySymbol}${value}`;
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: themeColors.bg
-                            },
-                            ticks: {
-                                color: themeColors.text
-                            }
-                        }
-                    }
-                }
-            };
-
-            // For Pie Chart, remove scales
-            if (chartType === 'pie') {
-                delete chartConfig.options.scales;
-            }
-
-            myChart = new Chart(ctx, chartConfig);
-        }
-
-        // =====================================================================
-        // === EVENT LISTENERS =================================================
-        // =====================================================================
-
-        expenseForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const newExpense = {
-                name: expenseNameInput.value,
-                amount: parseFloat(expenseAmountInput.value),
-                category: expenseCategorySelect.value,
-                isRecurring: isRecurringCheckbox.checked,
-                currency: currentCurrency
-            };
-            addExpense(newExpense);
-            expenseForm.reset();
-        });
-
-        budgetInput.addEventListener('change', (e) => {
-            const newBudget = parseFloat(e.target.value);
-            if (isNaN(newBudget) || newBudget < 0) {
-                // If invalid input, just reset the field
-                e.target.value = '';
-                updateSummary(allExpenses);
-                return;
-            }
-
-            let maxBudget;
-            if (currentCurrency === 'INR') {
-                maxBudget = 300000;
-            } else {
-                maxBudget = 30000;
-            }
-
-            if (newBudget > maxBudget) {
-                showMessage("Warning", `Budget cannot exceed ${currencySymbol}${maxBudget}.`, true);
-                e.target.value = maxBudget;
-                updateSummary(allExpenses);
-                return;
-            }
-            
-            saveBudget(newBudget);
-            updateSummary(allExpenses);
-        });
-
-        expenseFilterInput.addEventListener('input', () => {
-            renderExpenses(allExpenses);
-        });
-
-        chartBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                chartBtns.forEach(b => {
-                    b.classList.remove('active', 'bg-gray-800', 'text-white', 'hover:bg-gray-700', 'dark:bg-gray-100', 'dark:text-gray-800', 'dark:hover:bg-gray-200');
-                    b.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300', 'dark:bg-gray-600', 'dark:text-gray-200', 'dark:hover:bg-gray-500');
-                });
-                btn.classList.add('active', 'bg-gray-800', 'text-white', 'hover:bg-gray-700', 'dark:bg-gray-100', 'dark:text-gray-800', 'dark:hover:bg-gray-200');
-                btn.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300', 'dark:bg-gray-600', 'dark:text-gray-200', 'dark:hover:bg-gray-500');
-                renderChart(allExpenses);
-            });
-        });
-
-        syncBtn.addEventListener('click', () => {
-            showSyncSpinner();
-            // Re-establish the listener to trigger a manual refresh.
-            setupRealtimeListeners();
-        });
-
-        function showSyncSpinner() {
-            syncSpinner.style.display = 'block';
-            syncIcon.style.display = 'none';
-        }
-
-        function hideSyncSpinner() {
-            syncSpinner.style.display = 'none';
-            syncIcon.style.display = 'block';
-        }
-
-        // =====================================================================
-        // === DATA EXPORT LOGIC ===============================================
-        // =====================================================================
-
-        async function fetchAllExpenses() {
-            const expensesPath = getCollectionPath();
-            if (!expensesPath) return null;
-            try {
-                const querySnapshot = await getDocs(collection(db, expensesPath));
-                const expenses = [];
-                querySnapshot.forEach((doc) => {
-                    expenses.push({
+            // Path uses the hardcoded user ID
+            const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses/${currency}/data`);
+            const q = query(expensesCollectionRef, orderBy('date', 'desc'));
+            unsubscribeExpenses = onSnapshot(q, (snapshot) => {
+                const allExpenses = [];
+                snapshot.forEach(doc => {
+                    allExpenses.push({
                         id: doc.id,
                         ...doc.data()
                     });
                 });
-                return expenses;
-            } catch (e) {
-                console.error("Error fetching documents for export:", e);
-                showMessage("Error", "Failed to fetch data for export.", true);
+                renderExpenses(allExpenses);
+                const totalExpenses = allExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+                renderBudgetUI(totalExpenses);
+                const activeChartBtn = document.querySelector('.chart-btn.active');
+                if (activeChartBtn) {
+                    renderChart(activeChartBtn.getAttribute('data-chart-type'), allExpenses);
+                }
+            }, (error) => {
+                console.error("Error in onSnapshot listener:", error);
+                showMessage("Error", "Failed to sync data in real-time.", true);
+            });
+        }
+
+
+        // Add Expense Form Submission
+        expenseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const newExpense = {
+                name: expenseNameInput.value,
+                amount: parseFloat(expenseAmountInput.value),
+                category: expenseCategorySelect.value,
+                date: expenseDateInput.value,
+                createdAt: serverTimestamp()
+            };
+
+            try {
+                // Path uses the authenticated user ID
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`), newExpense);
+                showMessage("Success", "Expense added successfully!");
+                expenseForm.reset();
+                expenseDateInput.valueAsDate = new Date(); // Reset date to today
+            } catch (error) {
+                console.error("Error adding expense:", error);
+                showMessage("Error", "Failed to add expense. Please try again.", true);
+            }
+        });
+
+        // Expense Table Renderer
+        function renderExpenses(expenses) {
+            expenseTableBody.innerHTML = '';
+            if (expenses.length === 0) {
+                noExpensesMessage.classList.remove('hidden');
+            } else {
+                noExpensesMessage.classList.add('hidden');
+                let filteredExpenses = expenses;
+                const filterText = expenseFilterInput.value.toLowerCase();
+                if (filterText) {
+                    filteredExpenses = expenses.filter(expense =>
+                        expense.name.toLowerCase().includes(filterText) ||
+                        expense.category.toLowerCase().includes(filterText) ||
+                        (expense.date && expense.date.includes(filterText))
+                    );
+                }
+
+                if (filteredExpenses.length === 0) {
+                    noExpensesMessage.classList.remove('hidden');
+                    noExpensesMessage.textContent = "No expenses match your filter.";
+                } else {
+                    noExpensesMessage.classList.add('hidden');
+                    filteredExpenses.forEach(expense => {
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                        tr.innerHTML = `
+                        <td class="px-3 py-3 whitespace-nowrap">
+                            <div class="font-medium">${expense.name}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${categoryEmojis[expense.category]} ${expense.category}</div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap font-bold text-red-500">
+                            ${currencySymbol}${expense.amount.toFixed(2)}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            ${expense.date || 'N/A'}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                            <button class="delete-btn text-gray-400 hover:text-red-500 transition-colors" data-id="${expense.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 0 00-1-1H9a1 0 00-1 1v3m1-4h6"></path>
+                                </svg>
+                            </button>
+                        </td>
+                    `;
+                        expenseTableBody.appendChild(tr);
+                    });
+                }
+            }
+        }
+
+        // Filter event listener
+        expenseFilterInput.addEventListener('input', () => {
+            if (!userId) return; // Wait for user to be authenticated
+            // Path uses the authenticated user ID
+            const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`);
+            const q = query(expensesCollectionRef);
+            getDocs(q).then(snapshot => {
+                const allExpenses = [];
+                snapshot.forEach(doc => allExpenses.push({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderExpenses(allExpenses);
+            }).catch(err => console.error("Error fetching filtered expenses:", err));
+        });
+
+        // Delete Expense
+        expenseTableBody.addEventListener('click', async (e) => {
+            if (!userId) return; // Wait for user to be authenticated
+            if (e.target.closest('.delete-btn')) {
+                const button = e.target.closest('.delete-btn');
+                const expenseId = button.getAttribute('data-id');
+
+                try {
+                    // Path uses the authenticated user ID
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`, expenseId));
+                    showMessage("Success", "Expense deleted.");
+                } catch (error) {
+                    console.error("Error deleting expense:", error);
+                    showMessage("Error", "Failed to delete expense. Please try again.", true);
+                }
+            }
+        });
+
+        // Budget & UI updates
+        let totalExpenses = 0;
+        let monthlyBudget = 0;
+
+        function updateBudgetDisplay() {
+            monthlyBudget = parseFloat(budgetInput.value) || 0;
+            const remaining = monthlyBudget - totalExpenses;
+            budgetRemaining.textContent = `${currencySymbol}${remaining.toFixed(2)}`;
+
+            const progressPercentage = (totalExpenses / monthlyBudget) * 100;
+            if (monthlyBudget > 0) {
+                budgetProgress.style.width = `${Math.min(progressPercentage, 100)}%`;
+            } else {
+                budgetProgress.style.width = '0%';
+            }
+
+            if (remaining < 0) {
+                budgetProgress.style.backgroundColor = '#ef4444'; // Red for over budget
+                budgetRemaining.classList.add('text-red-500');
+                budgetRemaining.classList.remove('text-green-500');
+            } else {
+                budgetProgress.style.backgroundColor = '#10b981'; // Green for on track
+                budgetRemaining.classList.add('text-green-500');
+                budgetRemaining.classList.remove('text-red-500');
+            }
+        }
+
+        function renderBudgetUI(total) {
+            totalExpenses = total;
+            totalExpensesSpan.textContent = `${currencySymbol}${total.toFixed(2)}`;
+            updateBudgetDisplay();
+        }
+
+        budgetInput.addEventListener('change', async (e) => {
+            if (!userId) return; // Wait for user to be authenticated
+            const newBudget = parseFloat(e.target.value) || 0;
+            let maxBudget = 20000;
+            if (currentCurrency === 'INR') {
+                maxBudget = 100000;
+            }
+
+            if (newBudget > maxBudget) {
+                showMessage("Warning", `Budget cannot exceed ${currencySymbol}${maxBudget.toFixed(2)} for this currency.`);
+                budgetInput.value = maxBudget;
+                monthlyBudget = maxBudget;
+            } else {
+                monthlyBudget = newBudget;
+            }
+
+            try {
+                // Path uses the authenticated user ID
+                const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+                await setDoc(userSettingsDocRef, {
+                    budget: monthlyBudget
+                }, {
+                    merge: true
+                });
+                updateBudgetDisplay();
+                showMessage("Success", `Budget updated to ${currencySymbol}${monthlyBudget.toFixed(2)}.`);
+            } catch (error) {
+                console.error("Error saving budget:", error);
+                showMessage("Error", "Failed to save budget. Please try again.", true);
+            }
+        });
+
+
+        // Chart rendering
+        function renderChart(chartType, expenses) {
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            const chartCanvas = document.getElementById('expense-chart');
+            const ctx = chartCanvas.getContext('2d');
+
+            const categoryData = expenses.reduce((acc, expense) => {
+                acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+                return acc;
+            }, {});
+
+            const data = {
+                labels: Object.keys(categoryData),
+                datasets: [{
+                    label: `Expenses in ${currentCurrency}`,
+                    data: Object.values(categoryData),
+                    backgroundColor: [
+                        '#ef4444', '#f97316', '#f59e0b', '#22c55e', '#a855f7',
+                        '#3b82f6', '#14b8a6', '#64748b', '#ec4899', '#78350f', '#e5e7eb'
+                    ],
+                    borderColor: document.body.classList.contains('theme-dark') ? '#111827' : '#ffffff',
+                    borderWidth: 1
+                }]
+            };
+
+            const options = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: document.body.classList.contains('theme-dark') ? '#e5e7eb' : '#1f2937',
+                            font: {
+                                family: 'Inter',
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        display: chartType === 'bar',
+                        ticks: {
+                            color: document.body.classList.contains('theme-dark') ? '#e5e7eb' : '#1f2937',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            },
+                            callback: function(value) {
+                                return `${currencySymbol}${value}`;
+                            }
+                        },
+                        grid: {
+                            color: document.body.classList.contains('theme-dark') ? '#374151' : '#f3f4f6',
+                        }
+                    },
+                    x: {
+                        display: chartType === 'bar',
+                        ticks: {
+                            color: document.body.classList.contains('theme-dark') ? '#e5e7eb' : '#1f2937',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            }
+                        },
+                        grid: {
+                            color: document.body.classList.contains('theme-dark') ? '#374151' : '#f3f4f6',
+                        }
+                    }
+                }
+            };
+
+            if (chartType === 'pie') {
+                options.plugins.legend.labels.color = document.body.classList.contains('theme-dark') ? '#e5e7eb' : '#1f2937';
+            }
+
+            myChart = new Chart(ctx, {
+                type: chartType,
+                data: data,
+                options: options
+            });
+        }
+
+        chartBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (!userId) return;
+                chartBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-gray-800', 'text-white');
+                    b.classList.add('bg-gray-200', 'text-gray-800', 'dark:bg-gray-600', 'dark:text-gray-200');
+                });
+                e.target.classList.add('active', 'bg-gray-800', 'text-white');
+                e.target.classList.remove('bg-gray-200', 'text-gray-800', 'dark:bg-gray-600', 'dark:text-gray-200');
+                const chartType = e.target.getAttribute('data-chart-type');
+                // Path uses the authenticated user ID
+                const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`);
+                const q = query(expensesCollectionRef);
+                getDocs(q).then(snapshot => {
+                    const allExpenses = [];
+                    snapshot.forEach(doc => allExpenses.push(doc.data()));
+                    renderChart(chartType, allExpenses);
+                });
+            });
+        });
+
+        darkModeToggle.addEventListener('change', async (e) => {
+            if (!userId) return;
+            const theme = e.target.checked ? 'dark' : 'light';
+            document.body.classList.toggle('theme-dark', e.target.checked);
+            document.body.classList.toggle('theme-light', !e.target.checked);
+
+            if (myChart) {
+                myChart.options.plugins.legend.labels.color = e.target.checked ? '#e5e7eb' : '#1f2937';
+                if (myChart.options.scales.y) {
+                    myChart.options.scales.y.ticks.color = e.target.checked ? '#e5e7eb' : '#1f2937';
+                    myChart.options.scales.y.grid.color = e.target.checked ? '#374151' : '#f3f4f6';
+                }
+                if (myChart.options.scales.x) {
+                    myChart.options.scales.x.ticks.color = e.target.checked ? '#e5e7eb' : '#1f2937';
+                    myChart.options.scales.x.grid.color = e.target.checked ? '#374151' : '#f3f4f6';
+                }
+                myChart.data.datasets.forEach(dataset => {
+                    dataset.borderColor = e.target.checked ? '#111827' : '#ffffff';
+                });
+                myChart.update();
+            }
+
+            // Path uses the authenticated user ID
+            const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+            await setDoc(userSettingsDocRef, {
+                theme
+            }, {
+                merge: true
+            });
+        });
+
+        // Currency Update function and listener
+        const updateCurrency = async (newCurrency) => {
+            currentCurrency = newCurrency;
+            switch (newCurrency) {
+                case 'USD':
+                    currencySymbol = '$';
+                    budgetInput.max = 20000;
+                    break;
+                case 'EUR':
+                    currencySymbol = '€';
+                    budgetInput.max = 20000;
+                    break;
+                case 'INR':
+                default:
+                    currencySymbol = '₹';
+                    budgetInput.max = 100000;
+                    break;
+            }
+            currencySymbolSpan.textContent = currencySymbol;
+            budgetCurrencySymbol.textContent = currencySymbol;
+
+            if (!userId) return;
+            // Path uses the authenticated user ID
+            const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+            const docSnap = await getDoc(userSettingsDocRef);
+            let currentBudget = 0;
+            if (docSnap.exists() && docSnap.data().budget) {
+                currentBudget = docSnap.data().budget;
+            }
+
+            // If a user has a budget for the previous currency that's over the new currency's max, adjust it down
+            if (currentBudget > budgetInput.max) {
+                showMessage("Warning", `Budget cannot exceed ${currencySymbol}${budgetInput.max.toFixed(2)} for this currency.`);
+                budgetInput.value = budgetInput.max;
+                setDoc(userSettingsDocRef, {
+                    budget: parseFloat(budgetInput.max)
+                }, {
+                    merge: true
+                });
+            } else {
+                budgetInput.value = currentBudget;
+            }
+
+            setupExpenseListener(currentCurrency);
+        };
+
+        currencySelect.addEventListener('change', async (e) => {
+            if (!userId) return;
+            const newCurrency = e.target.value;
+            try {
+                // Path uses the authenticated user ID
+                const userSettingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'preferences');
+                await setDoc(userSettingsDocRef, {
+                    currency: newCurrency
+                }, {
+                    merge: true
+                });
+                updateCurrency(newCurrency);
+                showMessage("Success", `Currency updated to ${newCurrency}.`);
+                addLog(`Currency preference changed to ${newCurrency}.`);
+            } catch (error) {
+                console.error("Error saving currency:", error);
+                showMessage("Error", "Failed to save currency preference. Please try again.", true);
+            }
+        });
+
+
+        // Sync button listener
+        syncBtn.addEventListener('click', async () => {
+            if (!userId) return;
+            syncIcon.style.display = 'none';
+            syncSpinner.style.display = 'block';
+            syncBtn.disabled = true;
+
+            try {
+                await setupFirestoreListeners();
+                showMessage("Success", "Data synced successfully.");
+            } catch (error) {
+                console.error("Error syncing data:", error);
+                showMessage("Error", "Failed to sync data. Please try again.", true);
+            } finally {
+                syncIcon.style.display = 'block';
+                syncSpinner.style.display = 'none';
+                syncBtn.disabled = false;
+            }
+        });
+
+
+        // --- Data Export Functions ---
+        async function fetchAllExpenses() {
+            if (!userId) return;
+            try {
+                // Path uses the authenticated user ID
+                const expensesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/expenses/${currentCurrency}/data`);
+                const querySnapshot = await getDocs(expensesCollectionRef);
+                const allExpenses = [];
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const createdAt = data.createdAt ? data.createdAt.toDate().toISOString() : null;
+                    allExpenses.push({
+                        id: doc.id,
+                        name: data.name,
+                        amount: data.amount,
+                        category: data.category,
+                        date: data.date,
+                        createdAt
+                    });
+                });
+                return allExpenses;
+            } catch (error) {
+                console.error("Error fetching expenses for export:", error);
+                showMessage("Error", "Failed to fetch data for export. Please try again.", true);
                 return null;
             }
         }
 
         async function exportToJson() {
             const expenses = await fetchAllExpenses();
-            if (!expenses || expenses.length === 0) {
-                showMessage("Info", "No data to export.", false);
-                return;
-            }
-            const dataStr = JSON.stringify(expenses, null, 2);
-            const blob = new Blob([dataStr], {
+            if (!expenses) return;
+            const jsonString = JSON.stringify(expenses, null, 2);
+            const blob = new Blob([jsonString], {
                 type: 'application/json'
             });
             const url = URL.createObjectURL(blob);
@@ -974,16 +1035,11 @@
                 showMessage("Info", "No data to export.", false);
                 return;
             }
-            const headers = ["id", "name", "amount", "category", "isRecurring", "currency", "createdAt"];
+            const headers = ["id", "name", "amount", "category", "date", "createdAt"];
             const csvRows = [headers.join(',')];
             for (const expense of expenses) {
                 const values = headers.map(header => {
-                    let value = expense[header];
-                    if (header === "createdAt" && value && value.toDate) {
-                        value = value.toDate().toISOString();
-                    } else if (value === undefined) {
-                        value = '';
-                    }
+                    const value = expense[header];
                     const escaped = ('' + value).replace(/"/g, '""');
                     return `"${escaped}"`;
                 });
@@ -1004,10 +1060,11 @@
             showMessage("Success", "Expense data exported to CSV.");
         }
 
-        // Initialize the app
-        window.onload = initFirebase;
         exportJsonBtn.addEventListener('click', exportToJson);
         exportCsvBtn.addEventListener('click', exportToCsv);
+
+        // Set the default date input value to today
+        expenseDateInput.valueAsDate = new Date();
     </script>
 </body>
 
